@@ -1,0 +1,179 @@
+/* ============================================ */
+/* Alliance REN - Accueil (Dashboard)          */
+/* Stats, activite recente, systeme de points  */
+/* ============================================ */
+(function () {
+    'use strict';
+
+    document.addEventListener('ren:ready', init);
+
+    async function init() {
+        if (!window.REN.supabase || !window.REN.currentProfile) return;
+        loadDashboardStats();
+        loadActivityFeed();
+        setupPointsModal();
+    }
+
+    /* === DASHBOARD STATS === */
+    async function loadDashboardStats() {
+        try {
+            var { data, error } = await window.REN.supabase.rpc('get_dashboard_stats');
+            if (error) throw error;
+
+            var stats = typeof data === 'string' ? JSON.parse(data) : data;
+
+            setStatValue('stat-kamas', window.REN.formatKamas(stats.total_kamas));
+            setStatValue('stat-attaques', window.REN.formatNumber(stats.nb_attaques));
+            setStatValue('stat-winrate-atk', stats.winrate_attaque + '%');
+            setStatValue('stat-winrate-def', stats.winrate_defense + '%');
+            setStatValue('stat-defenses', window.REN.formatNumber(stats.nb_defenses));
+            setStatValue('stat-menace', stats.menace_nom);
+        } catch (err) {
+            console.error('[REN] Erreur dashboard stats:', err);
+        }
+    }
+
+    function setStatValue(id, value) {
+        var el = document.getElementById(id);
+        if (el) {
+            var valueEl = el.querySelector('.stat-card__value');
+            if (valueEl) valueEl.textContent = value;
+        }
+    }
+
+    /* === ACTIVITY FEED === */
+    async function loadActivityFeed() {
+        var feedContainer = document.getElementById('activity-feed');
+        if (!feedContainer) return;
+
+        try {
+            var { data: combats, error } = await window.REN.supabase
+                .from('combats')
+                .select('*, auteur:profiles!auteur_id(username), alliance:alliances(nom, tag), participants:combat_participants(user:profiles(username))')
+                .order('created_at', { ascending: false })
+                .limit(20);
+
+            if (error) throw error;
+
+            if (!combats || combats.length === 0) {
+                feedContainer.innerHTML = '<div class="activity"><div class="activity__title">Activite Recente</div><p class="text-muted" style="padding: 1rem;">Aucune activite pour le moment. Declarez votre premiere attaque !</p></div>';
+                return;
+            }
+
+            var html = '<div class="activity"><div class="activity__title">Activite Recente</div>';
+
+            combats.forEach(function (c) {
+                var badgeClass = c.resultat === 'victoire' ? 'badge--victoire' : 'badge--defaite';
+                var badgeText = c.resultat === 'victoire' ? 'VICTOIRE' : 'DEFAITE';
+                var auteurName = c.auteur ? c.auteur.username : 'Inconnu';
+                var mates = [];
+                if (c.participants) {
+                    c.participants.forEach(function (p) {
+                        if (p.user && p.user.username !== auteurName) {
+                            mates.push(p.user.username);
+                        }
+                    });
+                }
+                var matesStr = mates.length > 0 ? ' <span class="text-muted">(avec ' + mates.map(function(m) { return '<span class="highlight">' + m + '</span>'; }).join(', ') + ')</span>' : '';
+                var actionType = c.type === 'attaque' ? 'une Attaque' : 'une Defense';
+                var actionVerb = c.resultat === 'victoire' ? 'a remporte' : 'a perdu';
+                var allianceName = c.alliance ? '<strong>' + c.alliance.nom + (c.alliance.tag ? ' [' + c.alliance.tag + ']' : '') + '</strong>' : (c.alliance_ennemie_nom || 'Inconnu');
+                var butinStr = c.type === 'attaque' && c.butin_kamas > 0 ? ' &mdash; Butin : <span class="kamas">' + window.REN.formatKamas(c.butin_kamas) + '</span>' : '';
+                var pointsStr = c.points_gagnes !== 0 ? ' &mdash; <span class="' + (c.points_gagnes > 0 ? 'text-success' : 'text-danger') + '">' + (c.points_gagnes > 0 ? '+' : '') + c.points_gagnes + ' pts</span>' : '';
+
+                html += '<div class="activity__item">';
+                html += '<div class="activity__text"><span class="badge ' + badgeClass + '">' + badgeText + '</span> ';
+                html += '<strong>' + auteurName + '</strong>' + matesStr + ' ' + actionVerb + ' ' + actionType + ' contre ' + allianceName + butinStr + pointsStr;
+                html += '</div>';
+                html += '<span class="activity__time">' + window.REN.formatDate(c.created_at) + '</span>';
+                html += '</div>';
+            });
+
+            html += '</div>';
+            feedContainer.innerHTML = html;
+
+        } catch (err) {
+            console.error('[REN] Erreur activity feed:', err);
+            feedContainer.innerHTML = '<div class="activity"><div class="activity__title">Activite Recente</div><p class="text-muted" style="padding: 1rem;">Erreur de chargement.</p></div>';
+        }
+    }
+
+    /* === MODAL SYSTEME DE POINTS === */
+    function setupPointsModal() {
+        var btn = document.getElementById('system-points-btn');
+        var overlay = document.getElementById('modal-points');
+        var closeBtn = document.getElementById('modal-points-close');
+
+        if (!btn || !overlay) return;
+
+        btn.addEventListener('click', function () {
+            overlay.classList.add('active');
+            loadPointsBareme();
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                overlay.classList.remove('active');
+            });
+        }
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('active');
+        });
+    }
+
+    async function loadPointsBareme() {
+        var content = document.getElementById('modal-points-content');
+        if (!content) return;
+
+        try {
+            var { data: bareme, error } = await window.REN.supabase
+                .from('bareme_points').select('*').order('nb_allies').order('nb_ennemis');
+
+            if (error) throw error;
+
+            var html = '<p class="text-muted mb-lg" style="font-size:0.8125rem;">Points gagnes (vert) / perdus (rouge) selon le nombre d\'allies et d\'ennemis. Les multiplicateurs d\'alliance s\'appliquent en victoire.</p>';
+            html += '<div class="bareme-grid"><table class="table">';
+            html += '<thead><tr><th>Allies \\ Ennemis</th>';
+            for (var e = 1; e <= 5; e++) html += '<th>' + e + ' enn.</th>';
+            html += '</tr></thead><tbody>';
+
+            for (var a = 1; a <= 5; a++) {
+                html += '<tr><th>' + a + ' allie' + (a > 1 ? 's' : '') + '</th>';
+                for (var ee = 1; ee <= 5; ee++) {
+                    var cell = (bareme || []).find(function (b) { return b.nb_allies === a && b.nb_ennemis === ee; });
+                    var pv = cell ? cell.points_victoire : 0;
+                    var pd = cell ? cell.points_defaite : 0;
+                    html += '<td>';
+                    html += '<span class="text-success">' + (pv > 0 ? '+' : '') + pv + '</span>';
+                    html += ' / ';
+                    html += '<span class="text-danger">' + pd + '</span>';
+                    html += '</td>';
+                }
+                html += '</tr>';
+            }
+
+            html += '</tbody></table></div>';
+
+            /* Alliances + multiplicateurs */
+            var { data: alliances } = await window.REN.supabase.from('alliances').select('*').order('nom');
+            if (alliances && alliances.length) {
+                html += '<h3 style="font-family:var(--font-title);font-size:1rem;margin-top:var(--spacing-xl);margin-bottom:var(--spacing-md);">Multiplicateurs d\'alliance</h3>';
+                html += '<div class="ranking-list">';
+                alliances.forEach(function (a) {
+                    html += '<div class="ranking-item">';
+                    html += '<div class="ranking-item__left"><span class="ranking-item__name">' + a.nom + (a.tag ? ' [' + a.tag + ']' : '') + '</span></div>';
+                    html += '<span class="ranking-item__value text-accent">x' + a.multiplicateur + '</span>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            content.innerHTML = html;
+
+        } catch (err) {
+            console.error('[REN] Erreur bareme:', err);
+            content.innerHTML = '<p class="text-muted">Erreur de chargement du bareme.</p>';
+        }
+    }
+})();

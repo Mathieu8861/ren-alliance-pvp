@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alliance REN - Jeu de Cartes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header__inner">
+            <div class="header__brand">
+                <svg class="header__logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#c0392b" stroke="#e74c3c" stroke-width="2"/>
+                    <path d="M32 16C32 16 26 24 26 34C26 38 28 44 32 50C36 44 38 38 38 34C38 24 32 16 32 16Z" fill="#e74c3c" opacity="0.6"/>
+                </svg>
+                <span class="header__title">Alliance REN</span>
+            </div>
+
+            <nav class="nav" id="nav">
+                <div class="nav__menu" id="nav-menu">
+                    <a href="index.html" class="nav__link" data-page="accueil">Accueil</a>
+                    <a href="attaque.html" class="nav__link" data-page="attaque">Attaque</a>
+                    <a href="defense.html" class="nav__link" data-page="defense">Defense</a>
+                    <a href="classement.html" class="nav__link" data-page="classement">Classement</a>
+                    <a href="historique.html" class="nav__link" data-page="historique">Historique</a>
+                    <a href="membres.html" class="nav__link" data-page="membres">Membres</a>
+                    <a href="builds.html" class="nav__link" data-page="builds">Builds</a>
+                    <a href="jeux.html" class="nav__link" data-page="jeux">Jeux</a>
+                </div>
+            </nav>
+
+            <div class="header__user">
+                <a href="admin.html" class="header__icon" id="nav-admin-link" title="Admin" style="display:none;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z"/></svg>
+                </a>
+                <span class="header__username" id="nav-username"></span>
+                <button class="header__icon" id="btn-logout" title="Deconnexion">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                </button>
+                <button class="nav__toggle" id="nav-toggle">
+                    <span></span><span></span><span></span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="mb-lg">
+            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Jeu de Cartes</h1>
+            <p class="text-muted" style="font-size: 0.8125rem;">Tentez votre chance avec vos jetons</p>
+        </div>
+
+        <div class="game-layout">
+            <div class="game-section">
+                <div class="game-section__title">Tirage</div>
+                <div class="game-info mb-lg">
+                    <p>Vos jetons : <span class="jetons-count" id="jetons-count">0</span></p>
+                    <p class="mt-sm">Cout d'un tirage : <strong id="prix-tirage">12</strong> jetons</p>
+                </div>
+                <div class="game-cards" id="game-cards">
+                    <div class="game-card" data-index="0">
+                        <div class="game-card__inner">
+                            <div class="game-card__front">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                            </div>
+                            <div class="game-card__back">
+                                <span class="lot-name">?</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="game-card" data-index="1">
+                        <div class="game-card__inner">
+                            <div class="game-card__front">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                            </div>
+                            <div class="game-card__back">
+                                <span class="lot-name">?</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="game-card" data-index="2">
+                        <div class="game-card__inner">
+                            <div class="game-card__front">
+                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                            </div>
+                            <div class="game-card__back">
+                                <span class="lot-name">?</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <button class="btn btn--primary" id="btn-tirer">Tirer une carte (12 jetons)</button>
+                </div>
+            </div>
+
+            <div class="game-section">
+                <div class="game-section__title">Lots disponibles</div>
+                <div id="lots-list">
+                    <div class="loading"><div class="spinner"></div> Chargement...</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__left">
+            <span class="footer__members" id="footer-member-count">0 Membres</span>
+        </div>
+        <div class="footer__right">Developpe par <strong>Regen Agency</strong></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <script src="js/jeux.js"></script>
+</body>
+</html>

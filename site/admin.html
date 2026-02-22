@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alliance REN - Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ADMIN HEADER -->
+    <header class="admin-header">
+        <h1>PANNEAU ADMIN</h1>
+        <div class="admin-header__actions">
+            <a href="index.html" class="btn btn--secondary btn--small">Retour au site</a>
+            <button class="btn btn--danger btn--small" id="btn-logout">Deconnexion</button>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="admin-tabs" id="admin-tabs">
+            <button class="admin-tabs__btn active" data-tab="validation">Validation</button>
+            <button class="admin-tabs__btn" data-tab="utilisateurs">Utilisateurs</button>
+            <button class="admin-tabs__btn" data-tab="alliances">Alliances</button>
+            <button class="admin-tabs__btn" data-tab="bareme">Bareme</button>
+            <button class="admin-tabs__btn" data-tab="builds">Builds</button>
+            <button class="admin-tabs__btn" data-tab="jeu-config">Jeu Config</button>
+            <button class="admin-tabs__btn" data-tab="jeu-lots">Jeu Lots</button>
+            <button class="admin-tabs__btn" data-tab="jeu-historique">Jeu Historique</button>
+        </div>
+
+        <div class="admin-panel" id="admin-content">
+            <div class="loading"><div class="spinner"></div> Chargement...</div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__left">
+            <span class="footer__members" id="footer-member-count">0 Membres</span>
+        </div>
+        <div class="footer__right">Developpe par <strong>Regen Agency</strong></div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
