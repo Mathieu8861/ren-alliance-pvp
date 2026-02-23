@@ -358,18 +358,49 @@
         html += '<div class="form-group"><input class="form-input" id="add-build-titre" placeholder="Titre du build"></div>';
         html += '<div class="form-group"><textarea class="form-input" id="add-build-desc" placeholder="Description..." rows="3" style="resize:vertical;"></textarea></div>';
         html += '<div class="form-group"><input class="form-input" id="add-build-lien" placeholder="Lien Dofusbook (optionnel)"></div>';
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-sm);">';
+        html += '<div class="form-group" style="flex:1;margin-bottom:0;"><select class="form-input" id="add-build-type"><option value="">Type (optionnel)</option><option value="pvp">PVP</option><option value="pvm">PVM</option></select></div>';
+        html += '<div class="form-group" style="flex:1;margin-bottom:0;"><input class="form-input" id="add-build-kamas" type="number" min="0" placeholder="Valeur estimee en kamas (optionnel)"></div>';
+        html += '</div>';
+        html += '<div class="form-group"><label class="form-label">Capture d\'ecran (optionnel)</label><input type="file" class="form-input" id="add-build-image" accept="image/*"></div>';
         html += '<button class="btn btn--primary btn--small" id="btn-add-build">Ajouter le build</button>';
         html += '</div>';
 
         /* Liste */
         if (builds && builds.length) {
             html += '<div class="table-wrapper"><table class="table">';
-            html += '<thead><tr><th>Titre</th><th>Lien</th><th>Actions</th></tr></thead><tbody>';
+            html += '<thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Kamas</th><th>Lien</th><th>Actions</th></tr></thead><tbody>';
             builds.forEach(function (b) {
-                html += '<tr>';
-                html += '<td>' + b.titre + '</td>';
-                html += '<td>' + (b.lien_dofusbook ? '<a href="' + b.lien_dofusbook + '" target="_blank" class="text-accent">Lien</a>' : '-') + '</td>';
-                html += '<td><button class="table__action table__action--danger admin-delete-build" data-id="' + b.id + '">Supprimer</button></td>';
+                html += '<tr data-id="' + b.id + '" data-image="' + (b.image_url || '') + '">';
+                /* Image */
+                html += '<td>';
+                if (b.image_url) {
+                    html += '<img src="' + b.image_url + '" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">';
+                } else {
+                    html += '<span class="text-muted">-</span>';
+                }
+                html += '</td>';
+                /* Titre : display / edit */
+                html += '<td class="cell-display" data-field="titre">' + b.titre + '</td>';
+                html += '<td class="cell-edit" data-field="titre" style="display:none;"><input class="form-input edit-build-titre" value="' + (b.titre || '') + '" style="width:100%;"></td>';
+                /* Type : display / edit */
+                html += '<td class="cell-display" data-field="type">' + (b.type_build ? '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>' : '-') + '</td>';
+                html += '<td class="cell-edit" data-field="type" style="display:none;"><select class="form-input edit-build-type" style="width:100%;"><option value="">-</option><option value="pvp"' + (b.type_build === 'pvp' ? ' selected' : '') + '>PVP</option><option value="pvm"' + (b.type_build === 'pvm' ? ' selected' : '') + '>PVM</option></select></td>';
+                /* Kamas : display / edit */
+                html += '<td class="cell-display" data-field="kamas">' + (b.valeur_kamas ? Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M' : '-') + '</td>';
+                html += '<td class="cell-edit" data-field="kamas" style="display:none;"><input class="form-input edit-build-kamas" type="number" min="0" value="' + (b.valeur_kamas || 0) + '" style="width:100px;"></td>';
+                /* Lien : display / edit */
+                html += '<td class="cell-display" data-field="lien">' + (b.lien_dofusbook ? '<a href="' + b.lien_dofusbook + '" target="_blank" class="text-accent">Lien</a>' : '-') + '</td>';
+                html += '<td class="cell-edit" data-field="lien" style="display:none;"><input class="form-input edit-build-lien" value="' + (b.lien_dofusbook || '') + '" style="width:100%;"></td>';
+                /* Actions : display / edit */
+                html += '<td class="cell-display" data-field="actions">';
+                html += '<button class="table__action admin-edit-build" data-id="' + b.id + '">Modifier</button> ';
+                html += '<button class="table__action table__action--danger admin-delete-build" data-id="' + b.id + '">Supprimer</button>';
+                html += '</td>';
+                html += '<td class="cell-edit" data-field="actions" style="display:none;">';
+                html += '<button class="table__action table__action--success admin-save-build" data-id="' + b.id + '">Sauver</button> ';
+                html += '<button class="table__action admin-cancel-build">Annuler</button>';
+                html += '</td>';
                 html += '</tr>';
             });
             html += '</tbody></table></div>';
@@ -377,19 +408,99 @@
 
         container.innerHTML = html;
 
+        /* === AJOUTER un build === */
         document.getElementById('btn-add-build').addEventListener('click', async function () {
             var titre = document.getElementById('add-build-titre').value.trim();
             if (!titre) { window.REN.toast('Entrez un titre.', 'error'); return; }
             var desc = document.getElementById('add-build-desc').value.trim();
             var lien = document.getElementById('add-build-lien').value.trim();
-            await window.REN.supabase.from('builds').insert({ titre: titre, description: desc, lien_dofusbook: lien || '' });
+            var typeBuild = document.getElementById('add-build-type').value;
+            var valeurKamas = document.getElementById('add-build-kamas').value;
+
+            /* Upload image si presente */
+            var fileInput = document.getElementById('add-build-image');
+            var imageUrl = '';
+            if (fileInput && fileInput.files.length > 0) {
+                var file = fileInput.files[0];
+                var fileName = Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g, '');
+                var { error: uploadError } = await window.REN.supabase.storage
+                    .from('builds')
+                    .upload(fileName, file);
+                if (uploadError) {
+                    console.error('[REN] Upload error:', uploadError);
+                    window.REN.toast('Erreur upload image: ' + uploadError.message, 'error');
+                    return;
+                }
+                var { data: urlData } = window.REN.supabase.storage.from('builds').getPublicUrl(fileName);
+                imageUrl = urlData.publicUrl;
+            }
+
+            await window.REN.supabase.from('builds').insert({
+                titre: titre, description: desc, lien_dofusbook: lien || '', image_url: imageUrl,
+                type_build: typeBuild || '', valeur_kamas: valeurKamas ? parseInt(valeurKamas) : 0
+            });
             window.REN.toast('Build ajoute !', 'success');
             loadTab('builds');
         });
 
+        /* === MODIFIER un build (inline edit) === */
+        container.querySelectorAll('.admin-edit-build').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = btn.closest('tr');
+                row.querySelectorAll('.cell-display').forEach(function (td) { td.style.display = 'none'; });
+                row.querySelectorAll('.cell-edit').forEach(function (td) { td.style.display = ''; });
+            });
+        });
+
+        /* === ANNULER l'edition === */
+        container.querySelectorAll('.admin-cancel-build').forEach(function (btn) {
+            btn.addEventListener('click', function () { loadTab('builds'); });
+        });
+
+        /* === SAUVER un build === */
+        container.querySelectorAll('.admin-save-build').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var row = btn.closest('tr');
+                var id = btn.dataset.id;
+                var newTitre = row.querySelector('.edit-build-titre').value.trim();
+                if (!newTitre) { window.REN.toast('Le titre est obligatoire.', 'error'); return; }
+                var newType = row.querySelector('.edit-build-type').value;
+                var newKamas = row.querySelector('.edit-build-kamas').value;
+                var newLien = row.querySelector('.edit-build-lien').value.trim();
+
+                var { error: updateError } = await window.REN.supabase.from('builds').update({
+                    titre: newTitre,
+                    type_build: newType || '',
+                    valeur_kamas: newKamas ? parseInt(newKamas) : 0,
+                    lien_dofusbook: newLien || ''
+                }).eq('id', id);
+
+                if (updateError) {
+                    console.error('[REN] Update build error:', updateError);
+                    window.REN.toast('Erreur: ' + updateError.message, 'error');
+                    return;
+                }
+                window.REN.toast('Build modifie !', 'success');
+                loadTab('builds');
+            });
+        });
+
+        /* === SUPPRIMER un build === */
         container.querySelectorAll('.admin-delete-build').forEach(function (btn) {
             btn.addEventListener('click', async function () {
                 if (!confirm('Supprimer ce build ?')) return;
+
+                /* Supprimer l'image du storage si elle existe */
+                var row = btn.closest('tr');
+                var imageUrl = row ? row.dataset.image : '';
+                if (imageUrl) {
+                    var parts = imageUrl.split('/builds/');
+                    if (parts.length > 1) {
+                        var filePath = parts[parts.length - 1];
+                        await window.REN.supabase.storage.from('builds').remove([filePath]);
+                    }
+                }
+
                 await window.REN.supabase.from('builds').delete().eq('id', btn.dataset.id);
                 window.REN.toast('Build supprime.', 'info');
                 loadTab('builds');
@@ -421,8 +532,9 @@
         var { data: lots } = await window.REN.supabase.from('jeu_lots').select('*').order('pourcentage', { ascending: false });
 
         var html = '<div class="admin-panel__title">Gestion des Lots</div>';
+        html += '<div class="admin-panel__desc">Ajoutez ou modifiez les lots. La somme des pourcentages doit faire 100%.</div>';
 
-        /* Formulaire */
+        /* Formulaire ajout */
         html += '<div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-lg);flex-wrap:wrap;">';
         html += '<input class="form-input" id="add-lot-nom" placeholder="Nom du lot" style="flex:2;min-width:150px;">';
         html += '<input class="form-input" id="add-lot-pourcent" type="number" placeholder="%" min="0" max="100" step="0.01" style="flex:1;min-width:80px;">';
@@ -430,23 +542,56 @@
         html += '<button class="btn btn--primary btn--small" id="btn-add-lot">Ajouter</button>';
         html += '</div>';
 
-        /* Liste */
+        /* Liste avec inline-edit */
         if (lots && lots.length) {
             html += '<div class="table-wrapper"><table class="table">';
             html += '<thead><tr><th>Lot</th><th>%</th><th>Gain jetons</th><th>Actions</th></tr></thead><tbody>';
+
             lots.forEach(function (l) {
-                html += '<tr>';
-                html += '<td>' + l.nom + '</td>';
-                html += '<td>' + l.pourcentage + '%</td>';
-                html += '<td>' + (l.gain_jetons || 0) + '</td>';
-                html += '<td><button class="table__action table__action--danger admin-delete-lot" data-id="' + l.id + '">Supprimer</button></td>';
+                html += '<tr data-row-id="' + l.id + '">';
+                /* Mode affichage */
+                html += '<td class="cell-display" data-field="nom">' + l.nom + '</td>';
+                html += '<td class="cell-display" data-field="pourcentage">' + l.pourcentage + '%</td>';
+                html += '<td class="cell-display" data-field="gain_jetons">' + (l.gain_jetons || 0) + '</td>';
+                /* Mode edition (masque par defaut) */
+                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-lot-nom" value="' + l.nom + '" style="width:100%;"></td>';
+                html += '<td class="cell-edit" data-field="pourcentage" style="display:none;"><input class="form-input edit-lot-pourcent" type="number" value="' + l.pourcentage + '" step="0.01" min="0" max="100" style="width:80px;"></td>';
+                html += '<td class="cell-edit" data-field="gain_jetons" style="display:none;"><input class="form-input edit-lot-jetons" type="number" value="' + (l.gain_jetons || 0) + '" min="0" style="width:80px;"></td>';
+                /* Boutons */
+                html += '<td>';
+                html += '<span class="actions-display">';
+                html += '<button class="table__action admin-edit-lot" data-id="' + l.id + '">Modifier</button> ';
+                html += '<button class="table__action table__action--danger admin-delete-lot" data-id="' + l.id + '">Supprimer</button>';
+                html += '</span>';
+                html += '<span class="actions-edit" style="display:none;">';
+                html += '<button class="btn btn--primary btn--small admin-save-lot" data-id="' + l.id + '">Sauver</button> ';
+                html += '<button class="btn btn--secondary btn--small admin-cancel-lot" data-id="' + l.id + '">Annuler</button>';
+                html += '</span>';
+                html += '</td>';
                 html += '</tr>';
             });
+
             html += '</tbody></table></div>';
         }
 
+        /* Somme des probabilites */
+        var sommePourcentages = (lots || []).reduce(function (sum, l) {
+            return sum + parseFloat(l.pourcentage || 0);
+        }, 0);
+        var sommeOk = Math.abs(sommePourcentages - 100) < 0.01;
+        var sommeColor = sommeOk ? 'var(--color-success)' : 'var(--color-danger)';
+        var sommeWarning = !sommeOk ? '<br><span style="color:var(--color-warning);font-size:0.75rem;">La somme devrait etre 100%</span>' : '';
+
+        html += '<div style="text-align:center;margin-top:var(--spacing-lg);padding:var(--spacing-md);background:var(--color-bg-tertiary);border-radius:var(--radius-sm);">';
+        html += '<span style="font-family:var(--font-title);font-weight:600;color:' + sommeColor + ';">';
+        html += 'Somme des probabilites : ' + sommePourcentages.toFixed(2) + '%';
+        html += '</span>';
+        html += sommeWarning;
+        html += '</div>';
+
         container.innerHTML = html;
 
+        /* Ajouter */
         document.getElementById('btn-add-lot').addEventListener('click', async function () {
             var nom = document.getElementById('add-lot-nom').value.trim();
             var pourcent = parseFloat(document.getElementById('add-lot-pourcent').value);
@@ -457,6 +602,42 @@
             loadTab('jeu-lots');
         });
 
+        /* Modifier - passer en mode edition */
+        container.querySelectorAll('.admin-edit-lot').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = container.querySelector('tr[data-row-id="' + btn.dataset.id + '"]');
+                if (!row) return;
+                row.querySelectorAll('.cell-display').forEach(function (td) { td.style.display = 'none'; });
+                row.querySelectorAll('.cell-edit').forEach(function (td) { td.style.display = ''; });
+                row.querySelector('.actions-display').style.display = 'none';
+                row.querySelector('.actions-edit').style.display = '';
+            });
+        });
+
+        /* Annuler */
+        container.querySelectorAll('.admin-cancel-lot').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                loadTab('jeu-lots');
+            });
+        });
+
+        /* Sauver */
+        container.querySelectorAll('.admin-save-lot').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var row = container.querySelector('tr[data-row-id="' + btn.dataset.id + '"]');
+                if (!row) return;
+                var nom = row.querySelector('.edit-lot-nom').value.trim();
+                var pourcent = parseFloat(row.querySelector('.edit-lot-pourcent').value);
+                var jetons = parseInt(row.querySelector('.edit-lot-jetons').value) || 0;
+                if (!nom || isNaN(pourcent)) { window.REN.toast('Remplissez nom et pourcentage.', 'error'); return; }
+                var { error } = await window.REN.supabase.from('jeu_lots').update({ nom: nom, pourcentage: pourcent, gain_jetons: jetons }).eq('id', btn.dataset.id);
+                if (error) { window.REN.toast('Erreur: ' + error.message, 'error'); return; }
+                window.REN.toast('Lot modifie !', 'success');
+                loadTab('jeu-lots');
+            });
+        });
+
+        /* Supprimer */
         container.querySelectorAll('.admin-delete-lot').forEach(function (btn) {
             btn.addEventListener('click', async function () {
                 if (!confirm('Supprimer ce lot ?')) return;
@@ -483,6 +664,10 @@
             return;
         }
 
+        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm);">';
+        html += '<button class="btn btn--danger btn--small" id="btn-clear-all-hist">Tout supprimer (' + historique.length + ')</button>';
+        html += '</div>';
+
         html += '<div class="table-wrapper"><table class="table">';
         html += '<thead><tr><th>Joueur</th><th>Lot</th><th>Resultat</th><th>Donne</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
 
@@ -493,10 +678,11 @@
             html += '<td>' + h.resultat + '</td>';
             html += '<td>' + (h.donne ? '<span class="text-success">Oui</span>' : '<span class="text-danger">Non</span>') + '</td>';
             html += '<td>' + window.REN.formatDateFull(h.created_at) + '</td>';
-            html += '<td>';
+            html += '<td style="display:flex;gap:4px;flex-wrap:wrap;">';
             if (!h.donne) {
                 html += '<button class="btn btn--primary btn--small admin-mark-given" data-id="' + h.id + '">Marquer donne</button>';
             }
+            html += '<button class="btn btn--danger btn--small admin-delete-hist" data-id="' + h.id + '">Supprimer</button>';
             html += '</td>';
             html += '</tr>';
         });
@@ -504,6 +690,7 @@
         html += '</tbody></table></div>';
         container.innerHTML = html;
 
+        /* Marquer comme donné */
         container.querySelectorAll('.admin-mark-given').forEach(function (btn) {
             btn.addEventListener('click', async function () {
                 await window.REN.supabase.from('jeu_historique').update({ donne: true }).eq('id', btn.dataset.id);
@@ -511,5 +698,27 @@
                 loadTab('jeu-historique');
             });
         });
+
+        /* Supprimer une ligne */
+        container.querySelectorAll('.admin-delete-hist').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Supprimer ce tirage ?')) return;
+                await window.REN.supabase.from('jeu_historique').delete().eq('id', btn.dataset.id);
+                window.REN.toast('Tirage supprime.', 'success');
+                loadTab('jeu-historique');
+            });
+        });
+
+        /* Tout supprimer */
+        var clearAllBtn = document.getElementById('btn-clear-all-hist');
+        if (clearAllBtn) {
+            clearAllBtn.addEventListener('click', async function () {
+                if (!confirm('Supprimer TOUT l\'historique des tirages ? Cette action est irreversible.')) return;
+                var ids = historique.map(function (h) { return h.id; });
+                await window.REN.supabase.from('jeu_historique').delete().in('id', ids);
+                window.REN.toast('Historique supprime.', 'success');
+                loadTab('jeu-historique');
+            });
+        }
     }
 })();

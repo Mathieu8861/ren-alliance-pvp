@@ -14,10 +14,7 @@
     <header class="header">
         <div class="header__inner">
             <div class="header__brand">
-                <svg class="header__logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#c0392b" stroke="#e74c3c" stroke-width="2"/>
-                    <path d="M32 16C32 16 26 24 26 34C26 38 28 44 32 50C36 44 38 38 38 34C38 24 32 16 32 16Z" fill="#e74c3c" opacity="0.6"/>
-                </svg>
+                <img class="header__logo" src="assets/images/logo-ren.png" alt="Logo Alliance REN">
                 <span class="header__title">Alliance REN</span>
             </div>
 
@@ -55,18 +52,28 @@
             <p class="text-muted" style="font-size: 0.8125rem;">Tentez votre chance avec vos jetons</p>
         </div>
 
-        <div class="game-layout">
-            <div class="game-section">
-                <div class="game-section__title">Tirage</div>
-                <div class="game-info mb-lg">
-                    <p>Vos jetons : <span class="jetons-count" id="jetons-count">0</span></p>
-                    <p class="mt-sm">Cout d'un tirage : <strong id="prix-tirage">12</strong> jetons</p>
+        <!-- Décos page jeu -->
+        <img class="game-deco-kamas" src="assets/images/pile_de_kamas.png" alt="">
+        <img class="game-deco-ecaflip" src="assets/images/dieu_ecaflip.png" alt="">
+
+        <div class="game-layout game-layout--jeux">
+
+            <!-- Gauche : Jeu de Cartes (centré, plus gros) -->
+            <div class="game-section game-section--game">
+                <div class="game-section__title">Tenter sa chance</div>
+
+                <!-- Solde + prix -->
+                <div class="game-info--prominent">
+                    <span class="game-info__solde">Vos jetons : <span class="jetons-count" id="jetons-count">0</span></span>
+                    <span class="game-info__prix">Cout : <strong id="prix-tirage">12</strong> jetons</span>
                 </div>
+
+                <!-- 3 cartes -->
                 <div class="game-cards" id="game-cards">
                     <div class="game-card" data-index="0">
                         <div class="game-card__inner">
                             <div class="game-card__front">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
                             </div>
                             <div class="game-card__back">
                                 <span class="lot-name">?</span>
@@ -76,7 +83,7 @@
                     <div class="game-card" data-index="1">
                         <div class="game-card__inner">
                             <div class="game-card__front">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
                             </div>
                             <div class="game-card__back">
                                 <span class="lot-name">?</span>
@@ -86,7 +93,7 @@
                     <div class="game-card" data-index="2">
                         <div class="game-card__inner">
                             <div class="game-card__front">
-                                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M32 4C32 4 20 18 20 34C20 42 25 52 32 60C39 52 44 42 44 34C44 18 32 4 32 4Z" fill="#fff" opacity="0.8"/></svg>
+                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
                             </div>
                             <div class="game-card__back">
                                 <span class="lot-name">?</span>
@@ -94,18 +101,38 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Instruction -->
+                <p class="game-instruction text-muted text-center" id="game-instruction" style="font-size:0.875rem;margin-bottom:var(--spacing-md);">Cliquez sur "Tenter sa chance" pour melanger les cartes</p>
+
+                <!-- Bouton CTA -->
                 <div class="text-center">
-                    <button class="btn btn--primary" id="btn-tirer">Tirer une carte (12 jetons)</button>
+                    <button class="btn btn--primary btn--cta" id="btn-tirer">TENTER SA CHANCE</button>
                 </div>
             </div>
 
-            <div class="game-section">
-                <div class="game-section__title">Lots disponibles</div>
-                <div id="lots-list">
+            <!-- Droite : Classement Jetons -->
+            <div class="game-section game-section--ranking">
+                <div class="game-section__title">Classement Jetons</div>
+                <div id="jetons-ranking">
                     <div class="loading"><div class="spinner"></div> Chargement...</div>
                 </div>
             </div>
         </div>
+
+        <!-- Modal resultat -->
+        <div class="modal-overlay" id="modal-result">
+            <div class="modal modal--result">
+                <div class="modal__header">
+                    <h2 class="modal__title" id="result-title">Resultat</h2>
+                    <button class="modal__close" id="result-close">&times;</button>
+                </div>
+                <div class="modal__body" id="result-body"></div>
+            </div>
+        </div>
+
+        <!-- Confetti container -->
+        <div class="confetti-container" id="confetti-container"></div>
     </main>
 
     <footer class="footer">
