@@ -2747,6 +2747,9 @@ table {
 .profil-avatar-section__frame {
     position: relative;
     cursor: pointer;
+    transform: scale(1.3);
+    transform-origin: center;
+    margin: 10px 0;
 }
 
 .profil-avatar-section__overlay {
