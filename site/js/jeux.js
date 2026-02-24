@@ -150,7 +150,7 @@
                 if (lotName) lotName.textContent = '?';
             });
 
-            setInstruction('Melange en cours...');
+            setInstruction('Mélange en cours...');
 
             /* === ANIMATION DE MELANGE REALISTE === */
             if (cardsContainer) cardsContainer.classList.add('shuffling-active');
@@ -282,7 +282,7 @@
                     isDrawing = false;
                     var btn = document.getElementById('btn-tirer');
                     if (btn) btn.disabled = false;
-                    setInstruction('Cliquez sur "Tenter sa chance" pour melanger les cartes');
+                    setInstruction('Cliquez sur "Tenter sa chance" pour mélanger les cartes');
                 }, 1500);
             });
         });
@@ -323,7 +323,7 @@
             var body = document.getElementById('result-body');
             if (!overlay || !body) { resolve('garder'); return; }
 
-            if (title) title.textContent = 'Vous avez gagne !';
+            if (title) title.textContent = 'Vous avez gagné !';
 
             var html = '';
             html += '<div class="result-icon">&#127881;</div>';
@@ -372,7 +372,7 @@
 
         var html = '<div class="result-double-suspense">';
         html += '<div class="double-coin" id="double-coin">&#x1FA99;</div>';
-        html += '<div class="double-text">La piece tourne...</div>';
+        html += '<div class="double-text">La pièce tourne...</div>';
         html += '</div>';
 
         body.innerHTML = html;
@@ -401,7 +401,7 @@
         var html = '';
 
         if (isWin) {
-            var winTitles = ['DOUBLE !', 'JACKPOT !', 'ENORME !', 'GG WP !'];
+            var winTitles = ['DOUBLE !', 'JACKPOT !', 'ÉNORME !', 'GG WP !'];
             var winEmojis = ['&#x1F929;', '&#x1F525;', '&#x1F4B0;', '&#x1F3C6;'];
             var idx = Math.floor(Math.random() * winTitles.length);
             if (title) title.textContent = winTitles[idx];
@@ -417,13 +417,13 @@
                 'Putain la clim... Sakai ici ..',
                 'Cleamed',
                 'Retente ta chance gros plouc',
-                'Ah ouais ca veut depouiller le dieu ecaflip, dommage ...',
+                'Ah ouais ça veut dépouiller le dieu ecaflip, dommage ...',
                 'Bah alors ? On est nul ?',
-                'Malheureux au jeu chanceux en ... c\'est quoi deja qu\'on dit ?',
-                'Aie, coup dur pour le joueur francais',
+                'Malheureux au jeu chanceux en ... c\'est quoi déjà qu\'on dit ?',
+                'Aïe, coup dur pour le joueur français',
                 'Pas de chance, la vie c\'est pas facile ...'
             ];
-            var lossTitles = ['Perdu...', 'Ouch...', 'RIP...', 'Aie...', 'Dommage...'];
+            var lossTitles = ['Perdu...', 'Ouch...', 'RIP...', 'Aïe...', 'Dommage...'];
             var lossEmojis = ['&#x1F480;', '&#x1F4A8;', '&#x1F921;', '&#x1FAA6;', '&#x2620;&#xFE0F;'];
             var lIdx = Math.floor(Math.random() * lossTitles.length);
             var randomMsg = lossMessages[Math.floor(Math.random() * lossMessages.length)];
@@ -439,7 +439,7 @@
         var closeBtn = document.getElementById('result-close');
         if (closeBtn) closeBtn.style.display = '';
 
-        await sleep(3500);
+        await sleep(6500);
         overlay.classList.remove('active');
         if (modal) modal.classList.remove('result--win', 'result--lose');
     }
@@ -469,11 +469,12 @@
         });
     }
 
-    /* === CONFETTI === */
+    /* === CONFETTI + PEPITES === */
     function launchConfetti() {
         var container = document.getElementById('confetti-container');
         if (!container) return;
 
+        /* Confettis classiques */
         var colors = ['#db2929', '#e84444', '#ffd700', '#ffffff', '#2ecc71', '#f39c12'];
         var count = 40;
 
@@ -489,9 +490,24 @@
             container.appendChild(confetti);
         }
 
+        /* Pluie de pépites */
+        var pepiteCount = 15;
+        for (var j = 0; j < pepiteCount; j++) {
+            var pepite = document.createElement('img');
+            pepite.className = 'pepite-rain';
+            pepite.src = 'assets/images/pepite.png';
+            pepite.style.left = Math.random() * 100 + '%';
+            pepite.style.animationDelay = (Math.random() * 1.2) + 's';
+            pepite.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+            var size = 20 + Math.random() * 20;
+            pepite.style.width = size + 'px';
+            pepite.style.height = size + 'px';
+            container.appendChild(pepite);
+        }
+
         setTimeout(function () {
             container.innerHTML = '';
-        }, 4000);
+        }, 5000);
     }
 
     /* === UTILS === */
