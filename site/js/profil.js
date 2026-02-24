@@ -37,6 +37,18 @@
             elementSelect.value = profile.element;
         }
 
+        /* Do Pou */
+        var doPouInput = document.getElementById('profil-do-pou');
+        if (doPouInput && profile.do_pou != null) {
+            doPouInput.value = profile.do_pou;
+        }
+
+        /* Do Cri */
+        var doCriInput = document.getElementById('profil-do-cri');
+        if (doCriInput && profile.do_cri != null) {
+            doCriInput.value = profile.do_cri;
+        }
+
         /* Dofusbook */
         var dofusbookInput = document.getElementById('profil-dofusbook');
         if (dofusbookInput && profile.dofusbook_url) {
@@ -53,8 +65,10 @@
         var html = '';
 
         html += buildInfoItem('Pseudo', profile.username || '--');
-        html += buildInfoItem('Classe', profile.classe || 'Non definie');
-        html += buildInfoItem('Element', profile.element || 'Non defini');
+        html += buildInfoItem('Classe', profile.classe || 'Non définie');
+        html += buildInfoItem('Élément', profile.element || 'Non défini');
+        html += buildInfoItem('Do Pou', profile.do_pou != null ? profile.do_pou : '--');
+        html += buildInfoItem('Do Cri', profile.do_cri != null ? profile.do_cri : '--');
         html += buildInfoItem('Statut', profile.is_validated ? '<span style="color:var(--color-success)">Valide</span>' : '<span style="color:var(--color-danger)">En attente</span>');
         html += buildInfoItem('Role', profile.is_admin ? '<span style="color:var(--color-accent-light)">Admin</span>' : 'Membre');
         html += buildInfoItem('Inscription', window.REN.formatDate(profile.created_at));
@@ -247,9 +261,14 @@
                 var userId = window.REN.currentUser.id;
 
                 /* Update champs profil */
+                var doPouVal = document.getElementById('profil-do-pou').value;
+                var doCriVal = document.getElementById('profil-do-cri').value;
+
                 var updates = {
                     classe: document.getElementById('profil-classe').value || null,
                     element: document.getElementById('profil-element').value || null,
+                    do_pou: doPouVal !== '' ? parseInt(doPouVal) : null,
+                    do_cri: doCriVal !== '' ? parseInt(doCriVal) : null,
                     dofusbook_url: document.getElementById('profil-dofusbook').value.trim() || null
                 };
 

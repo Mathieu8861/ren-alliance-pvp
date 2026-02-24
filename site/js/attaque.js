@@ -289,9 +289,21 @@
                     await window.REN.supabase.from('combat_participants').insert(participants);
                 }
 
+                /* Ajouter les jetons à tous les participants (1 point = 1 jeton, seulement si positif) */
+                if (points > 0) {
+                    for (var pi = 0; pi < selectedAllies.length; pi++) {
+                        var uid = selectedAllies[pi];
+                        var { data: pData } = await window.REN.supabase.from('profiles').select('jetons').eq('id', uid).single();
+                        var currentJetons = (pData && pData.jetons) || 0;
+                        await window.REN.supabase.from('profiles').update({ jetons: currentJetons + points }).eq('id', uid);
+                    }
+                    /* Mettre à jour en mémoire pour l'auteur */
+                    window.REN.currentProfile.jetons = (window.REN.currentProfile.jetons || 0) + points;
+                }
+
                 var msg = resultat === 'victoire'
-                    ? 'Victoire enregistree ! +' + points + ' points'
-                    : 'Defaite enregistree. ' + points + ' points';
+                    ? 'Victoire enregistrée ! +' + points + ' points (+' + points + ' jetons)'
+                    : 'Défaite enregistrée. ' + points + ' points';
 
                 window.REN.toast(msg, resultat === 'victoire' ? 'success' : 'info');
 
