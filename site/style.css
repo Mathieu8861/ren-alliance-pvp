@@ -1369,6 +1369,18 @@ table {
     color: var(--color-text-primary);
 }
 
+.ranking-item__right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.ranking-item__sub {
+    font-size: 0.6875rem;
+    color: var(--color-text-muted);
+}
+
 .ranking-item--gold .ranking-item__rank { color: #ffd700; font-size: 1.125rem; }
 .ranking-item--silver .ranking-item__rank { color: #c0c0c0; font-size: 1.05rem; }
 .ranking-item--bronze .ranking-item__rank { color: #cd7f32; font-size: 1rem; }
