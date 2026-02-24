@@ -143,6 +143,7 @@
         var btnV = document.getElementById('btn-victoire');
         var btnD = document.getElementById('btn-defaite');
         var sectionButin = document.getElementById('section-butin');
+        var sectionCommentaire = document.getElementById('section-commentaire');
 
         if (btnV) {
             btnV.addEventListener('click', function () {
@@ -150,6 +151,7 @@
                 btnV.classList.add('active');
                 if (btnD) btnD.classList.remove('active');
                 if (sectionButin) sectionButin.style.display = '';
+                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
 
@@ -159,6 +161,7 @@
                 btnD.classList.add('active');
                 if (btnV) btnV.classList.remove('active');
                 if (sectionButin) sectionButin.style.display = 'none';
+                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
     }
@@ -192,6 +195,9 @@
                 butin = parseInt(inputButin.value) || 0;
             }
 
+            var inputCommentaire = document.getElementById('input-commentaire');
+            var commentaire = inputCommentaire && inputCommentaire.value.trim() ? inputCommentaire.value.trim() : null;
+
             btn.disabled = true;
             btn.textContent = 'Envoi...';
 
@@ -217,7 +223,8 @@
                     nb_ennemis: nbEnnemis,
                     resultat: resultat,
                     butin_kamas: butin,
-                    points_gagnes: points
+                    points_gagnes: points,
+                    commentaire: commentaire
                 }).select().single();
 
                 if (combatRes.error) throw combatRes.error;

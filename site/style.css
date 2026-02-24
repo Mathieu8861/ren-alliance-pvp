@@ -1353,32 +1353,33 @@ table {
 
 .history-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: var(--spacing-md);
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
 }
 
 .history-card {
     background-color: var(--color-bg-secondary);
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-md);
-    font-size: 0.8125rem;
-    transition: transform var(--transition-fast);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    font-size: 0.875rem;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .history-card:hover {
     transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .history-card__header {
     display: flex;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
 }
 
 .history-card__body {
     color: var(--color-text-secondary);
-    line-height: 1.7;
+    line-height: 1.8;
 }
 
 .history-card__body strong {
@@ -1386,7 +1387,7 @@ table {
 }
 
 .history-card__footer {
-    margin-top: var(--spacing-sm);
+    margin-top: var(--spacing-md);
     padding-top: var(--spacing-sm);
     border-top: 1px solid var(--color-border);
     font-size: 0.75rem;

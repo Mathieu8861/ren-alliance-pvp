@@ -90,6 +90,9 @@
             if (participants.length > 1) {
                 html += '<br><span class="text-muted">Avec: ' + participants.filter(function(p) { return p !== auteur; }).join(', ') + '</span>';
             }
+            if (c.commentaire) {
+                html += '<br><span class="text-muted">&#128205; ' + c.commentaire + '</span>';
+            }
             html += '</div>';
             html += '<div class="history-card__footer">' + window.REN.formatDateFull(c.created_at) + '</div>';
             html += '</div>';

@@ -121,11 +121,13 @@
     function setupResultButtons() {
         var btnV = document.getElementById('btn-victoire');
         var btnD = document.getElementById('btn-defaite');
+        var sectionCommentaire = document.getElementById('section-commentaire');
         if (btnV) {
             btnV.addEventListener('click', function () {
                 resultat = 'victoire';
                 btnV.classList.add('active');
                 if (btnD) btnD.classList.remove('active');
+                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
         if (btnD) {
@@ -133,6 +135,7 @@
                 resultat = 'defaite';
                 btnD.classList.add('active');
                 if (btnV) btnV.classList.remove('active');
+                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
     }
@@ -158,6 +161,9 @@
                 allianceNom = customInput.value.trim();
             }
 
+            var inputCommentaire = document.getElementById('input-commentaire');
+            var commentaire = inputCommentaire && inputCommentaire.value.trim() ? inputCommentaire.value.trim() : null;
+
             btn.disabled = true;
             btn.textContent = 'Envoi...';
 
@@ -181,7 +187,8 @@
                     nb_ennemis: nbEnnemis,
                     resultat: resultat,
                     butin_kamas: 0,
-                    points_gagnes: points
+                    points_gagnes: points,
+                    commentaire: commentaire
                 }).select().single();
 
                 if (combatRes.error) throw combatRes.error;

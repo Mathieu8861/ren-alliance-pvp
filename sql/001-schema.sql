@@ -44,6 +44,7 @@ CREATE TABLE public.combats (
     resultat TEXT NOT NULL CHECK (resultat IN ('victoire', 'defaite')),
     butin_kamas BIGINT DEFAULT 0,
     points_gagnes INTEGER DEFAULT 0,
+    commentaire TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
