@@ -102,6 +102,7 @@ CREATE TABLE public.jeu_lots (
     nom TEXT NOT NULL,
     pourcentage NUMERIC(5,2) NOT NULL,
     gain_jetons INTEGER DEFAULT 0,
+    gain_pepites INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -73,9 +73,9 @@ LEFT JOIN (
         COUNT(*)::INTEGER AS tirages,
         SUM(
             CASE
-                WHEN jh.resultat = 'double' THEN jl.gain_jetons * 2
+                WHEN jh.resultat = 'double' THEN jl.gain_pepites * 2
                 WHEN jh.resultat = 'perdu' THEN 0
-                ELSE jl.gain_jetons
+                ELSE jl.gain_pepites
             END
         )::INTEGER AS pepites
     FROM public.jeu_historique jh
