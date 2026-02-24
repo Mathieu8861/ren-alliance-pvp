@@ -403,9 +403,20 @@
                 html += '<div class="result-gain">Lot double !</div>';
             }
         } else {
+            var lossMessages = [
+                'Putain la clim... Sakai ici ..',
+                'Cleamed',
+                'Retente ta chance gros plouc',
+                'Ah ouais ca veut depouiller le dieu ecaflip, dommage ...',
+                'Bah alors ? On est nul ?',
+                'Malheureux au jeu chanceux en ... c\'est quoi deja qu\'on dit ?',
+                'Aie, coup dur pour le joueur francais',
+                'Pas de chance, la vie c\'est pas facile ...'
+            ];
+            var randomMsg = lossMessages[Math.floor(Math.random() * lossMessages.length)];
             if (title) title.textContent = 'Perdu...';
             html += '<div class="result-icon">&#x1F4A8;</div>';
-            html += '<div class="result-lot-name" style="color:var(--color-text-muted);">Vous avez tout perdu !</div>';
+            html += '<div class="result-lot-name" style="color:var(--color-text-muted);">' + randomMsg + '</div>';
             html += '<div class="result-loss">Lot perdu</div>';
         }
 
