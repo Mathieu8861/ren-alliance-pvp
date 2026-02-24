@@ -6,33 +6,108 @@
     'use strict';
 
     var allBuilds = [];
+    var currentType = 'tous';
+    var currentClasse = '';
+    var currentSort = 'recent';
 
     document.addEventListener('ren:ready', init);
 
     async function init() {
         if (!window.REN.supabase || !window.REN.currentProfile) return;
         await loadBuilds();
+        setupFilters();
+    }
+
+    /* === FILTERS SETUP === */
+    function setupFilters() {
+        /* Tabs type (Tous / PVP / PVM) */
+        var tabsContainer = document.getElementById('builds-type-tabs');
+        if (tabsContainer) {
+            tabsContainer.addEventListener('click', function (e) {
+                var btn = e.target.closest('.tabs__btn');
+                if (!btn) return;
+                tabsContainer.querySelectorAll('.tabs__btn').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                currentType = btn.getAttribute('data-tab');
+                applyFilters();
+            });
+        }
+
+        /* Select classe */
+        var classeSelect = document.getElementById('builds-filter-classe');
+        if (classeSelect) {
+            classeSelect.addEventListener('change', function () {
+                currentClasse = this.value;
+                applyFilters();
+            });
+        }
+
+        /* Select tri */
+        var sortSelect = document.getElementById('builds-filter-sort');
+        if (sortSelect) {
+            sortSelect.addEventListener('change', function () {
+                currentSort = this.value;
+                applyFilters();
+            });
+        }
 
         /* Barre de recherche */
         var searchInput = document.getElementById('builds-search');
         if (searchInput) {
             searchInput.addEventListener('input', function () {
-                var query = this.value.toLowerCase().trim();
-                if (!query) {
-                    renderBuilds(allBuilds);
-                    return;
-                }
-                var filtered = allBuilds.filter(function (b) {
-                    var titre = (b.titre || '').toLowerCase();
-                    var desc = (b.description || '').toLowerCase();
-                    var type = (b.type_build || '').toLowerCase();
-                    return titre.indexOf(query) !== -1 || desc.indexOf(query) !== -1 || type.indexOf(query) !== -1;
-                });
-                renderBuilds(filtered);
+                applyFilters();
             });
         }
     }
 
+    /* === APPLY ALL FILTERS + SORT === */
+    function applyFilters() {
+        var searchInput = document.getElementById('builds-search');
+        var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
+
+        var filtered = allBuilds.filter(function (b) {
+            /* Filtre type */
+            if (currentType !== 'tous') {
+                if ((b.type_build || '').toLowerCase() !== currentType) return false;
+            }
+
+            /* Filtre classe */
+            if (currentClasse) {
+                if ((b.classe || '') !== currentClasse) return false;
+            }
+
+            /* Filtre recherche texte */
+            if (query) {
+                var titre = (b.titre || '').toLowerCase();
+                var desc = (b.description || '').toLowerCase();
+                var type = (b.type_build || '').toLowerCase();
+                var classe = (b.classe || '').toLowerCase();
+                if (titre.indexOf(query) === -1 && desc.indexOf(query) === -1 && type.indexOf(query) === -1 && classe.indexOf(query) === -1) return false;
+            }
+
+            return true;
+        });
+
+        /* Tri */
+        switch (currentSort) {
+            case 'prix-asc':
+                filtered.sort(function (a, b) {
+                    return (a.valeur_kamas || 0) - (b.valeur_kamas || 0);
+                });
+                break;
+            case 'prix-desc':
+                filtered.sort(function (a, b) {
+                    return (b.valeur_kamas || 0) - (a.valeur_kamas || 0);
+                });
+                break;
+            default: /* recent - deja trie par created_at desc depuis Supabase */
+                break;
+        }
+
+        renderBuilds(filtered);
+    }
+
+    /* === LOAD === */
     async function loadBuilds() {
         var grid = document.getElementById('builds-grid');
         if (!grid) return;
@@ -53,6 +128,7 @@
         }
     }
 
+    /* === RENDER === */
     function renderBuilds(builds) {
         var grid = document.getElementById('builds-grid');
         if (!grid) return;
@@ -71,12 +147,17 @@
                 html += '</div>';
             }
             html += '<div class="build-card__body">';
-            /* Badges type + kamas */
-            if (b.type_build || b.valeur_kamas) {
+            /* Badges type + classe + kamas */
+            if (b.type_build || b.classe || b.valeur_kamas) {
                 html += '<div class="build-card__meta">';
+                var badgesHtml = '';
                 if (b.type_build) {
-                    html += '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>';
+                    badgesHtml += '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>';
                 }
+                if (b.classe) {
+                    badgesHtml += '<span class="badge badge--classe">' + b.classe + '</span>';
+                }
+                html += '<div style="display:flex;gap:var(--spacing-xs);align-items:center;">' + badgesHtml + '</div>';
                 if (b.valeur_kamas) {
                     html += '<span class="build-card__kamas"><span class="build-card__kamas-label">Estimation de prix :</span> ' + Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M</span>';
                 }

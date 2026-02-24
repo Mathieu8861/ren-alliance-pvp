@@ -359,9 +359,16 @@
         html += '<div class="form-group"><input class="form-input" id="add-build-titre" placeholder="Titre du build"></div>';
         html += '<div class="form-group"><textarea class="form-input" id="add-build-desc" placeholder="Description..." rows="3" style="resize:vertical;"></textarea></div>';
         html += '<div class="form-group"><input class="form-input" id="add-build-lien" placeholder="Lien Dofusbook (optionnel)"></div>';
-        html += '<div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-sm);">';
-        html += '<div class="form-group" style="flex:1;margin-bottom:0;"><select class="form-input" id="add-build-type"><option value="">Type (optionnel)</option><option value="pvp">PVP</option><option value="pvm">PVM</option></select></div>';
-        html += '<div class="form-group" style="flex:1;margin-bottom:0;"><input class="form-input" id="add-build-kamas" type="number" min="0" placeholder="Valeur estimee en kamas (optionnel)"></div>';
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-sm);flex-wrap:wrap;">';
+        html += '<div class="form-group" style="flex:1;margin-bottom:0;min-width:120px;"><select class="form-input" id="add-build-type"><option value="">Type (optionnel)</option><option value="pvp">PVP</option><option value="pvm">PVM</option></select></div>';
+        html += '<div class="form-group" style="flex:1;margin-bottom:0;min-width:120px;"><select class="form-input" id="add-build-classe"><option value="">Classe (optionnel)</option>';
+        html += '<option value="Cra">Cra</option><option value="Ecaflip">Ecaflip</option><option value="Eliotrope">Eliotrope</option><option value="Eniripsa">Eniripsa</option>';
+        html += '<option value="Enutrof">Enutrof</option><option value="Feca">Feca</option><option value="Forgelance">Forgelance</option><option value="Huppermage">Huppermage</option>';
+        html += '<option value="Iop">Iop</option><option value="Osamodas">Osamodas</option><option value="Ouginak">Ouginak</option><option value="Pandawa">Pandawa</option>';
+        html += '<option value="Roublard">Roublard</option><option value="Sacrieur">Sacrieur</option><option value="Sadida">Sadida</option><option value="Sram">Sram</option>';
+        html += '<option value="Steamer">Steamer</option><option value="Xelor">Xelor</option><option value="Zobal">Zobal</option>';
+        html += '</select></div>';
+        html += '<div class="form-group" style="flex:1;margin-bottom:0;min-width:120px;"><input class="form-input" id="add-build-kamas" type="number" min="0" placeholder="Valeur estimee en kamas (optionnel)"></div>';
         html += '</div>';
         html += '<div class="form-group"><label class="form-label">Capture d\'ecran (optionnel)</label><input type="file" class="form-input" id="add-build-image" accept="image/*"></div>';
         html += '<button class="btn btn--primary btn--small" id="btn-add-build">Ajouter le build</button>';
@@ -370,7 +377,7 @@
         /* Liste */
         if (builds && builds.length) {
             html += '<div class="table-wrapper"><table class="table">';
-            html += '<thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Kamas</th><th>Lien</th><th>Actions</th></tr></thead><tbody>';
+            html += '<thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Classe</th><th>Kamas</th><th>Lien</th><th>Actions</th></tr></thead><tbody>';
             builds.forEach(function (b) {
                 html += '<tr data-id="' + b.id + '" data-image="' + (b.image_url || '') + '">';
                 /* Image */
@@ -387,6 +394,29 @@
                 /* Type : display / edit */
                 html += '<td class="cell-display" data-field="type">' + (b.type_build ? '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>' : '-') + '</td>';
                 html += '<td class="cell-edit" data-field="type" style="display:none;"><select class="form-input edit-build-type" style="width:100%;"><option value="">-</option><option value="pvp"' + (b.type_build === 'pvp' ? ' selected' : '') + '>PVP</option><option value="pvm"' + (b.type_build === 'pvm' ? ' selected' : '') + '>PVM</option></select></td>';
+                /* Classe : display / edit */
+                html += '<td class="cell-display" data-field="classe">' + (b.classe ? '<span class="badge badge--classe">' + b.classe + '</span>' : '-') + '</td>';
+                html += '<td class="cell-edit" data-field="classe" style="display:none;"><select class="form-input edit-build-classe" style="width:100%;"><option value="">-</option>';
+                html += '<option value="Cra"' + (b.classe === 'Cra' ? ' selected' : '') + '>Cra</option>';
+                html += '<option value="Ecaflip"' + (b.classe === 'Ecaflip' ? ' selected' : '') + '>Ecaflip</option>';
+                html += '<option value="Eliotrope"' + (b.classe === 'Eliotrope' ? ' selected' : '') + '>Eliotrope</option>';
+                html += '<option value="Eniripsa"' + (b.classe === 'Eniripsa' ? ' selected' : '') + '>Eniripsa</option>';
+                html += '<option value="Enutrof"' + (b.classe === 'Enutrof' ? ' selected' : '') + '>Enutrof</option>';
+                html += '<option value="Feca"' + (b.classe === 'Feca' ? ' selected' : '') + '>Feca</option>';
+                html += '<option value="Forgelance"' + (b.classe === 'Forgelance' ? ' selected' : '') + '>Forgelance</option>';
+                html += '<option value="Huppermage"' + (b.classe === 'Huppermage' ? ' selected' : '') + '>Huppermage</option>';
+                html += '<option value="Iop"' + (b.classe === 'Iop' ? ' selected' : '') + '>Iop</option>';
+                html += '<option value="Osamodas"' + (b.classe === 'Osamodas' ? ' selected' : '') + '>Osamodas</option>';
+                html += '<option value="Ouginak"' + (b.classe === 'Ouginak' ? ' selected' : '') + '>Ouginak</option>';
+                html += '<option value="Pandawa"' + (b.classe === 'Pandawa' ? ' selected' : '') + '>Pandawa</option>';
+                html += '<option value="Roublard"' + (b.classe === 'Roublard' ? ' selected' : '') + '>Roublard</option>';
+                html += '<option value="Sacrieur"' + (b.classe === 'Sacrieur' ? ' selected' : '') + '>Sacrieur</option>';
+                html += '<option value="Sadida"' + (b.classe === 'Sadida' ? ' selected' : '') + '>Sadida</option>';
+                html += '<option value="Sram"' + (b.classe === 'Sram' ? ' selected' : '') + '>Sram</option>';
+                html += '<option value="Steamer"' + (b.classe === 'Steamer' ? ' selected' : '') + '>Steamer</option>';
+                html += '<option value="Xelor"' + (b.classe === 'Xelor' ? ' selected' : '') + '>Xelor</option>';
+                html += '<option value="Zobal"' + (b.classe === 'Zobal' ? ' selected' : '') + '>Zobal</option>';
+                html += '</select></td>';
                 /* Kamas : display / edit */
                 html += '<td class="cell-display" data-field="kamas">' + (b.valeur_kamas ? Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M' : '-') + '</td>';
                 html += '<td class="cell-edit" data-field="kamas" style="display:none;"><input class="form-input edit-build-kamas" type="number" min="0" value="' + (b.valeur_kamas || 0) + '" style="width:100px;"></td>';
@@ -416,6 +446,7 @@
             var desc = document.getElementById('add-build-desc').value.trim();
             var lien = document.getElementById('add-build-lien').value.trim();
             var typeBuild = document.getElementById('add-build-type').value;
+            var classeBuild = document.getElementById('add-build-classe').value;
             var valeurKamas = document.getElementById('add-build-kamas').value;
 
             /* Upload image si presente */
@@ -438,7 +469,7 @@
 
             await window.REN.supabase.from('builds').insert({
                 titre: titre, description: desc, lien_dofusbook: lien || '', image_url: imageUrl,
-                type_build: typeBuild || '', valeur_kamas: valeurKamas ? parseInt(valeurKamas) : 0
+                type_build: typeBuild || '', classe: classeBuild || '', valeur_kamas: valeurKamas ? parseInt(valeurKamas) : 0
             });
             window.REN.toast('Build ajoute !', 'success');
             loadTab('builds');
@@ -466,12 +497,14 @@
                 var newTitre = row.querySelector('.edit-build-titre').value.trim();
                 if (!newTitre) { window.REN.toast('Le titre est obligatoire.', 'error'); return; }
                 var newType = row.querySelector('.edit-build-type').value;
+                var newClasse = row.querySelector('.edit-build-classe').value;
                 var newKamas = row.querySelector('.edit-build-kamas').value;
                 var newLien = row.querySelector('.edit-build-lien').value.trim();
 
                 var { error: updateError } = await window.REN.supabase.from('builds').update({
                     titre: newTitre,
                     type_build: newType || '',
+                    classe: newClasse || '',
                     valeur_kamas: newKamas ? parseInt(newKamas) : 0,
                     lien_dofusbook: newLien || ''
                 }).eq('id', id);

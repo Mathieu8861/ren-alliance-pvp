@@ -2470,6 +2470,37 @@ table {
     background-position: 10px center;
 }
 
+.builds-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--spacing-lg);
+}
+
+.builds-filter-classe,
+.builds-filter-sort {
+    font-size: 0.8125rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    min-width: 160px;
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+}
+
+.badge--classe {
+    background-color: rgba(13, 139, 139, 0.15);
+    color: var(--color-teal);
+    border: 1px solid rgba(13, 139, 139, 0.3);
+    font-family: var(--font-title);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    letter-spacing: 0.3px;
+}
+
 .builds-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -3216,6 +3247,21 @@ table {
     .admin-tabs {
         overflow-x: auto;
         flex-wrap: nowrap;
+    }
+
+    .builds-filters {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .builds-filters .tabs {
+        justify-content: center;
+    }
+
+    .builds-filter-classe,
+    .builds-filter-sort {
+        width: 100%;
+        min-width: 0;
     }
 
     .builds-grid {
