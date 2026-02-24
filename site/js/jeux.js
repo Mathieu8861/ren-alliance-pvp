@@ -428,7 +428,13 @@
             var lIdx = Math.floor(Math.random() * lossTitles.length);
             var randomMsg = lossMessages[Math.floor(Math.random() * lossMessages.length)];
             if (title) title.textContent = lossTitles[lIdx];
-            html += '<div class="result-icon">' + lossEmojis[lIdx] + '</div>';
+
+            /* Emoji spécial pour clim/cleamed → tornade */
+            var emoji = lossEmojis[lIdx];
+            if (randomMsg.indexOf('clim') !== -1 || randomMsg.indexOf('Cleamed') !== -1) {
+                emoji = '&#x1F32A;&#xFE0F;';
+            }
+            html += '<div class="result-icon">' + emoji + '</div>';
             html += '<div class="result-message">' + randomMsg + '</div>';
             html += '<div class="result-loss">Lot perdu</div>';
         }
@@ -490,15 +496,15 @@
             container.appendChild(confetti);
         }
 
-        /* Pluie de pépites */
-        var pepiteCount = 15;
+        /* Pluie de pépites (en même temps que les confettis) */
+        var pepiteCount = 30;
         for (var j = 0; j < pepiteCount; j++) {
             var pepite = document.createElement('img');
             pepite.className = 'pepite-rain';
             pepite.src = 'assets/images/pepite.png';
             pepite.style.left = Math.random() * 100 + '%';
-            pepite.style.animationDelay = (Math.random() * 1.2) + 's';
-            pepite.style.animationDuration = (2.5 + Math.random() * 2) + 's';
+            pepite.style.animationDelay = (Math.random() * 0.8) + 's';
+            pepite.style.animationDuration = (2 + Math.random() * 1.5) + 's';
             var size = 20 + Math.random() * 20;
             pepite.style.width = size + 'px';
             pepite.style.height = size + 'px';
