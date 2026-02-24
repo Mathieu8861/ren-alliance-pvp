@@ -387,15 +387,25 @@
     /* === AFFICHAGE RESULTAT DU DOUBLE === */
     async function showDoubleResult(isWin, lot, finalGain) {
         var overlay = document.getElementById('modal-result');
+        var modal = overlay ? overlay.querySelector('.modal--result') : null;
         var title = document.getElementById('result-title');
         var body = document.getElementById('result-body');
         if (!overlay || !body) return;
 
+        /* Reset classes */
+        if (modal) {
+            modal.classList.remove('result--win', 'result--lose');
+            modal.classList.add(isWin ? 'result--win' : 'result--lose');
+        }
+
         var html = '';
 
         if (isWin) {
-            if (title) title.textContent = 'DOUBLE !';
-            html += '<div class="result-icon">&#x1F929;</div>';
+            var winTitles = ['DOUBLE !', 'JACKPOT !', 'ENORME !', 'GG WP !'];
+            var winEmojis = ['&#x1F929;', '&#x1F525;', '&#x1F4B0;', '&#x1F3C6;'];
+            var idx = Math.floor(Math.random() * winTitles.length);
+            if (title) title.textContent = winTitles[idx];
+            html += '<div class="result-icon">' + winEmojis[idx] + '</div>';
             html += '<div class="result-lot-name">' + lot.nom + ' x2</div>';
             if (finalGain > 0) {
                 html += '<div class="result-gain">+' + finalGain + ' jetons !</div>';
@@ -413,10 +423,13 @@
                 'Aie, coup dur pour le joueur francais',
                 'Pas de chance, la vie c\'est pas facile ...'
             ];
+            var lossTitles = ['Perdu...', 'Ouch...', 'RIP...', 'Aie...', 'Dommage...'];
+            var lossEmojis = ['&#x1F480;', '&#x1F4A8;', '&#x1F921;', '&#x1FAA6;', '&#x2620;&#xFE0F;'];
+            var lIdx = Math.floor(Math.random() * lossTitles.length);
             var randomMsg = lossMessages[Math.floor(Math.random() * lossMessages.length)];
-            if (title) title.textContent = 'Perdu...';
-            html += '<div class="result-icon">&#x1F4A8;</div>';
-            html += '<div class="result-lot-name" style="color:var(--color-text-muted);">' + randomMsg + '</div>';
+            if (title) title.textContent = lossTitles[lIdx];
+            html += '<div class="result-icon">' + lossEmojis[lIdx] + '</div>';
+            html += '<div class="result-message">' + randomMsg + '</div>';
             html += '<div class="result-loss">Lot perdu</div>';
         }
 
@@ -426,8 +439,9 @@
         var closeBtn = document.getElementById('result-close');
         if (closeBtn) closeBtn.style.display = '';
 
-        await sleep(3000);
+        await sleep(3500);
         overlay.classList.remove('active');
+        if (modal) modal.classList.remove('result--win', 'result--lose');
     }
 
     function drawRandomLot() {
