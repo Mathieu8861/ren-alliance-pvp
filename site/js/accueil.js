@@ -10,6 +10,7 @@
     async function init() {
         if (!window.REN.supabase || !window.REN.currentProfile) return;
         loadDashboardStats();
+        loadMyRank();
         loadActivityFeed();
         setupPointsModal();
     }
@@ -35,9 +36,152 @@
 
     function setStatValue(id, value) {
         var el = document.getElementById(id);
-        if (el) {
-            var valueEl = el.querySelector('.stat-card__value');
-            if (valueEl) valueEl.textContent = value;
+        if (!el) return;
+        var valueEl = el.querySelector('.stat-card__value');
+        if (!valueEl) return;
+
+        /* Si l'element a data-counter, on anime le chiffre */
+        if (valueEl.hasAttribute('data-counter')) {
+            animateCounter(valueEl, value);
+        } else {
+            valueEl.textContent = value;
+        }
+    }
+
+    /**
+     * Anime un compteur de 0 vers la valeur finale
+     * Supporte : "1 234", "56%", "1.2M K", etc.
+     */
+    function animateCounter(el, finalText) {
+        var str = String(finalText);
+        /* Extraire le nombre et le suffixe */
+        var match = str.match(/^([0-9\s.,]+)(.*)/);
+        if (!match) {
+            el.textContent = finalText;
+            return;
+        }
+
+        var numStr = match[1].trim();
+        var suffix = match[2] || '';
+        var cleanNum = numStr.replace(/\s/g, '').replace(',', '.');
+        var target = parseFloat(cleanNum);
+
+        if (isNaN(target) || target === 0) {
+            el.textContent = finalText;
+            return;
+        }
+
+        var duration = 1200;
+        var startTime = null;
+        var isDecimal = numStr.indexOf(',') !== -1 || numStr.indexOf('.') !== -1;
+        var hasSpaces = numStr.indexOf(' ') !== -1;
+
+        function formatAnimValue(val) {
+            if (isDecimal) {
+                var formatted = val.toFixed(1);
+            } else {
+                var formatted = Math.round(val).toString();
+            }
+            /* Remettre les espaces milliers si l'original en avait */
+            if (hasSpaces && !isDecimal) {
+                formatted = Math.round(val).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+            }
+            return formatted + suffix;
+        }
+
+        function step(timestamp) {
+            if (!startTime) startTime = timestamp;
+            var progress = Math.min((timestamp - startTime) / duration, 1);
+            /* easeOutExpo pour un effet de ralentissement naturel */
+            var eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+            var current = eased * target;
+            el.textContent = formatAnimValue(current);
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                /* Valeur finale exacte */
+                el.textContent = finalText;
+            }
+        }
+
+        requestAnimationFrame(step);
+    }
+
+    /* === MON RANG === */
+    async function loadMyRank() {
+        var container = document.getElementById('my-rank');
+        if (!container) return;
+
+        try {
+            var { data, error } = await window.REN.supabase.rpc('get_member_stats');
+            if (error) throw error;
+
+            var userId = window.REN.currentUser.id;
+            var me = (data || []).find(function (m) { return m.user_id === userId; });
+
+            if (!me) {
+                container.innerHTML = '<p class="text-muted" style="padding:1rem;">Aucune donnee disponible.</p>';
+                return;
+            }
+
+            var totalPoints = me.total_points || 0;
+            var tier = window.REN.getTierFromPoints(totalPoints);
+            var tiersAsc = window.REN.TIERS_ASC;
+            var currentIdx = -1;
+            for (var i = 0; i < tiersAsc.length; i++) {
+                if (tiersAsc[i].key === tier.key) { currentIdx = i; break; }
+            }
+            var nextTier = currentIdx < tiersAsc.length - 1 ? tiersAsc[currentIdx + 1] : null;
+
+            var totalCombats = (me.total_attaques || 0) + (me.total_defenses || 0);
+            var totalVictoires = (me.victoires_attaque || 0) + (me.victoires_defense || 0);
+            var winrate = totalCombats > 0 ? Math.round(totalVictoires / totalCombats * 100) : 0;
+
+            var html = '<div class="dashboard-rank">';
+
+            /* Avatar frame */
+            html += '<div class="dashboard-rank__frame">';
+            html += window.REN.buildAvatarFrame(me.avatar_url, totalPoints);
+            html += '</div>';
+
+            /* Info */
+            html += '<div class="dashboard-rank__info">';
+            html += '<div class="dashboard-rank__header">';
+            html += '<span class="dashboard-rank__name">' + me.username + '</span>';
+            html += '</div>';
+            html += '<div class="dashboard-rank__detail"><span class="dashboard-rank__label">Ornement :</span> <span class="tier-badge tier-badge--' + tier.key + '">' + tier.name + '</span></div>';
+            html += '<div class="dashboard-rank__detail"><span class="dashboard-rank__label">Titre :</span> ' + tier.title + '</div>';
+
+            /* Mini stats inline */
+            html += '<div class="dashboard-rank__mini-stats">';
+            html += '<span><span class="dashboard-rank__label">Points</span> ' + totalPoints + '</span>';
+            html += '<span class="dashboard-rank__sep">&bull;</span>';
+            html += '<span><span class="dashboard-rank__label">Combats</span> ' + totalCombats + '</span>';
+            html += '<span class="dashboard-rank__sep">&bull;</span>';
+            html += '<span><span class="dashboard-rank__label">Winrate</span> <span class="' + (winrate >= 50 ? 'text-success' : 'text-danger') + '">' + winrate + '%</span></span>';
+            html += '</div>';
+
+            /* Progress bar */
+            if (nextTier) {
+                var progress = Math.min(100, Math.round((totalPoints - tier.min) / (nextTier.min - tier.min) * 100));
+                html += '<div class="dashboard-rank__progress">';
+                html += '<div class="profil-progression__bar">';
+                html += '<div class="profil-progression__bar-fill profil-progression__bar-fill--' + nextTier.key + '" style="width:' + progress + '%"></div>';
+                html += '</div>';
+                html += '<span class="dashboard-rank__next">Prochain palier de recompense : <strong>' + nextTier.name + '</strong> (' + totalPoints + ' / ' + nextTier.min + ' pts)</span>';
+                html += '</div>';
+            } else {
+                html += '<div class="dashboard-rank__max">&#11088; Rang maximum atteint !</div>';
+            }
+
+            html += '</div>'; /* rank__info */
+            html += '</div>'; /* dashboard-rank */
+
+            container.innerHTML = html;
+
+        } catch (err) {
+            console.error('[REN] Erreur rang dashboard:', err);
+            container.innerHTML = '<p class="text-muted" style="padding:1rem;">Erreur de chargement.</p>';
         }
     }
 
@@ -56,11 +200,11 @@
             if (error) throw error;
 
             if (!combats || combats.length === 0) {
-                feedContainer.innerHTML = '<div class="activity"><div class="activity__title">Activite Recente</div><p class="text-muted" style="padding: 1rem;">Aucune activite pour le moment. Declarez votre premiere attaque !</p></div>';
+                feedContainer.innerHTML = '<div class="activity"><p class="text-muted" style="padding: 1rem;">Aucune activite pour le moment. Declarez votre premiere attaque !</p></div>';
                 return;
             }
 
-            var html = '<div class="activity"><div class="activity__title">Activite Recente</div>';
+            var html = '<div class="activity">';
 
             combats.forEach(function (c) {
                 var badgeClass = c.resultat === 'victoire' ? 'badge--victoire' : 'badge--defaite';
@@ -94,7 +238,7 @@
 
         } catch (err) {
             console.error('[REN] Erreur activity feed:', err);
-            feedContainer.innerHTML = '<div class="activity"><div class="activity__title">Activite Recente</div><p class="text-muted" style="padding: 1rem;">Erreur de chargement.</p></div>';
+            feedContainer.innerHTML = '<div class="activity"><p class="text-muted" style="padding: 1rem;">Erreur de chargement.</p></div>';
         }
     }
 

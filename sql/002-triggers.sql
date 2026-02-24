@@ -7,12 +7,13 @@
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO public.profiles (id, username, classe, element)
+    INSERT INTO public.profiles (id, username, classe, element, dofusbook_url)
     VALUES (
         NEW.id,
         COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || LEFT(NEW.id::text, 8)),
         NEW.raw_user_meta_data->>'classe',
-        NEW.raw_user_meta_data->>'element'
+        NEW.raw_user_meta_data->>'element',
+        NEW.raw_user_meta_data->>'dofusbook_url'
     );
     RETURN NEW;
 END;
@@ -120,12 +121,15 @@ RETURNS TABLE (
     percepteurs INTEGER,
     referent_pvp TEXT,
     disponibilite_pvp TEXT,
+    avatar_url TEXT,
+    dofusbook_url TEXT,
+    mules TEXT[],
     total_attaques BIGINT,
     victoires_attaque BIGINT,
     total_defenses BIGINT,
     victoires_defense BIGINT,
-    total_kamas BIGINT,
-    total_points BIGINT
+    total_kamas NUMERIC,
+    total_points NUMERIC
 ) AS $$
 BEGIN
     RETURN QUERY
@@ -138,12 +142,15 @@ BEGIN
         p.percepteurs,
         p.referent_pvp,
         p.disponibilite_pvp,
-        COALESCE(stats.total_atk, 0) AS total_attaques,
-        COALESCE(stats.win_atk, 0) AS victoires_attaque,
-        COALESCE(stats.total_def, 0) AS total_defenses,
-        COALESCE(stats.win_def, 0) AS victoires_defense,
-        COALESCE(stats.kamas, 0) AS total_kamas,
-        COALESCE(stats.points, 0) AS total_points
+        p.avatar_url,
+        p.dofusbook_url,
+        p.mules,
+        COALESCE(stats.total_atk, 0)::BIGINT AS total_attaques,
+        COALESCE(stats.win_atk, 0)::BIGINT AS victoires_attaque,
+        COALESCE(stats.total_def, 0)::BIGINT AS total_defenses,
+        COALESCE(stats.win_def, 0)::BIGINT AS victoires_defense,
+        COALESCE(stats.kamas, 0)::NUMERIC AS total_kamas,
+        COALESCE(stats.points, 0)::NUMERIC AS total_points
     FROM public.profiles p
     LEFT JOIN LATERAL (
         SELECT

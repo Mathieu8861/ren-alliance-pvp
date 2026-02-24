@@ -78,7 +78,7 @@
                     html += '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>';
                 }
                 if (b.valeur_kamas) {
-                    html += '<span class="build-card__kamas">' + Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M</span>';
+                    html += '<span class="build-card__kamas"><span class="build-card__kamas-label">Estimation de prix :</span> ' + Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M</span>';
                 }
                 html += '</div>';
             }

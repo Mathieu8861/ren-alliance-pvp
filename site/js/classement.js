@@ -6,13 +6,29 @@
     'use strict';
 
     var currentTab = 'semaine';
+    var pointsMap = {};
 
     document.addEventListener('ren:ready', init);
 
-    function init() {
+    async function init() {
         if (!window.REN.supabase || !window.REN.currentProfile) return;
+        await loadPointsMap();
         setupTabs();
         loadTab(currentTab);
+    }
+
+    /* Charge les points PVP definitifs de chaque joueur pour afficher les badges tier */
+    async function loadPointsMap() {
+        try {
+            var { data } = await window.REN.supabase.from('classement_pvp_definitif').select('*');
+            if (data) {
+                data.forEach(function (row) {
+                    pointsMap[row.id] = row.points || 0;
+                });
+            }
+        } catch (err) {
+            console.warn('[REN] Points map non charge:', err);
+        }
     }
 
     /* === TABS === */
@@ -51,14 +67,14 @@
     async function loadSemaine(container) {
         var { data, error } = await window.REN.supabase.from('classement_pvp_semaine').select('*');
         if (error) throw error;
-        renderRanking(container, data || [], 'total_points', 'pts', 'Classement PvP - Semaine');
+        renderRanking(container, data || [], 'points', 'pts', 'Classement PvP - Semaine');
     }
 
     /* === PVP DEFINITIF === */
     async function loadDefinitif(container) {
         var { data, error } = await window.REN.supabase.from('classement_pvp_definitif').select('*');
         if (error) throw error;
-        renderRanking(container, data || [], 'total_points', 'pts', 'Classement PvP - Definitif');
+        renderRanking(container, data || [], 'points', 'pts', 'Classement PvP - Definitif');
     }
 
     /* === KAMAS === */
@@ -104,10 +120,13 @@
             var rankClass = i === 0 ? ' ranking-item--gold' : i === 1 ? ' ranking-item--silver' : i === 2 ? ' ranking-item--bronze' : '';
             var medal = i === 0 ? '&#129351;' : i === 1 ? '&#129352;' : i === 2 ? '&#129353;' : '#' + (i + 1);
             var value = valueKey === 'total_kamas' ? window.REN.formatKamas(row[valueKey]) : row[valueKey];
+            var totalPts = pointsMap[row.id] || 0;
+            var tier = window.REN.getTierFromPoints(totalPts);
             html += '<div class="ranking-item' + rankClass + '">';
             html += '<div class="ranking-item__left">';
             html += '<span class="ranking-item__rank">' + medal + '</span>';
             html += '<span class="ranking-item__name">' + (row.username || 'Inconnu') + '</span>';
+            html += '<span class="tier-badge tier-badge--' + tier.key + ' ranking-item__tier">' + tier.name + '</span>';
             html += '</div>';
             html += '<span class="ranking-item__value">' + value + ' ' + suffix + '</span>';
             html += '</div>';
@@ -123,10 +142,13 @@
             var rankClass = i === 0 ? ' ranking-item--gold' : i === 1 ? ' ranking-item--silver' : i === 2 ? ' ranking-item--bronze' : '';
             var medal = i === 0 ? '&#129351;' : i === 1 ? '&#129352;' : i === 2 ? '&#129353;' : '#' + (i + 1);
             var value = isKamas ? window.REN.formatKamas(row[valueKey]) : row[valueKey];
+            var totalPts = pointsMap[row.id] || 0;
+            var tier = window.REN.getTierFromPoints(totalPts);
             html += '<div class="ranking-item' + rankClass + '">';
             html += '<div class="ranking-item__left">';
             html += '<span class="ranking-item__rank">' + medal + '</span>';
             html += '<span class="ranking-item__name">' + (row.username || 'Inconnu') + '</span>';
+            html += '<span class="tier-badge tier-badge--' + tier.key + ' ranking-item__tier">' + tier.name + '</span>';
             html += '</div>';
             html += '<span class="ranking-item__value">' + value + '</span>';
             html += '</div>';

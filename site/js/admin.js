@@ -58,6 +58,7 @@
                 case 'jeu-config': await tabJeuConfig(content); break;
                 case 'jeu-lots': await tabJeuLots(content); break;
                 case 'jeu-historique': await tabJeuHistorique(content); break;
+                case 'cadres': tabCadres(content); break;
                 default: content.innerHTML = '<p class="text-muted">Onglet inconnu.</p>';
             }
         } catch (err) {
@@ -721,4 +722,75 @@
             });
         }
     }
+    /* === TAB: CADRES === */
+    function tabCadres(content) {
+        var tiers = [
+            { key: 'initie', name: 'Initie', min: 0, max: 49, title: 'Joueur Lambda', desc: 'Bordure grise', reward: 0 },
+            { key: 'bronze', name: 'Bronze', min: 50, max: 149, title: 'Guerrier de Base', desc: 'Bordure bronze + lueur', reward: 10 },
+            { key: 'argent', name: 'Argent', min: 150, max: 299, title: 'Combattant Confirme', desc: 'Bordure argent + lueur', reward: 20 },
+            { key: 'or', name: 'Or', min: 300, max: 499, title: 'Elite PVP', desc: 'Bordure doree + glow pulsante', reward: 40 },
+            { key: 'saphir', name: 'Saphir', min: 500, max: 749, title: 'Veteran des Arenes', desc: 'Ring bleu rotatif + glow', reward: 70 },
+            { key: 'emeraude', name: 'Emeraude', min: 750, max: 999, title: 'Seigneur de Guerre', desc: 'Ring vert rotatif + glow intense', reward: 100 },
+            { key: 'rubis', name: 'Rubis', min: 1000, max: 1499, title: 'Machine de Guerre', desc: 'Ring rouge rotatif + glow intense', reward: 150 },
+            { key: 'diamant', name: 'Diamant', min: 1500, max: 1999, title: 'Faucheuse des Champs', desc: 'Ring irise rotatif + glow prismatique', reward: 200 },
+            { key: 'legendaire', name: 'Legendaire', min: 2000, max: null, title: 'Dieu du PVP', desc: 'Ring rouge/or + braises + mega glow', reward: 400 }
+        ];
+
+        var userSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+        var html = '<div style="padding: var(--spacing-lg);">';
+        html += '<h2 style="font-family: var(--font-title); font-size: 1.3rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Cadres de Profil</h2>';
+        html += '<p class="text-muted" style="font-size: 0.8125rem; margin-bottom: var(--spacing-xl);">Les cadres s\'appliquent automatiquement en fonction des points PVP definitifs cumules.</p>';
+
+        html += '<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-xl);">';
+
+        tiers.forEach(function (t) {
+            var flames = '';
+            if (t.key === 'legendaire') {
+                flames = '<div class="frame-flames">';
+                for (var i = 0; i < 8; i++) flames += '<div class="frame-flame"></div>';
+                flames += '</div>';
+            }
+
+            html += '<div style="background: var(--color-bg-secondary); border: 1px solid var(--color-border); border-radius: var(--radius-lg); padding: var(--spacing-lg); display: flex; flex-direction: column; align-items: center; gap: var(--spacing-md);">';
+            html += '<div class="avatar-frame avatar-frame--' + t.key + '">';
+            html += '<div class="avatar-frame__img">' + userSvg + '</div>';
+            html += flames;
+            html += '</div>';
+            html += '<span class="tier-badge tier-badge--' + t.key + '">' + t.name + '</span>';
+            html += '<span class="text-muted" style="font-size: 0.75rem;">' + t.min + (t.max ? ' - ' + t.max : '+') + ' pts</span>';
+            html += '<span style="font-weight: 600; font-size: 0.9rem;">' + t.title + '</span>';
+            html += '<span class="text-muted" style="font-size: 0.7rem;">' + t.desc + '</span>';
+            if (t.reward > 0) {
+                html += '<span style="font-weight: 700; font-size: 0.8rem; color: #f0ad4e;">+' + t.reward + ' jetons</span>';
+            }
+            html += '</div>';
+        });
+
+        html += '</div>';
+
+        /* Tableau recapitulatif */
+        html += '<h3 style="font-family: var(--font-title); font-size: 1.1rem; font-weight: 700; margin-top: var(--spacing-xl); margin-bottom: var(--spacing-md);">Recapitulatif des paliers</h3>';
+        html += '<div style="overflow-x: auto;">';
+        html += '<table class="admin-table" style="width: 100%;">';
+        html += '<thead><tr>';
+        html += '<th>Palier</th><th>Points requis</th><th>Titre</th><th>Recompense</th><th>Style du cadre</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
+        tiers.forEach(function (t) {
+            html += '<tr>';
+            html += '<td><span class="tier-badge tier-badge--' + t.key + '">' + t.name + '</span></td>';
+            html += '<td>' + t.min + (t.max ? ' - ' + t.max : '+') + '</td>';
+            html += '<td>' + t.title + '</td>';
+            html += '<td style="font-weight:700; color:#f0ad4e;">' + (t.reward > 0 ? '+' + t.reward + ' jetons' : '-') + '</td>';
+            html += '<td class="text-muted" style="font-size:0.8rem;">' + t.desc + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        html += '</div>';
+
+        html += '</div>';
+        content.innerHTML = html;
+    }
+
 })();

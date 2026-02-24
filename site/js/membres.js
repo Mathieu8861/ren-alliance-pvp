@@ -47,7 +47,8 @@
         if (query) {
             filtered = allMembers.filter(function (m) {
                 return m.username.toLowerCase().includes(query) ||
-                    (m.classe && m.classe.toLowerCase().includes(query));
+                    (m.classe && m.classe.toLowerCase().includes(query)) ||
+                    (m.mules && m.mules.some(function (mule) { return mule.toLowerCase().includes(query); }));
             });
         }
 
@@ -62,21 +63,50 @@
             var totalVictoires = (m.victoires_attaque || 0) + (m.victoires_defense || 0);
             var winrate = totalCombats > 0 ? Math.round(totalVictoires / totalCombats * 100) : 0;
 
+            var tier = window.REN.getTierFromPoints(m.total_points);
+            var wrClass = winrate >= 50 ? ' member-card__stat-value--success' : ' member-card__stat-value--danger';
+
             html += '<div class="member-card">';
+
+            /* Header : avatar + identite */
+            html += '<div class="member-card__header">';
+            html += '<div class="member-card__avatar">';
+            html += window.REN.buildAvatarFrame(m.avatar_url, m.total_points);
+            html += '</div>';
+            html += '<div class="member-card__identity">';
             html += '<div class="member-card__name">' + m.username + '</div>';
             html += '<div class="member-card__class">' + (m.classe || '?') + ' &bull; ' + (m.element || '?') + '</div>';
+            html += '<span class="tier-badge tier-badge--' + tier.key + '">' + tier.name + '</span>';
+            html += '</div>';
+            html += '</div>';
 
+            if (m.mules && m.mules.length > 0) {
+                html += '<div class="member-card__mules">Mules : ' + m.mules.join(', ') + '</div>';
+            }
+
+            /* Stats 4 colonnes */
             html += '<div class="member-card__stats">';
             html += '<div class="member-card__stat"><span class="member-card__stat-label">ATK</span><span class="member-card__stat-value">' + (m.total_attaques || 0) + '</span></div>';
             html += '<div class="member-card__stat"><span class="member-card__stat-label">DEF</span><span class="member-card__stat-value">' + (m.total_defenses || 0) + '</span></div>';
-            html += '<div class="member-card__stat"><span class="member-card__stat-label">Winrate</span><span class="member-card__stat-value">' + winrate + '%</span></div>';
-            html += '<div class="member-card__stat"><span class="member-card__stat-label">Points</span><span class="member-card__stat-value">' + (m.total_points || 0) + '</span></div>';
+            html += '<div class="member-card__stat"><span class="member-card__stat-label">Winrate</span><span class="member-card__stat-value' + wrClass + '">' + winrate + '%</span></div>';
+            html += '<div class="member-card__stat"><span class="member-card__stat-label">Points</span><span class="member-card__stat-value member-card__stat-value--accent">' + (m.total_points || 0) + '</span></div>';
             html += '</div>';
 
+            /* Infos secondaires */
             html += '<div class="member-card__info">';
-            html += '<p>Jetons: <span>' + (m.jetons || 0) + '</span></p>';
-            if (m.total_kamas > 0) html += '<p>Kamas: <span class="text-warning">' + window.REN.formatKamas(m.total_kamas) + '</span></p>';
+            html += '<div class="member-card__info-item"><span class="member-card__info-label">Jetons</span><span class="member-card__info-value">' + (m.jetons || 0) + '</span></div>';
+            if (m.total_kamas > 0) {
+                html += '<div class="member-card__info-item"><span class="member-card__info-label">Kamas</span><span class="member-card__info-value text-warning">' + window.REN.formatKamas(m.total_kamas) + '</span></div>';
+            }
             html += '</div>';
+
+            /* Lien Dofusbook */
+            if (m.dofusbook_url) {
+                html += '<a href="' + m.dofusbook_url + '" target="_blank" rel="noopener" class="member-card__dofusbook">';
+                html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
+                html += ' Dofusbook';
+                html += '</a>';
+            }
 
             html += '</div>';
         });

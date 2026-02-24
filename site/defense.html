@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alliance REN - Defense</title>
+    <link rel="icon" type="image/png" href="assets/images/logo-ren.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
@@ -27,7 +28,7 @@
                     <a href="historique.html" class="nav__link" data-page="historique">Historique</a>
                     <a href="membres.html" class="nav__link" data-page="membres">Membres</a>
                     <a href="builds.html" class="nav__link" data-page="builds">Builds</a>
-                    <a href="jeux.html" class="nav__link" data-page="jeux">Jeux</a>
+                    <a href="jeux.html" class="nav__link nav__link--cta" data-page="jeux">Jeux</a>
                 </div>
             </nav>
 
@@ -47,15 +48,23 @@
     </header>
 
     <main class="main">
-        <div class="mb-lg">
-            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Declarer une Defense</h1>
-            <p class="text-muted" style="font-size: 0.8125rem;">Enregistrez le resultat d'une defense PvP</p>
+        <div class="combat-page-header">
+            <div class="combat-page-header__icon combat-page-header__icon--defense">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+                <h1 class="combat-page-header__title">Declarer une Defense</h1>
+                <p class="combat-page-header__sub">Enregistrez le resultat d'une defense PvP</p>
+            </div>
         </div>
 
-        <div class="combat-form" id="combat-form">
-            <div class="combat-form__section combat-form__section--split">
-                <div>
-                    <div class="combat-form__label">Nombre d'allies</div>
+        <div class="combat-form combat-form--defense" id="combat-form">
+            <div class="combat-form__section combat-form__section--forces">
+                <div class="combat-form__force-block">
+                    <div class="combat-form__label">
+                        <svg class="combat-form__label-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Vos Forces
+                    </div>
                     <div class="combat-form__count" id="count-allies">
                         <button class="count-btn active" data-value="1">1</button>
                         <button class="count-btn" data-value="2">2</button>
@@ -65,8 +74,11 @@
                     </div>
                     <div class="combat-form__allies" id="allies-list"></div>
                 </div>
-                <div>
-                    <div class="combat-form__label">Nombre d'ennemis</div>
+                <div class="combat-form__force-block">
+                    <div class="combat-form__label">
+                        <svg class="combat-form__label-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        Forces Ennemies
+                    </div>
                     <div class="combat-form__count" id="count-ennemis">
                         <button class="count-btn active" data-value="1">1</button>
                         <button class="count-btn" data-value="2">2</button>
@@ -78,22 +90,34 @@
             </div>
 
             <div class="combat-form__section">
-                <div class="combat-form__label">Alliance ennemie</div>
+                <div class="combat-form__label">
+                    <svg class="combat-form__label-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                    Alliance ennemie
+                </div>
                 <select class="form-select" id="select-alliance">
-                    <option value="">-- Choisir une alliance --</option>
+                    <option value="">Choisir une alliance</option>
                 </select>
-                <input class="form-input mt-sm" id="input-alliance-custom" type="text" placeholder="Ou tapez le nom de l'alliance..." style="display:none;">
+                <input class="form-input mt-sm" id="input-alliance-custom" type="text" placeholder="Tapez le nom de l'alliance..." style="display:none;">
             </div>
 
             <div class="combat-form__section">
-                <div class="combat-form__label">Resultat</div>
+                <div class="combat-form__label">
+                    <svg class="combat-form__label-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Resultat du combat
+                </div>
                 <div class="combat-form__result">
-                    <button class="btn btn--victoire" id="btn-victoire">Victoire</button>
-                    <button class="btn btn--defaite" id="btn-defaite">Defaite</button>
+                    <button class="combat-result-btn combat-result-btn--victoire" id="btn-victoire">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>Victoire</span>
+                    </button>
+                    <button class="combat-result-btn combat-result-btn--defaite" id="btn-defaite">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        <span>Defaite</span>
+                    </button>
                 </div>
             </div>
 
-            <button class="btn btn--submit" id="btn-submit-combat">Enregistrer la defense</button>
+            <button class="combat-form__submit combat-form__submit--defense" id="btn-submit-combat">Enregistrer la defense</button>
         </div>
     </main>
 

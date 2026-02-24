@@ -20,6 +20,44 @@
     var toggleToRegister = document.getElementById('toggle-to-register');
     var toggleToLogin = document.getElementById('toggle-to-login');
 
+    /* === AVATAR PREVIEW === */
+    var avatarUpload = document.getElementById('avatar-upload');
+    var avatarPreview = document.getElementById('avatar-preview');
+    var avatarInput = document.getElementById('register-avatar');
+    var selectedAvatarFile = null;
+
+    if (avatarUpload && avatarInput) {
+        /* Click on the preview zone opens file picker */
+        avatarUpload.addEventListener('click', function () {
+            avatarInput.click();
+        });
+
+        avatarInput.addEventListener('change', function () {
+            var file = avatarInput.files[0];
+            if (!file) return;
+
+            /* Validate file */
+            if (!file.type.startsWith('image/')) {
+                alert('Veuillez choisir une image (PNG, JPG, WEBP...)');
+                return;
+            }
+            if (file.size > 2 * 1024 * 1024) {
+                alert('L\'image ne doit pas depasser 2 Mo.');
+                return;
+            }
+
+            selectedAvatarFile = file;
+
+            /* Show preview */
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                avatarPreview.innerHTML = '<img src="' + e.target.result + '" alt="Avatar">';
+                avatarUpload.classList.add('avatar-upload--has-image');
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
     /* === TOGGLE FORMS === */
     if (toggleToRegister) {
         toggleToRegister.addEventListener('click', function (e) {
@@ -114,6 +152,8 @@
             var password = document.getElementById('register-password').value;
             var classe = document.getElementById('register-classe').value;
             var element = document.getElementById('register-element').value;
+            var dofusbookInput = document.getElementById('register-dofusbook');
+            var dofusbookUrl = dofusbookInput ? dofusbookInput.value.trim() : '';
 
             if (!username) {
                 showMessage(registerMessage, 'Veuillez entrer votre pseudo.', 'error');
@@ -144,7 +184,8 @@
                         data: {
                             username: username,
                             classe: classe || null,
-                            element: element || null
+                            element: element || null,
+                            dofusbook_url: dofusbookUrl || null
                         }
                     }
                 });
@@ -163,7 +204,7 @@
                     return;
                 }
 
-                /* Verifier si l'utilisateur a bien ete cree (pas de session = email confirmation requise ?) */
+                /* Verifier si l'utilisateur a bien ete cree */
                 if (!result.data || !result.data.user) {
                     console.error('[REN] Inscription: pas de user retourne', result);
                     showMessage(registerMessage, 'Erreur: aucun utilisateur cree. Verifiez la configuration Supabase.', 'error');
@@ -173,6 +214,11 @@
                 }
 
                 console.log('[REN] Inscription reussie:', result.data.user.id, 'Session:', !!result.data.session);
+
+                /* Upload avatar si un fichier a ete selectionne et qu'on a une session */
+                if (selectedAvatarFile && result.data.session) {
+                    await uploadAvatar(result.data.user.id, selectedAvatarFile);
+                }
 
                 showMessage(registerMessage, 'Compte cree ! Un administrateur doit valider votre acces avant que vous puissiez utiliser le site.', 'success');
                 submitBtn.disabled = false;
@@ -185,5 +231,43 @@
                 submitBtn.textContent = 'S\'inscrire';
             }
         });
+    }
+
+    /* === AVATAR UPLOAD === */
+    async function uploadAvatar(userId, file) {
+        try {
+            var ext = file.name.split('.').pop().toLowerCase();
+            var filePath = userId + '.' + ext;
+
+            /* Upload vers le bucket "avatars" */
+            var { error: uploadError } = await window.REN.supabase.storage
+                .from('avatars')
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true
+                });
+
+            if (uploadError) {
+                console.error('[REN] Erreur upload avatar:', uploadError);
+                return;
+            }
+
+            /* Recuperer l'URL publique */
+            var { data: urlData } = window.REN.supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath);
+
+            if (urlData && urlData.publicUrl) {
+                /* Mettre a jour le profil avec l'URL de l'avatar */
+                await window.REN.supabase
+                    .from('profiles')
+                    .update({ avatar_url: urlData.publicUrl })
+                    .eq('id', userId);
+
+                console.log('[REN] Avatar uploade avec succes:', urlData.publicUrl);
+            }
+        } catch (err) {
+            console.error('[REN] Exception upload avatar:', err);
+        }
     }
 })();

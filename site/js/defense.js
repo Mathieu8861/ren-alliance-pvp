@@ -28,7 +28,7 @@
     async function loadData() {
         try {
             var [profilesRes, alliancesRes] = await Promise.all([
-                window.REN.supabase.from('profiles').select('id, username').eq('is_validated', true).order('username'),
+                window.REN.supabase.from('profiles').select('id, username, mules').eq('is_validated', true).order('username'),
                 window.REN.supabase.from('alliances').select('*').order('nom')
             ]);
             allProfiles = profilesRes.data || [];
@@ -65,13 +65,23 @@
         var container = document.getElementById('allies-list');
         if (!container) return;
         selectedAllies = [window.REN.currentProfile.id];
-        var html = '<div style="padding: var(--spacing-sm); color: var(--color-text-primary); font-size: 0.875rem; font-weight: 500;">' + window.REN.currentProfile.username + ' (vous)</div>';
+        var selfText = window.REN.currentProfile.username;
+        var myMules = window.REN.currentProfile.mules || [];
+        if (myMules.length > 0) {
+            selfText += ' <span class="combat-form__ally-sep">/</span> ' + myMules.join(' <span class="combat-form__ally-sep">/</span> ');
+        }
+        var html = '<div class="combat-form__ally-self">' + selfText + ' <span>(vous)</span></div>';
         for (var i = 1; i < nbAllies; i++) {
             html += '<select class="form-select ally-select" data-index="' + i + '">';
-            html += '<option value="">-- Allie ' + (i + 1) + ' --</option>';
+            html += '<option value="">Allie ' + (i + 1) + '</option>';
             allProfiles.forEach(function (p) {
                 if (p.id !== window.REN.currentProfile.id) {
                     html += '<option value="' + p.id + '">' + p.username + '</option>';
+                    if (p.mules && p.mules.length > 0) {
+                        p.mules.forEach(function (mule) {
+                            html += '<option value="' + p.id + '">&#8627; ' + mule + '</option>';
+                        });
+                    }
                 }
             });
             html += '</select>';
@@ -96,12 +106,12 @@
         allAlliances.forEach(function (a) {
             var opt = document.createElement('option');
             opt.value = a.id;
-            opt.textContent = a.nom + (a.tag ? ' [' + a.tag + ']' : '') + ' (x' + a.multiplicateur + ')';
+            opt.textContent = a.nom + (a.tag ? ' [' + a.tag + ']' : '');
             select.appendChild(opt);
         });
         var optAutre = document.createElement('option');
         optAutre.value = 'autre';
-        optAutre.textContent = '-- Autre / Pas d\'alliance --';
+        optAutre.textContent = 'Autre / Pas d\'alliance';
         select.appendChild(optAutre);
         select.addEventListener('change', function () {
             if (customInput) customInput.style.display = select.value === 'autre' ? '' : 'none';

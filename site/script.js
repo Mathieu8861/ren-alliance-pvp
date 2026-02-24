@@ -119,6 +119,10 @@
     function updateNavUser(profile) {
         if (navUsername && profile) {
             navUsername.textContent = profile.username;
+            navUsername.style.cursor = 'pointer';
+            navUsername.addEventListener('click', function () {
+                window.location.href = 'profil.html';
+            });
         }
         if (navAdminLink) {
             navAdminLink.style.display = (profile && profile.is_admin) ? '' : 'none';
@@ -228,6 +232,90 @@
         if (value >= 1000000) return Math.floor(value / 1000000).toLocaleString('fr-FR') + ' M';
         if (value >= 1000) return Math.floor(value / 1000).toLocaleString('fr-FR') + ' K';
         return value.toLocaleString('fr-FR');
+    };
+
+    /* === CADRES PROFIL - TIERS === */
+    var TIERS = [
+        { key: 'legendaire', min: 2000, name: 'Legendaire', title: 'Dieu du PVP', reward: 400 },
+        { key: 'diamant', min: 1500, name: 'Diamant', title: 'Faucheuse des Champs', reward: 200 },
+        { key: 'rubis', min: 1000, name: 'Rubis', title: 'Machine de Guerre', reward: 150 },
+        { key: 'emeraude', min: 750, name: 'Emeraude', title: 'Seigneur de Guerre', reward: 100 },
+        { key: 'saphir', min: 500, name: 'Saphir', title: 'Veteran des Arenes', reward: 70 },
+        { key: 'or', min: 300, name: 'Or', title: 'Elite PVP', reward: 40 },
+        { key: 'argent', min: 150, name: 'Argent', title: 'Combattant Confirme', reward: 20 },
+        { key: 'bronze', min: 50, name: 'Bronze', title: 'Guerrier de Base', reward: 10 },
+        { key: 'initie', min: 0, name: 'Initie', title: 'Joueur Lambda', reward: 0 }
+    ];
+
+    window.REN.getTierFromPoints = function (points) {
+        var pts = points || 0;
+        for (var i = 0; i < TIERS.length; i++) {
+            if (pts >= TIERS[i].min) return TIERS[i];
+        }
+        return TIERS[TIERS.length - 1];
+    };
+
+    window.REN.buildAvatarFrame = function (avatarUrl, points, size) {
+        var tier = window.REN.getTierFromPoints(points);
+        var sz = size || 100;
+        var containerSz = tier.key === 'legendaire' ? sz * 1.2 : sz * 1.15;
+        var userSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+        var imgContent = avatarUrl ? '<img src="' + avatarUrl + '" alt="Avatar">' : userSvg;
+        var flames = '';
+        if (tier.key === 'legendaire') {
+            flames = '<div class="frame-flames">';
+            for (var i = 0; i < 8; i++) flames += '<div class="frame-flame"></div>';
+            flames += '</div>';
+        }
+        var html = '<div class="avatar-frame avatar-frame--' + tier.key + '" style="width:' + containerSz + 'px;height:' + containerSz + 'px;">';
+        html += '<div class="avatar-frame__img" style="width:' + sz + 'px;height:' + sz + 'px;">' + imgContent + '</div>';
+        html += flames;
+        html += '</div>';
+        return html;
+    };
+
+    /* Expose TIERS pour les autres modules */
+    window.REN.TIERS_ASC = TIERS.slice().reverse(); /* initie -> legendaire */
+
+    /* Claim des recompenses de palier (jetons) */
+    window.REN.claimTierRewards = async function (totalPoints) {
+        var profile = window.REN.currentProfile;
+        if (!profile) return null;
+
+        var claimed = profile.tier_rewards_claimed || [];
+        var tiersAsc = window.REN.TIERS_ASC;
+        var newClaims = [];
+        var totalBonus = 0;
+
+        for (var i = 0; i < tiersAsc.length; i++) {
+            var t = tiersAsc[i];
+            if (totalPoints >= t.min && t.reward > 0 && claimed.indexOf(t.key) === -1) {
+                newClaims.push(t.key);
+                totalBonus += t.reward;
+            }
+        }
+
+        if (newClaims.length === 0) return null;
+
+        var updatedClaimed = claimed.concat(newClaims);
+        var newJetons = (profile.jetons || 0) + totalBonus;
+
+        try {
+            var { error } = await window.REN.supabase
+                .from('profiles')
+                .update({ tier_rewards_claimed: updatedClaimed, jetons: newJetons })
+                .eq('id', window.REN.currentUser.id);
+
+            if (error) throw error;
+
+            profile.tier_rewards_claimed = updatedClaimed;
+            profile.jetons = newJetons;
+
+            return { newClaims: newClaims, totalBonus: totalBonus, newJetons: newJetons };
+        } catch (err) {
+            console.error('[REN] Erreur claim rewards:', err);
+            return null;
+        }
     };
 
     window.REN.formatNumber = function (value) {

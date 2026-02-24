@@ -16,6 +16,8 @@ CREATE TABLE public.profiles (
     percepteurs INTEGER DEFAULT 0,
     referent_pvp TEXT DEFAULT NULL,
     disponibilite_pvp TEXT DEFAULT NULL,
+    avatar_url TEXT DEFAULT NULL,
+    dofusbook_url TEXT DEFAULT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
