@@ -2173,6 +2173,68 @@ table {
     }
 }
 
+/* ========================================
+   LIENS UTILES
+   ======================================== */
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+.link-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    color: var(--color-text-primary);
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.link-card:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 25px rgba(219, 41, 41, 0.12);
+    transform: translateY(-4px);
+}
+
+.link-card__preview {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+    transition: opacity 0.2s;
+}
+
+.link-card:hover .link-card__preview {
+    opacity: 0.85;
+}
+
+.link-card__body {
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.link-card__name {
+    font-family: var(--font-title);
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.link-card__desc {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+
+@media (max-width: 480px) {
+    .links-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 .game-info {
     text-align: center;
     font-size: 0.875rem;
