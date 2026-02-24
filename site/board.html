@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alliance REN - Historique</title>
+    <title>Alliance REN - Board Hebdomadaire</title>
     <link rel="icon" type="image/png" href="assets/images/logo-ren.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,22 +50,23 @@
     </header>
 
     <main class="main">
-        <div class="mb-lg">
-            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Historique</h1>
-            <p class="text-muted" style="font-size: 0.8125rem;">Historique de tous les combats</p>
-        </div>
-
-        <div class="history-filter">
-            <div class="tabs" id="history-tabs">
-                <button class="tabs__btn active" data-tab="tous">Tous</button>
-                <button class="tabs__btn" data-tab="attaques">Attaques</button>
-                <button class="tabs__btn" data-tab="defenses">Defenses</button>
-                <button class="tabs__btn" data-tab="victoires">Victoires</button>
-                <button class="tabs__btn" data-tab="defaites">Defaites</button>
+        <div class="board-header mb-lg">
+            <div>
+                <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Board Hebdomadaire</h1>
+                <p class="text-muted" style="font-size: 0.8125rem;">Points PVP et récompenses par semaine</p>
+            </div>
+            <div class="board-header__controls">
+                <select class="form-select board-week-select" id="board-week-select">
+                    <option value="current">Semaine en cours</option>
+                </select>
             </div>
         </div>
 
-        <div class="history-grid" id="history-grid">
+        <!-- Résumé de la semaine -->
+        <div class="board-summary" id="board-summary"></div>
+
+        <!-- Classement par palier -->
+        <div class="board-tiers" id="board-tiers">
             <div class="loading"><div class="spinner"></div> Chargement...</div>
         </div>
     </main>
@@ -79,6 +80,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
-    <script src="js/historique.js"></script>
+    <script src="js/board.js"></script>
 </body>
 </html>

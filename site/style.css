@@ -2235,6 +2235,158 @@ table {
     }
 }
 
+/* ========================================
+   BOARD HEBDOMADAIRE
+   ======================================== */
+.board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.board-header__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.board-week-select {
+    font-size: 0.875rem;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background-color: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    min-width: 220px;
+}
+
+/* Résumé */
+.board-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.board-summary__card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+}
+
+.board-summary__value {
+    font-family: var(--font-title);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--color-warning);
+    line-height: 1;
+    margin-bottom: var(--spacing-xs);
+}
+
+.board-summary__label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
+/* Paliers */
+.board-tier {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    margin-bottom: var(--spacing-md);
+    overflow: hidden;
+}
+
+.board-tier__header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--color-border);
+    flex-wrap: wrap;
+}
+
+.board-tier__emoji {
+    font-size: 1.25rem;
+}
+
+.board-tier__title {
+    font-family: var(--font-title);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--color-text-primary);
+}
+
+.board-tier__reward {
+    font-size: 0.8125rem;
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.board-tier__range {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-left: auto;
+}
+
+.board-tier__players {
+    padding: var(--spacing-sm) 0;
+}
+
+.board-player {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xs) var(--spacing-lg);
+    transition: background 0.15s;
+}
+
+.board-player:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.board-player__rank {
+    font-family: var(--font-title);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    min-width: 28px;
+}
+
+.board-player__name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    flex: 1;
+}
+
+.board-player__points {
+    font-family: var(--font-title);
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--color-warning);
+}
+
+@media (max-width: 768px) {
+    .board-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .board-week-select {
+        width: 100%;
+    }
+
+    .board-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
 .game-info {
     text-align: center;
     font-size: 0.875rem;

@@ -59,6 +59,8 @@
                 case 'jeu-lots': await tabJeuLots(content); break;
                 case 'jeu-historique': await tabJeuHistorique(content); break;
                 case 'cadres': tabCadres(content); break;
+                case 'board': await tabBoard(content); break;
+                case 'bareme-perco': await tabBaremePerco(content); break;
                 default: content.innerHTML = '<p class="text-muted">Onglet inconnu.</p>';
             }
         } catch (err) {
@@ -824,6 +826,244 @@
 
         html += '</div>';
         content.innerHTML = html;
+    }
+
+    /* === TAB: BOARD HEBDO (archivage semaines) === */
+    async function tabBoard(content) {
+        /* Charger semaines archivées + config récompenses + classement semaine en cours */
+        var [semainesRes, configRes, liveRes] = await Promise.all([
+            window.REN.supabase.from('semaines').select('*').order('date_debut', { ascending: false }),
+            window.REN.supabase.from('recompenses_config').select('*').order('ordre'),
+            window.REN.supabase.from('classement_pvp_semaine').select('id, username, points')
+        ]);
+
+        var semaines = semainesRes.data || [];
+        var config = configRes.data || [];
+        var livePlayers = liveRes.data || [];
+
+        var html = '<div class="admin-panel__title">Board Hebdomadaire</div>';
+
+        /* Section archivage */
+        html += '<div style="background:var(--color-bg-tertiary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-lg);margin-bottom:var(--spacing-lg);">';
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Archiver la semaine en cours</h3>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-md);">' + livePlayers.length + ' joueurs actifs cette semaine</p>';
+
+        if (livePlayers.length > 0) {
+            /* Afficher un aperçu */
+            html += '<div style="margin-bottom:var(--spacing-md);max-height:200px;overflow-y:auto;">';
+            livePlayers.forEach(function (p, i) {
+                var reward = findReward(config, p.points);
+                html += '<div style="display:flex;align-items:center;gap:var(--spacing-sm);padding:4px 0;font-size:0.8125rem;">';
+                html += '<span style="min-width:24px;color:var(--color-text-muted);">' + (i + 1) + '.</span>';
+                html += '<span style="flex:1;">' + p.username + '</span>';
+                html += '<span style="color:var(--color-warning);font-weight:600;">' + p.points + ' pts</span>';
+                html += '<span style="color:var(--color-success);font-size:0.75rem;">' + (reward ? reward.emoji + ' ' + reward.label : '') + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+            html += '<button class="btn btn--primary" id="btn-archive-week">Archiver cette semaine</button>';
+        } else {
+            html += '<p class="text-muted">Aucun joueur actif cette semaine.</p>';
+        }
+        html += '</div>';
+
+        /* Historique des semaines archivées */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Semaines archivées (' + semaines.length + ')</h3>';
+
+        if (semaines.length) {
+            html += '<table class="admin-table"><thead><tr>';
+            html += '<th>Période</th><th>Joueurs</th><th>Date d\'archivage</th>';
+            html += '</tr></thead><tbody>';
+
+            for (var i = 0; i < semaines.length; i++) {
+                var s = semaines[i];
+                var { count } = await window.REN.supabase.from('semaine_snapshots').select('id', { count: 'exact', head: true }).eq('semaine_id', s.id);
+                html += '<tr>';
+                html += '<td style="font-weight:600;">' + formatDate(s.date_debut) + ' — ' + formatDate(s.date_fin) + '</td>';
+                html += '<td>' + (count || 0) + ' joueurs</td>';
+                html += '<td class="text-muted">' + new Date(s.created_at).toLocaleDateString('fr-FR') + '</td>';
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+        } else {
+            html += '<p class="text-muted text-center">Aucune semaine archivée.</p>';
+        }
+
+        content.innerHTML = html;
+
+        /* Event archivage */
+        var archiveBtn = document.getElementById('btn-archive-week');
+        if (archiveBtn) {
+            archiveBtn.addEventListener('click', async function () {
+                if (!confirm('Archiver la semaine en cours ? Les données seront sauvegardées.')) return;
+
+                archiveBtn.disabled = true;
+                archiveBtn.textContent = 'Archivage...';
+
+                try {
+                    /* Calculer dates de la semaine en cours (lundi à dimanche) */
+                    var now = new Date();
+                    var day = now.getDay();
+                    var diffToMonday = (day === 0 ? -6 : 1) - day;
+                    var monday = new Date(now);
+                    monday.setDate(now.getDate() + diffToMonday);
+                    var sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6);
+
+                    var dateDebut = monday.toISOString().split('T')[0];
+                    var dateFin = sunday.toISOString().split('T')[0];
+
+                    /* Vérifier si la semaine n'est pas déjà archivée */
+                    var { data: existing } = await window.REN.supabase
+                        .from('semaines')
+                        .select('id')
+                        .eq('date_debut', dateDebut)
+                        .eq('date_fin', dateFin);
+
+                    if (existing && existing.length > 0) {
+                        window.REN.toast('Cette semaine a déjà été archivée !', 'error');
+                        archiveBtn.disabled = false;
+                        archiveBtn.textContent = 'Archiver cette semaine';
+                        return;
+                    }
+
+                    /* Créer la semaine */
+                    var { data: semaine, error: semErr } = await window.REN.supabase
+                        .from('semaines')
+                        .insert({ date_debut: dateDebut, date_fin: dateFin, archivee_par: window.REN.currentProfile.id })
+                        .select()
+                        .single();
+
+                    if (semErr) throw semErr;
+
+                    /* Snapshot de chaque joueur */
+                    var snapshots = livePlayers.map(function (p, idx) {
+                        var reward = findReward(config, p.points);
+                        return {
+                            semaine_id: semaine.id,
+                            user_id: p.id,
+                            username: p.username,
+                            points: p.points,
+                            rang: idx + 1,
+                            recompense_pepites: reward ? reward.pepites : 0,
+                            recompense_percepteurs: reward ? reward.percepteurs_bonus : 0
+                        };
+                    });
+
+                    if (snapshots.length > 0) {
+                        var { error: snapErr } = await window.REN.supabase.from('semaine_snapshots').insert(snapshots);
+                        if (snapErr) throw snapErr;
+                    }
+
+                    window.REN.toast('Semaine archivée avec succès !', 'success');
+                    loadTab('board');
+                } catch (err) {
+                    console.error('[REN] Erreur archivage:', err);
+                    window.REN.toast('Erreur : ' + err.message, 'error');
+                    archiveBtn.disabled = false;
+                    archiveBtn.textContent = 'Archiver cette semaine';
+                }
+            });
+        }
+    }
+
+    function findReward(config, points) {
+        for (var i = 0; i < config.length; i++) {
+            var r = config[i];
+            var max = r.seuil_max !== null ? r.seuil_max : 999999;
+            if (points >= r.seuil_min && points <= max) return r;
+        }
+        return null;
+    }
+
+    function formatDate(dateStr) {
+        var d = new Date(dateStr);
+        return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    }
+
+    /* === TAB: BARÈME PERCO (config récompenses) === */
+    async function tabBaremePerco(content) {
+        var { data: config } = await window.REN.supabase
+            .from('recompenses_config')
+            .select('*')
+            .order('ordre');
+
+        var rows = config || [];
+
+        var html = '<div class="admin-panel__title">Barème Percepteurs & Récompenses</div>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-lg);">Définir les paliers de récompenses en fonction des points hebdomadaires</p>';
+
+        html += '<table class="admin-table"><thead><tr>';
+        html += '<th>Palier</th><th>Emoji</th><th>Points min</th><th>Points max</th><th>Percepteurs bonus</th><th>Pépites</th><th>Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        rows.forEach(function (r) {
+            html += '<tr data-id="' + r.id + '">';
+            html += '<td><input class="form-input" style="width:100px;" value="' + r.label + '" data-field="label"></td>';
+            html += '<td><input class="form-input" style="width:50px;text-align:center;" value="' + (r.emoji || '') + '" data-field="emoji"></td>';
+            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + r.seuil_min + '" data-field="seuil_min"></td>';
+            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + (r.seuil_max !== null ? r.seuil_max : '') + '" placeholder="∞" data-field="seuil_max"></td>';
+            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + r.percepteurs_bonus + '" data-field="percepteurs_bonus"></td>';
+            html += '<td><input class="form-input" style="width:90px;text-align:center;" type="number" value="' + r.pepites + '" data-field="pepites"></td>';
+            html += '<td><button class="btn btn--danger btn--small btn-delete-tier" data-id="' + r.id + '">✕</button></td>';
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md);">';
+        html += '<button class="btn btn--primary" id="btn-save-bareme">Sauvegarder</button>';
+        html += '<button class="btn btn--secondary" id="btn-add-tier">+ Ajouter un palier</button>';
+        html += '</div>';
+
+        content.innerHTML = html;
+
+        /* Save */
+        document.getElementById('btn-save-bareme').addEventListener('click', async function () {
+            var tableRows = content.querySelectorAll('tbody tr');
+            var updates = [];
+
+            tableRows.forEach(function (tr) {
+                var id = parseInt(tr.getAttribute('data-id'));
+                if (!id) return;
+                var inputs = tr.querySelectorAll('input');
+                var label = inputs[0].value.trim();
+                var emoji = inputs[1].value.trim();
+                var seuil_min = parseInt(inputs[2].value) || 0;
+                var seuil_max = inputs[3].value.trim() === '' ? null : parseInt(inputs[3].value);
+                var percepteurs_bonus = parseInt(inputs[4].value) || 0;
+                var pepites = parseInt(inputs[5].value) || 0;
+
+                updates.push(
+                    window.REN.supabase.from('recompenses_config').update({
+                        label: label, emoji: emoji, seuil_min: seuil_min, seuil_max: seuil_max,
+                        percepteurs_bonus: percepteurs_bonus, pepites: pepites
+                    }).eq('id', id)
+                );
+            });
+
+            await Promise.all(updates);
+            window.REN.toast('Barème sauvegardé !', 'success');
+        });
+
+        /* Add tier */
+        document.getElementById('btn-add-tier').addEventListener('click', async function () {
+            var maxOrdre = rows.length ? Math.max.apply(null, rows.map(function (r) { return r.ordre; })) : 0;
+            await window.REN.supabase.from('recompenses_config').insert({
+                label: 'Nouveau', emoji: '🏅', seuil_min: 0, seuil_max: null,
+                percepteurs_bonus: 0, pepites: 0, ordre: maxOrdre + 1
+            });
+            loadTab('bareme-perco');
+        });
+
+        /* Delete tier */
+        content.querySelectorAll('.btn-delete-tier').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Supprimer ce palier ?')) return;
+                await window.REN.supabase.from('recompenses_config').delete().eq('id', parseInt(btn.getAttribute('data-id')));
+                loadTab('bareme-perco');
+            });
+        });
     }
 
 })();
