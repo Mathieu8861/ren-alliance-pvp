@@ -62,38 +62,18 @@
         if (!container) return;
 
         try {
-            var [jetonsRes, histoRes] = await Promise.all([
-                window.REN.supabase.from('classement_jetons').select('id, username, jetons'),
-                window.REN.supabase.from('jeu_historique').select('user_id, resultat, lot:jeu_lots(gain_jetons)')
-            ]);
+            var { data, error } = await window.REN.supabase.from('classement_jetons').select('id, username, jetons, tirages, pepites');
 
-            var data = jetonsRes.data || [];
-            var histo = histoRes.data || [];
+            if (error) {
+                console.error('[REN] Erreur classement jetons:', error);
+            }
+
+            data = data || [];
 
             if (!data.length) {
                 container.innerHTML = '<p class="text-muted text-center">Aucun joueur.</p>';
                 return;
             }
-
-            /* Calculer parties jouées et pépites gagnées par joueur */
-            var playerStats = {};
-            histo.forEach(function (h) {
-                if (!playerStats[h.user_id]) {
-                    playerStats[h.user_id] = { parties: 0, pepites: 0 };
-                }
-                playerStats[h.user_id].parties++;
-                var baseGain = h.lot && h.lot.gain_jetons ? h.lot.gain_jetons : 0;
-                /* Tenir compte du resultat : normal = x1, double = x2, perdu = 0 */
-                var gain = 0;
-                if (h.resultat === 'double') {
-                    gain = baseGain * 2;
-                } else if (h.resultat === 'perdu') {
-                    gain = 0;
-                } else {
-                    gain = baseGain;
-                }
-                if (gain > 0) playerStats[h.user_id].pepites += gain;
-            });
 
             var html = '<div class="ranking-list">';
             data.forEach(function (player, i) {
@@ -104,7 +84,8 @@
                 else if (rank === 2) { medalClass = ' ranking-item--silver'; medal = '<span class="ranking-item__medal">&#x1F948;</span>'; }
                 else if (rank === 3) { medalClass = ' ranking-item--bronze'; medal = '<span class="ranking-item__medal">&#x1F949;</span>'; }
 
-                var stats = playerStats[player.id] || { parties: 0, pepites: 0 };
+                var tirages = player.tirages || 0;
+                var pepites = player.pepites || 0;
 
                 html += '<div class="ranking-item' + medalClass + '">';
                 html += '<div class="ranking-item__left">';
@@ -113,8 +94,8 @@
                 html += '</div>';
                 html += '<div class="ranking-item__right">';
                 html += '<span class="ranking-item__value" style="color:var(--color-warning);">' + (player.jetons || 0) + ' jetons</span>';
-                if (stats.parties > 0) {
-                    html += '<span class="ranking-item__sub">' + stats.parties + ' tirage' + (stats.parties > 1 ? 's' : '') + ' · +' + stats.pepites + ' pép</span>';
+                if (tirages > 0) {
+                    html += '<span class="ranking-item__sub">' + tirages + ' tirage' + (tirages > 1 ? 's' : '') + ' · +' + pepites + ' pép</span>';
                 }
                 html += '</div>';
                 html += '</div>';

@@ -57,13 +57,30 @@ GROUP BY p.id, p.username
 HAVING COALESCE(SUM(c.butin_kamas), 0) > 0
 ORDER BY total_kamas DESC;
 
--- === VIEW: Classement Jetons ===
+-- === VIEW: Classement Jetons (avec stats tirages) ===
 CREATE OR REPLACE VIEW public.classement_jetons AS
 SELECT
     p.id,
     p.username,
     p.jetons,
-    p.percepteurs
+    p.percepteurs,
+    COALESCE(s.tirages, 0)::INTEGER AS tirages,
+    COALESCE(s.pepites, 0)::INTEGER AS pepites
 FROM public.profiles p
+LEFT JOIN (
+    SELECT
+        jh.user_id,
+        COUNT(*)::INTEGER AS tirages,
+        SUM(
+            CASE
+                WHEN jh.resultat = 'double' THEN jl.gain_jetons * 2
+                WHEN jh.resultat = 'perdu' THEN 0
+                ELSE jl.gain_jetons
+            END
+        )::INTEGER AS pepites
+    FROM public.jeu_historique jh
+    JOIN public.jeu_lots jl ON jl.id = jh.lot_id
+    GROUP BY jh.user_id
+) s ON s.user_id = p.id
 WHERE p.is_validated = TRUE AND p.jetons > 0
 ORDER BY p.jetons DESC;
