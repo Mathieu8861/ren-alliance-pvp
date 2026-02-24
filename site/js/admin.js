@@ -363,7 +363,7 @@
         html += '<div class="form-group" style="flex:1;margin-bottom:0;min-width:120px;"><select class="form-input" id="add-build-type"><option value="">Type (optionnel)</option><option value="pvp">PVP</option><option value="pvm">PVM</option></select></div>';
         html += '<div class="form-group" style="flex:1;margin-bottom:0;min-width:120px;"><select class="form-input" id="add-build-classe"><option value="">Classe (optionnel)</option>';
         html += '<option value="Cra">Cra</option><option value="Ecaflip">Ecaflip</option><option value="Eliotrope">Eliotrope</option><option value="Eniripsa">Eniripsa</option>';
-        html += '<option value="Enutrof">Enutrof</option><option value="Feca">Feca</option><option value="Forgelance">Forgelance</option><option value="Huppermage">Huppermage</option>';
+        html += '<option value="Enutrof">Enutrof</option><option value="Feca">Feca</option><option value="Forge">Forge</option><option value="Huppermage">Huppermage</option>';
         html += '<option value="Iop">Iop</option><option value="Osamodas">Osamodas</option><option value="Ouginak">Ouginak</option><option value="Pandawa">Pandawa</option>';
         html += '<option value="Roublard">Roublard</option><option value="Sacrieur">Sacrieur</option><option value="Sadida">Sadida</option><option value="Sram">Sram</option>';
         html += '<option value="Steamer">Steamer</option><option value="Xelor">Xelor</option><option value="Zobal">Zobal</option>';
@@ -403,7 +403,7 @@
                 html += '<option value="Eniripsa"' + (b.classe === 'Eniripsa' ? ' selected' : '') + '>Eniripsa</option>';
                 html += '<option value="Enutrof"' + (b.classe === 'Enutrof' ? ' selected' : '') + '>Enutrof</option>';
                 html += '<option value="Feca"' + (b.classe === 'Feca' ? ' selected' : '') + '>Feca</option>';
-                html += '<option value="Forgelance"' + (b.classe === 'Forgelance' ? ' selected' : '') + '>Forgelance</option>';
+                html += '<option value="Forge"' + (b.classe === 'Forge' ? ' selected' : '') + '>Forge</option>';
                 html += '<option value="Huppermage"' + (b.classe === 'Huppermage' ? ' selected' : '') + '>Huppermage</option>';
                 html += '<option value="Iop"' + (b.classe === 'Iop' ? ' selected' : '') + '>Iop</option>';
                 html += '<option value="Osamodas"' + (b.classe === 'Osamodas' ? ' selected' : '') + '>Osamodas</option>';

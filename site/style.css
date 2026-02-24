@@ -2573,6 +2573,8 @@ table {
     font-weight: 700;
     color: #d4a017;
     letter-spacing: 0.3px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .build-card__kamas-label {
