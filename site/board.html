@@ -29,6 +29,7 @@
                     <a href="membres.html" class="nav__link" data-page="membres">Membres</a>
                     <a href="builds.html" class="nav__link" data-page="builds">Builds</a>
                     <a href="liens.html" class="nav__link" data-page="liens">Liens</a>
+                    <a href="board.html" class="nav__link" data-page="board">Board</a>
                     <a href="jeux.html" class="nav__link nav__link--cta" data-page="jeux">Jeux</a>
                 </div>
             </nav>
@@ -51,8 +52,8 @@
     <main class="main">
         <div class="board-header mb-lg">
             <div>
-                <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Board Hebdomadaire</h1>
-                <p class="text-muted" style="font-size: 0.8125rem;">Points PVP et récompenses par semaine</p>
+                <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Droits Percepteurs</h1>
+                <p class="text-muted" id="board-period" style="font-size: 0.8125rem;">Chargement...</p>
             </div>
             <div class="board-header__controls">
                 <select class="form-select board-week-select" id="board-week-select">
@@ -61,11 +62,13 @@
             </div>
         </div>
 
-        <!-- Résumé de la semaine -->
-        <div class="board-summary" id="board-summary"></div>
+        <!-- Barème : légende des paliers -->
+        <div class="board-bareme" id="board-bareme">
+            <div class="loading"><div class="spinner"></div> Chargement...</div>
+        </div>
 
-        <!-- Classement par palier -->
-        <div class="board-tiers" id="board-tiers">
+        <!-- Tableau des droits -->
+        <div class="board-table-wrap" id="board-table-wrap">
             <div class="loading"><div class="spinner"></div> Chargement...</div>
         </div>
     </main>

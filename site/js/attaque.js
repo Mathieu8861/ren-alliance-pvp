@@ -63,12 +63,11 @@
         });
     }
 
-    /* === ALLIES LIST === */
+    /* === ALLIES LIST (autocomplete) === */
     function renderAlliesList() {
         var container = document.getElementById('allies-list');
         if (!container) return;
 
-        /* Premier slot = joueur courant (auto) */
         selectedAllies = [window.REN.currentProfile.id];
 
         var html = '';
@@ -80,35 +79,87 @@
         html += '<div class="combat-form__ally-self">' + selfText + ' <span>(vous)</span></div>';
 
         for (var i = 1; i < nbAllies; i++) {
-            html += '<select class="form-select ally-select" data-index="' + i + '">';
-            html += '<option value="">Allie ' + (i + 1) + '</option>';
-            allProfiles.forEach(function (p) {
-                if (p.id !== window.REN.currentProfile.id) {
-                    html += '<option value="' + p.id + '">' + p.username + '</option>';
-                    if (p.mules && p.mules.length > 0) {
-                        p.mules.forEach(function (mule) {
-                            html += '<option value="' + p.id + '">&#8627; ' + mule + '</option>';
-                        });
-                    }
-                }
-            });
-            html += '</select>';
+            html += '<div class="ally-autocomplete" data-index="' + i + '">';
+            html += '<input type="text" class="form-input ally-search" placeholder="Rechercher allié ' + (i + 1) + '..." autocomplete="off">';
+            html += '<input type="hidden" class="ally-value">';
+            html += '<div class="ally-dropdown"></div>';
+            html += '</div>';
         }
 
         container.innerHTML = html;
 
-        /* Event listeners pour les selects */
-        container.querySelectorAll('.ally-select').forEach(function (sel) {
-            sel.addEventListener('change', function () {
-                updateSelectedAllies();
+        container.querySelectorAll('.ally-autocomplete').forEach(function (wrap) {
+            setupAllyAutocomplete(wrap);
+        });
+    }
+
+    function setupAllyAutocomplete(wrap) {
+        var input = wrap.querySelector('.ally-search');
+        var hidden = wrap.querySelector('.ally-value');
+        var dropdown = wrap.querySelector('.ally-dropdown');
+
+        /* Construire la liste des options (profils + mules) */
+        var options = [];
+        allProfiles.forEach(function (p) {
+            if (p.id !== window.REN.currentProfile.id) {
+                options.push({ id: p.id, label: p.username, isMule: false });
+                if (p.mules && p.mules.length > 0) {
+                    p.mules.forEach(function (mule) {
+                        options.push({ id: p.id, label: '\u21B3 ' + mule, isMule: true });
+                    });
+                }
+            }
+        });
+
+        function showDropdown(filter) {
+            var query = (filter || '').toLowerCase();
+            var matches = options.filter(function (o) {
+                return o.label.toLowerCase().indexOf(query) !== -1;
             });
+
+            if (!matches.length) {
+                dropdown.innerHTML = '<div class="ally-dropdown__empty">Aucun résultat</div>';
+                dropdown.classList.add('active');
+                return;
+            }
+
+            var html = '';
+            matches.forEach(function (o) {
+                html += '<div class="ally-dropdown__item' + (o.isMule ? ' ally-dropdown__item--mule' : '') + '" data-id="' + o.id + '" data-label="' + o.label.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+            });
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+
+            dropdown.querySelectorAll('.ally-dropdown__item').forEach(function (item) {
+                item.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    input.value = item.getAttribute('data-label');
+                    hidden.value = item.getAttribute('data-id');
+                    dropdown.classList.remove('active');
+                    updateSelectedAllies();
+                });
+            });
+        }
+
+        input.addEventListener('focus', function () {
+            showDropdown(input.value);
+        });
+
+        input.addEventListener('input', function () {
+            hidden.value = '';
+            updateSelectedAllies();
+            showDropdown(input.value);
+        });
+
+        input.addEventListener('blur', function () {
+            setTimeout(function () { dropdown.classList.remove('active'); }, 150);
         });
     }
 
     function updateSelectedAllies() {
         selectedAllies = [window.REN.currentProfile.id];
-        document.querySelectorAll('.ally-select').forEach(function (sel) {
-            if (sel.value) selectedAllies.push(sel.value);
+        document.querySelectorAll('.ally-value').forEach(function (h) {
+            if (h.value) selectedAllies.push(h.value);
         });
     }
 

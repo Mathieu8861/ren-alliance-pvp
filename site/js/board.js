@@ -1,6 +1,6 @@
 /* ============================================ */
-/* Alliance REN - Board Hebdomadaire           */
-/* Classement semaine + récompenses auto       */
+/* Alliance REN - Droits Percepteurs            */
+/* Points semaine passée → droits semaine       */
 /* ============================================ */
 (function () {
     'use strict';
@@ -16,6 +16,7 @@
         await loadRecompensesConfig();
         await loadSemaines();
         setupWeekSelect();
+        renderBareme();
         loadBoard(currentSelection);
     }
 
@@ -50,7 +51,6 @@
         var select = document.getElementById('board-week-select');
         if (!select) return;
 
-        /* Ajouter les semaines archivées */
         semaines.forEach(function (s) {
             var opt = document.createElement('option');
             opt.value = s.id;
@@ -64,34 +64,79 @@
         });
     }
 
-    function formatWeekLabel(debut, fin) {
-        var d = new Date(debut);
-        var f = new Date(fin);
-        var mois = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
-        return d.getDate() + ' ' + mois[d.getMonth()] + ' — ' + f.getDate() + ' ' + mois[f.getMonth()] + ' ' + f.getFullYear();
+    /* === RENDER BARÈME (légende des paliers) === */
+    function renderBareme() {
+        var container = document.getElementById('board-bareme');
+        if (!container || !recompensesConfig.length) {
+            if (container) container.innerHTML = '';
+            return;
+        }
+
+        var html = '<div class="board-bareme__grid">';
+        recompensesConfig.forEach(function (r) {
+            var range = r.seuil_min + (r.seuil_max ? '-' + r.seuil_max : '+') + ' pts';
+            var perco = r.percepteurs_bonus > 0
+                ? r.percepteurs_bonus + ' perco' + (r.percepteurs_bonus > 1 ? 's' : '')
+                : '0 perco';
+            var pepites = r.pepites > 0 ? formatNumber(r.pepites) + ' pep' : '';
+
+            html += '<div class="board-bareme__item">';
+            html += '<span class="board-bareme__emoji">' + r.emoji + '</span>';
+            html += '<div class="board-bareme__info">';
+            html += '<span class="board-bareme__label">' + r.label + '</span>';
+            html += '<span class="board-bareme__range">' + range + '</span>';
+            html += '</div>';
+            html += '<div class="board-bareme__rewards">';
+            html += '<span class="board-bareme__perco">' + perco + '</span>';
+            if (pepites) html += '<span class="board-bareme__pepites">' + pepites + '</span>';
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+
+        container.innerHTML = html;
     }
 
     /* === CHARGER LE BOARD === */
     async function loadBoard(selection) {
-        var tiersContainer = document.getElementById('board-tiers');
-        var summaryContainer = document.getElementById('board-summary');
-        if (!tiersContainer) return;
+        var tableWrap = document.getElementById('board-table-wrap');
+        var periodEl = document.getElementById('board-period');
+        if (!tableWrap) return;
 
-        tiersContainer.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
-        if (summaryContainer) summaryContainer.innerHTML = '';
+        tableWrap.innerHTML = '<div class="loading"><div class="spinner"></div> Chargement...</div>';
 
         var players = [];
+        var periodText = '';
 
         if (selection === 'current') {
             players = await loadCurrentWeek();
+            /* Calculer les dates de la semaine en cours */
+            var now = new Date();
+            var day = now.getDay();
+            var diffToMonday = (day === 0 ? -6 : 1) - day;
+            var monday = new Date(now);
+            monday.setDate(now.getDate() + diffToMonday);
+            var sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            periodText = 'Points du ' + formatDate(monday) + ' au ' + formatDate(sunday) + ' — Droits de la semaine prochaine';
         } else {
+            var sem = semaines.find(function (s) { return s.id === parseInt(selection); });
             players = await loadArchivedWeek(parseInt(selection));
+            if (sem) {
+                var nextMonday = new Date(sem.date_fin);
+                nextMonday.setDate(nextMonday.getDate() + 1);
+                var nextSunday = new Date(nextMonday);
+                nextSunday.setDate(nextMonday.getDate() + 6);
+                periodText = 'Points du ' + formatDate(new Date(sem.date_debut)) + ' au ' + formatDate(new Date(sem.date_fin)) + ' — Droits du ' + formatDate(nextMonday) + ' au ' + formatDate(nextSunday);
+            }
         }
 
-        renderBoard(players, tiersContainer, summaryContainer, selection);
+        if (periodEl) periodEl.textContent = periodText;
+
+        renderTable(players, tableWrap);
     }
 
-    /* === SEMAINE EN COURS (live depuis classement_pvp_semaine) === */
+    /* === SEMAINE EN COURS === */
     async function loadCurrentWeek() {
         try {
             var { data } = await window.REN.supabase
@@ -99,7 +144,9 @@
                 .select('id, username, points');
             if (!data) return [];
 
-            /* Calculer les récompenses pour chaque joueur */
+            /* Trier par points décroissants */
+            data.sort(function (a, b) { return b.points - a.points; });
+
             return data.map(function (p, i) {
                 var reward = getReward(p.points);
                 return {
@@ -108,7 +155,9 @@
                     points: p.points,
                     rang: i + 1,
                     recompense_pepites: reward.pepites,
-                    recompense_percepteurs: reward.percepteurs_bonus
+                    recompense_percepteurs: reward.percepteurs_bonus,
+                    tier_label: reward.label,
+                    tier_emoji: reward.emoji
                 };
             });
         } catch (err) {
@@ -125,7 +174,21 @@
                 .select('*')
                 .eq('semaine_id', semaineId)
                 .order('rang', { ascending: true });
-            return data || [];
+            if (!data) return [];
+
+            return data.map(function (p) {
+                var reward = getReward(p.points);
+                return {
+                    user_id: p.user_id,
+                    username: p.username,
+                    points: p.points,
+                    rang: p.rang,
+                    recompense_pepites: p.recompense_pepites,
+                    recompense_percepteurs: p.recompense_percepteurs,
+                    tier_label: reward.label,
+                    tier_emoji: reward.emoji
+                };
+            });
         } catch (err) {
             console.error('[REN-BOARD] Erreur semaine archivée:', err);
             return [];
@@ -145,99 +208,61 @@
         return { pepites: 0, percepteurs_bonus: 0, label: 'Aucun', emoji: '' };
     }
 
-    /* === RENDER BOARD === */
-    function renderBoard(players, tiersContainer, summaryContainer, selection) {
+    /* === RENDER TABLEAU === */
+    function renderTable(players, container) {
         if (!players.length) {
-            tiersContainer.innerHTML = '<p class="text-muted text-center" style="padding:2rem;">Aucune donnée pour cette semaine.</p>';
+            container.innerHTML = '<p class="text-muted text-center" style="padding:2rem;">Aucune donnée pour cette semaine.</p>';
             return;
         }
 
-        /* Grouper par palier */
-        var tiers = {};
-        recompensesConfig.forEach(function (r) {
-            tiers[r.label] = { config: r, players: [] };
-        });
+        var html = '<table class="board-table">';
+        html += '<thead><tr>';
+        html += '<th class="board-table__th board-table__th--rank">#</th>';
+        html += '<th class="board-table__th board-table__th--name">Joueur</th>';
+        html += '<th class="board-table__th board-table__th--points">Points</th>';
+        html += '<th class="board-table__th board-table__th--tier">Palier</th>';
+        html += '<th class="board-table__th board-table__th--perco">Percepteurs</th>';
+        html += '<th class="board-table__th board-table__th--pepites">Pépites</th>';
+        html += '</tr></thead>';
+        html += '<tbody>';
 
         players.forEach(function (p) {
-            var reward = getReward(p.points);
-            var tierName = reward.label || 'Aucun';
-            if (tiers[tierName]) {
-                tiers[tierName].players.push(p);
-            }
+            var percoText = p.recompense_percepteurs > 0
+                ? '+' + p.recompense_percepteurs
+                : '0';
+            var pepitesText = p.recompense_pepites > 0
+                ? formatNumber(p.recompense_pepites)
+                : '—';
+
+            html += '<tr class="board-table__row">';
+            html += '<td class="board-table__td board-table__td--rank">' + p.rang + '</td>';
+            html += '<td class="board-table__td board-table__td--name">' + p.username + '</td>';
+            html += '<td class="board-table__td board-table__td--points">' + p.points + '</td>';
+            html += '<td class="board-table__td board-table__td--tier">' + p.tier_emoji + ' ' + p.tier_label + '</td>';
+            html += '<td class="board-table__td board-table__td--perco">' + percoText + '</td>';
+            html += '<td class="board-table__td board-table__td--pepites">' + pepitesText + '</td>';
+            html += '</tr>';
         });
 
-        /* Résumé */
-        var totalPepites = 0;
-        var totalPlayers = players.length;
-        var totalPoints = 0;
-        players.forEach(function (p) {
-            totalPepites += p.recompense_pepites || 0;
-            totalPoints += p.points;
-        });
-
-        if (summaryContainer) {
-            var weekLabel = 'Semaine en cours';
-            if (selection !== 'current') {
-                var sem = semaines.find(function (s) { return s.id === parseInt(selection); });
-                if (sem) weekLabel = formatWeekLabel(sem.date_debut, sem.date_fin);
-            }
-
-            summaryContainer.innerHTML = ''
-                + '<div class="board-summary__card">'
-                + '    <div class="board-summary__value">' + totalPlayers + '</div>'
-                + '    <div class="board-summary__label">Joueurs actifs</div>'
-                + '</div>'
-                + '<div class="board-summary__card">'
-                + '    <div class="board-summary__value">' + totalPoints + '</div>'
-                + '    <div class="board-summary__label">Points totaux</div>'
-                + '</div>'
-                + '<div class="board-summary__card">'
-                + '    <div class="board-summary__value">' + formatNumber(totalPepites) + '</div>'
-                + '    <div class="board-summary__label">Pépites distribuées</div>'
-                + '</div>';
-        }
-
-        /* Rendu des paliers */
-        var html = '';
-
-        recompensesConfig.forEach(function (config) {
-            var tier = tiers[config.label];
-            if (!tier || !tier.players.length) return;
-
-            html += '<div class="board-tier">';
-            html += '<div class="board-tier__header">';
-            html += '<span class="board-tier__emoji">' + config.emoji + '</span>';
-            html += '<span class="board-tier__title">' + config.label + '</span>';
-            html += '<span class="board-tier__reward">';
-            if (config.percepteurs_bonus > 0) {
-                html += '+' + config.percepteurs_bonus + ' percepteur' + (config.percepteurs_bonus > 1 ? 's' : '') + ' bonus';
-            }
-            if (config.pepites > 0) {
-                if (config.percepteurs_bonus > 0) html += ' ou ';
-                html += formatNumber(config.pepites) + ' pépites';
-            }
-            html += '</span>';
-            html += '<span class="board-tier__range">(' + config.seuil_min + (config.seuil_max ? ' à ' + config.seuil_max : '+') + ' pts)</span>';
-            html += '</div>';
-
-            html += '<div class="board-tier__players">';
-            tier.players.forEach(function (p) {
-                html += '<div class="board-player">';
-                html += '<span class="board-player__rank">' + p.rang + '.</span>';
-                html += '<span class="board-player__name">' + p.username + '</span>';
-                html += '<span class="board-player__points">' + p.points + ' pts</span>';
-                html += '</div>';
-            });
-            html += '</div>';
-            html += '</div>';
-        });
-
-        tiersContainer.innerHTML = html;
+        html += '</tbody></table>';
+        container.innerHTML = html;
     }
 
     /* === UTILS === */
     function formatNumber(n) {
         return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+
+    function formatWeekLabel(debut, fin) {
+        var d = new Date(debut);
+        var f = new Date(fin);
+        var mois = ['Janv', 'Févr', 'Mars', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
+        return d.getDate() + ' ' + mois[d.getMonth()] + ' — ' + f.getDate() + ' ' + mois[f.getMonth()] + ' ' + f.getFullYear();
+    }
+
+    function formatDate(date) {
+        var mois = ['janv', 'févr', 'mars', 'avr', 'mai', 'juin', 'juil', 'août', 'sept', 'oct', 'nov', 'déc'];
+        return date.getDate() + ' ' + mois[date.getMonth()];
     }
 
 })();

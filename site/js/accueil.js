@@ -276,28 +276,13 @@
 
             if (error) throw error;
 
-            var html = '<p class="text-muted mb-lg" style="font-size:0.8125rem;">Points gagnes (vert) / perdus (rouge) selon le nombre d\'allies et d\'ennemis. Les multiplicateurs d\'alliance s\'appliquent en victoire.</p>';
-            html += '<div class="bareme-grid"><table class="table">';
-            html += '<thead><tr><th>Allies \\ Ennemis</th>';
-            for (var e = 1; e <= 5; e++) html += '<th>' + e + ' enn.</th>';
-            html += '</tr></thead><tbody>';
+            var html = '<p class="text-muted mb-lg" style="font-size:0.8125rem;">Points gagnés (vert) / perdus (rouge) selon le nombre d\'alliés et d\'ennemis. Les multiplicateurs d\'alliance s\'appliquent en victoire.</p>';
 
-            for (var a = 1; a <= 5; a++) {
-                html += '<tr><th>' + a + ' allie' + (a > 1 ? 's' : '') + '</th>';
-                for (var ee = 1; ee <= 5; ee++) {
-                    var cell = (bareme || []).find(function (b) { return b.nb_allies === a && b.nb_ennemis === ee; });
-                    var pv = cell ? cell.points_victoire : 0;
-                    var pd = cell ? cell.points_defaite : 0;
-                    html += '<td>';
-                    html += '<span class="text-success">' + (pv > 0 ? '+' : '') + pv + '</span>';
-                    html += ' / ';
-                    html += '<span class="text-danger">' + pd + '</span>';
-                    html += '</td>';
-                }
-                html += '</tr>';
-            }
+            /* Tableau Attaque */
+            html += buildBaremeTable(bareme, 'attaque', 'Attaque');
 
-            html += '</tbody></table></div>';
+            /* Tableau Défense */
+            html += buildBaremeTable(bareme, 'defense', 'Défense');
 
             /* Alliances + multiplicateurs */
             var { data: alliances } = await window.REN.supabase.from('alliances').select('*').order('nom');
@@ -317,7 +302,35 @@
 
         } catch (err) {
             console.error('[REN] Erreur bareme:', err);
-            content.innerHTML = '<p class="text-muted">Erreur de chargement du bareme.</p>';
+            content.innerHTML = '<p class="text-muted">Erreur de chargement du barème.</p>';
         }
+    }
+
+    function buildBaremeTable(bareme, type, label) {
+        var filtered = (bareme || []).filter(function (b) { return b.type === type; });
+
+        var html = '<h3 style="font-family:var(--font-title);font-size:1rem;margin-top:var(--spacing-lg);margin-bottom:var(--spacing-sm);">' + label + '</h3>';
+        html += '<div class="bareme-grid"><table class="table">';
+        html += '<thead><tr><th>Alliés \\ Ennemis</th>';
+        for (var e = 1; e <= 5; e++) html += '<th>' + e + ' enn.</th>';
+        html += '</tr></thead><tbody>';
+
+        for (var a = 1; a <= 5; a++) {
+            html += '<tr><th>' + a + ' allié' + (a > 1 ? 's' : '') + '</th>';
+            for (var ee = 1; ee <= 5; ee++) {
+                var cell = filtered.find(function (b) { return b.nb_allies === a && b.nb_ennemis === ee; });
+                var pv = cell ? cell.points_victoire : 0;
+                var pd = cell ? cell.points_defaite : 0;
+                html += '<td>';
+                html += '<span class="text-success">' + (pv > 0 ? '+' : '') + pv + '</span>';
+                html += ' / ';
+                html += '<span class="text-danger">' + pd + '</span>';
+                html += '</td>';
+            }
+            html += '</tr>';
+        }
+
+        html += '</tbody></table></div>';
+        return html;
     }
 })();
