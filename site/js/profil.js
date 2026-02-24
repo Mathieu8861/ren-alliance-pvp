@@ -197,7 +197,7 @@
         var avatarInput = document.getElementById('profil-avatar-input');
         if (!avatarInput) return;
 
-        avatarInput.addEventListener('change', function () {
+        avatarInput.addEventListener('change', async function () {
             var file = avatarInput.files[0];
             if (!file) return;
 
@@ -210,16 +210,24 @@
                 return;
             }
 
-            selectedAvatarFile = file;
-
-            /* Preview dans le cadre */
-            var frameImg = document.querySelector('#profil-stats .avatar-frame__img');
+            /* Preview immediate dans le cadre */
+            var frameImg = document.querySelector('#profil-rank .avatar-frame__img');
             if (frameImg) {
                 var reader = new FileReader();
                 reader.onload = function (e) {
                     frameImg.innerHTML = '<img src="' + e.target.result + '" alt="Avatar">';
                 };
                 reader.readAsDataURL(file);
+            }
+
+            /* Upload immediat */
+            try {
+                window.REN.toast('Upload en cours...', 'info');
+                await uploadAvatar(window.REN.currentUser.id, file);
+                window.REN.toast('Photo de profil mise a jour !', 'success');
+            } catch (err) {
+                console.error('[REN] Erreur upload avatar:', err);
+                window.REN.toast('Erreur lors de l\'upload : ' + (err.message || err), 'error');
             }
         });
     }
@@ -237,12 +245,6 @@
 
             try {
                 var userId = window.REN.currentUser.id;
-
-                /* Upload avatar si change */
-                if (selectedAvatarFile) {
-                    await uploadAvatar(userId, selectedAvatarFile);
-                    selectedAvatarFile = null;
-                }
 
                 /* Update champs profil */
                 var updates = {
