@@ -18,6 +18,7 @@ CREATE TABLE public.profiles (
     disponibilite_pvp TEXT DEFAULT NULL,
     avatar_url TEXT DEFAULT NULL,
     dofusbook_url TEXT DEFAULT NULL,
+    prefere_pepites BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

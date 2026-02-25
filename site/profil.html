@@ -101,19 +101,9 @@
                                     <option value="Eau">Eau</option>
                                     <option value="Air">Air</option>
                                     <option value="Multi">Multi</option>
+                                    <option value="Do Pou">Do Pou</option>
+                                    <option value="Do Cri">Do Cri</option>
                                 </select>
-                            </div>
-                        </div>
-
-                        <!-- Do Pou + Do Cri -->
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label" for="profil-do-pou">Do Pou</label>
-                                <input type="number" id="profil-do-pou" class="form-input" placeholder="0" min="0">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label" for="profil-do-cri">Do Cri</label>
-                                <input type="number" id="profil-do-cri" class="form-input" placeholder="0" min="0">
                             </div>
                         </div>
 
@@ -158,9 +148,17 @@
                         <button type="submit" class="btn btn--secondary" id="password-save-btn">Modifier le mot de passe</button>
                     </form>
                 </section>
+
+                <!-- Infos Joueur (lecture seule) -->
+                <section class="profil-card">
+                    <h2 class="dashboard-section__title">Infos Joueur</h2>
+                    <div class="profil-info-list" id="profil-infos">
+                        <div class="loading"><div class="spinner"></div> Chargement...</div>
+                    </div>
+                </section>
             </div>
 
-            <!-- COLONNE DROITE : Stats + Infos joueur -->
+            <!-- COLONNE DROITE : Rang, Droits, Stats -->
             <div class="profil-layout__right">
                 <section class="profil-card">
                     <h2 class="dashboard-section__title">Mon Rang</h2>
@@ -170,17 +168,17 @@
                     </div>
                 </section>
 
-                <section class="profil-card profil-card--stats">
-                    <h2 class="dashboard-section__title">Mes Statistiques</h2>
-                    <div class="profil-stats-grid" id="profil-stats">
+                <!-- Droits de la semaine -->
+                <section class="profil-card profil-card--droits">
+                    <h2 class="dashboard-section__title">Droits de la semaine</h2>
+                    <div id="profil-droits">
                         <div class="loading"><div class="spinner"></div> Chargement...</div>
                     </div>
                 </section>
 
-                <!-- Infos rapides -->
-                <section class="profil-card">
-                    <h2 class="dashboard-section__title">Infos Joueur</h2>
-                    <div class="profil-info-list" id="profil-infos">
+                <section class="profil-card profil-card--stats">
+                    <h2 class="dashboard-section__title">Mes Statistiques</h2>
+                    <div class="profil-stats-grid" id="profil-stats">
                         <div class="loading"><div class="spinner"></div> Chargement...</div>
                     </div>
                 </section>

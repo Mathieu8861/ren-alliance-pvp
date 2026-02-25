@@ -7,6 +7,7 @@
 
     var recompensesConfig = [];
     var semaines = [];
+    var preferencesMap = {};
     var currentSelection = 'last';
 
     document.addEventListener('ren:ready', init);
@@ -14,6 +15,7 @@
     async function init() {
         if (!window.REN.supabase || !window.REN.currentProfile) return;
         await loadRecompensesConfig();
+        await loadPreferences();
         await loadSemaines();
         setupWeekSelect();
         renderBareme();
@@ -30,6 +32,22 @@
             recompensesConfig = data || [];
         } catch (err) {
             console.error('[REN-BOARD] Erreur config:', err);
+        }
+    }
+
+    /* === CHARGER PRÉFÉRENCES JOUEURS (percos vs pépites) === */
+    async function loadPreferences() {
+        try {
+            var { data } = await window.REN.supabase
+                .from('profiles')
+                .select('id, prefere_pepites')
+                .eq('is_validated', true);
+            preferencesMap = {};
+            (data || []).forEach(function (p) {
+                preferencesMap[p.id] = p.prefere_pepites || false;
+            });
+        } catch (err) {
+            console.error('[REN-BOARD] Erreur preferences:', err);
         }
     }
 
@@ -179,7 +197,8 @@
                     recompense_percepteurs: reward.percepteurs_bonus,
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
-                    pepites_jeu: pepitesMap[p.id] || 0
+                    pepites_jeu: pepitesMap[p.id] || 0,
+                    prefere_pepites: preferencesMap[p.id] || false
                 };
             });
         } catch (err) {
@@ -212,7 +231,8 @@
                     recompense_percepteurs: reward.percepteurs_bonus,
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
-                    pepites_jeu: pepitesMap[p.id] || 0
+                    pepites_jeu: pepitesMap[p.id] || 0,
+                    prefere_pepites: preferencesMap[p.id] || false
                 };
             });
         } catch (err) {
@@ -242,7 +262,8 @@
                     recompense_percepteurs: p.recompense_percepteurs,
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
-                    pepites_jeu: 0
+                    pepites_jeu: 0,
+                    prefere_pepites: preferencesMap[p.user_id] || false
                 };
             });
         } catch (err) {
@@ -277,20 +298,20 @@
         html += '<th class="board-table__th board-table__th--name">Joueur</th>';
         html += '<th class="board-table__th board-table__th--points">Points</th>';
         html += '<th class="board-table__th board-table__th--tier">Palier</th>';
-        html += '<th class="board-table__th board-table__th--reward">Récompense PVP</th>';
+        html += '<th class="board-table__th board-table__th--reward">R\u00e9compense PVP</th>';
         html += '<th class="board-table__th board-table__th--pepjeu">Pépites jeu</th>';
         html += '</tr></thead>';
         html += '<tbody>';
 
         players.forEach(function (p) {
-            /* Récompense PVP : "+X percos ou Y pépites" (le joueur choisit) */
+            /* Récompense PVP : affiche le choix du joueur (percos ou pépites) */
             var rewardPvp = '—';
-            if (p.recompense_percepteurs > 0 && p.recompense_pepites > 0) {
-                rewardPvp = '+' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '') + ' <span class="text-muted" style="font-size:0.75rem;">ou</span> ' + formatNumber(p.recompense_pepites) + ' pép';
+            if (p.prefere_pepites && p.recompense_pepites > 0) {
+                rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
             } else if (p.recompense_percepteurs > 0) {
-                rewardPvp = '+' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
+                rewardPvp = '\uD83C\uDFF0 +' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
             } else if (p.recompense_pepites > 0) {
-                rewardPvp = formatNumber(p.recompense_pepites) + ' pép';
+                rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
             }
 
             var pepJeuText = p.pepites_jeu > 0 ? formatNumber(p.pepites_jeu) : '—';

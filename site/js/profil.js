@@ -19,6 +19,7 @@
         setupMulesForm();
         setupPasswordForm();
         await loadStats();
+        await loadDroitsHebdo();
     }
 
     /* === PRE-REMPLIR LE FORMULAIRE === */
@@ -35,18 +36,6 @@
         var elementSelect = document.getElementById('profil-element');
         if (elementSelect && profile.element) {
             elementSelect.value = profile.element;
-        }
-
-        /* Do Pou */
-        var doPouInput = document.getElementById('profil-do-pou');
-        if (doPouInput && profile.do_pou != null) {
-            doPouInput.value = profile.do_pou;
-        }
-
-        /* Do Cri */
-        var doCriInput = document.getElementById('profil-do-cri');
-        if (doCriInput && profile.do_cri != null) {
-            doCriInput.value = profile.do_cri;
         }
 
         /* Dofusbook */
@@ -66,9 +55,7 @@
 
         html += buildInfoItem('Pseudo', profile.username || '--');
         html += buildInfoItem('Classe', profile.classe || 'Non définie');
-        html += buildInfoItem('Élément', profile.element || 'Non défini');
-        html += buildInfoItem('Do Pou', profile.do_pou != null ? profile.do_pou : '--');
-        html += buildInfoItem('Do Cri', profile.do_cri != null ? profile.do_cri : '--');
+        html += buildInfoItem('\u00c9l\u00e9ment', profile.element || 'Non d\u00e9fini');
         html += buildInfoItem('Statut', profile.is_validated ? '<span style="color:var(--color-success)">Valide</span>' : '<span style="color:var(--color-danger)">En attente</span>');
         html += buildInfoItem('Role', profile.is_admin ? '<span style="color:var(--color-accent-light)">Admin</span>' : 'Membre');
         html += buildInfoItem('Inscription', window.REN.formatDate(profile.created_at));
@@ -261,14 +248,9 @@
                 var userId = window.REN.currentUser.id;
 
                 /* Update champs profil */
-                var doPouVal = document.getElementById('profil-do-pou').value;
-                var doCriVal = document.getElementById('profil-do-cri').value;
-
                 var updates = {
                     classe: document.getElementById('profil-classe').value || null,
                     element: document.getElementById('profil-element').value || null,
-                    do_pou: doPouVal !== '' ? parseInt(doPouVal) : null,
-                    do_cri: doCriVal !== '' ? parseInt(doCriVal) : null,
                     dofusbook_url: document.getElementById('profil-dofusbook').value.trim() || null
                 };
 
@@ -560,6 +542,172 @@
 
         html += '</div>';
         return html;
+    }
+
+    /* === DROITS HEBDOMADAIRES === */
+    async function loadDroitsHebdo() {
+        var container = document.getElementById('profil-droits');
+        if (!container) return;
+
+        try {
+            var userId = window.REN.currentUser.id;
+            var profile = window.REN.currentProfile;
+            var preferePepites = profile.prefere_pepites || false;
+
+            /* Charger config + data semaine passee + semaine en cours en parallele */
+            var results = await Promise.all([
+                window.REN.supabase
+                    .from('recompenses_config')
+                    .select('*')
+                    .order('ordre', { ascending: true }),
+                window.REN.supabase
+                    .from('classement_pvp_semaine_passee')
+                    .select('id, username, points')
+                    .eq('id', userId),
+                window.REN.supabase
+                    .from('pepites_semaine_passee')
+                    .select('id, pepites')
+                    .eq('id', userId),
+                window.REN.supabase
+                    .from('classement_pvp_semaine')
+                    .select('id, username, points')
+                    .eq('id', userId),
+                window.REN.supabase
+                    .from('pepites_semaine_courante')
+                    .select('id, pepites')
+                    .eq('id', userId)
+            ]);
+
+            var recompensesConfig = results[0].data || [];
+
+            /* Semaine passee */
+            var pvpLast = (results[1].data && results[1].data[0]) ? results[1].data[0] : null;
+            var pepJeuLast = (results[2].data && results[2].data[0]) ? results[2].data[0].pepites : 0;
+            var pointsLast = pvpLast ? pvpLast.points : 0;
+            var rewardLast = findReward(recompensesConfig, pointsLast);
+
+            /* Semaine en cours */
+            var pvpCurrent = (results[3].data && results[3].data[0]) ? results[3].data[0] : null;
+            var pepJeuCurrent = (results[4].data && results[4].data[0]) ? results[4].data[0].pepites : 0;
+            var pointsCurrent = pvpCurrent ? pvpCurrent.points : 0;
+            var rewardCurrent = findReward(recompensesConfig, pointsCurrent);
+
+            /* Construire le HTML */
+            var html = '';
+
+            /* --- Semaine passee = droits actuels --- */
+            html += '<div class="profil-droits__section-label">Semaine pass\u00e9e \u2192 droits actuels</div>';
+            html += buildWeekBlock(pointsLast, rewardLast, pepJeuLast, preferePepites);
+
+            /* Separateur entre les 2 semaines */
+            html += '<div class="profil-droits__separator"></div>';
+
+            /* --- Semaine en cours = droits prochains --- */
+            html += '<div class="profil-droits__section-label profil-droits__section-label--muted">Semaine en cours \u2192 droits prochains</div>';
+            html += buildWeekBlock(pointsCurrent, rewardCurrent, pepJeuCurrent, preferePepites);
+
+            /* Separateur */
+            html += '<div class="profil-droits__separator"></div>';
+
+            /* Toggle preference */
+            html += '<div class="profil-droits__toggle-row">';
+            html += '<label class="profil-droits__toggle-label" for="profil-prefere-pepites">';
+            html += 'Je pr\u00e9f\u00e8re les p\u00e9pites au lieu des percos';
+            html += '</label>';
+            html += '<label class="toggle-switch">';
+            html += '<input type="checkbox" id="profil-prefere-pepites" ' + (preferePepites ? 'checked' : '') + '>';
+            html += '<span class="toggle-switch__slider"></span>';
+            html += '</label>';
+            html += '</div>';
+
+            container.innerHTML = html;
+            setupPreferenceToggle();
+
+        } catch (err) {
+            console.error('[REN] Erreur droits hebdo:', err);
+            container.innerHTML = '<p class="text-muted">Erreur de chargement.</p>';
+        }
+    }
+
+    function findReward(config, points) {
+        for (var i = 0; i < config.length; i++) {
+            var r = config[i];
+            var min = r.seuil_min;
+            var max = r.seuil_max !== null ? r.seuil_max : 999999;
+            if (points >= min && points <= max) return r;
+        }
+        return { pepites: 0, percepteurs_bonus: 0, label: 'Aucun', emoji: '' };
+    }
+
+    function buildWeekBlock(points, reward, pepJeu, preferePepites) {
+        var html = '';
+
+        /* Ligne recap : points + palier */
+        html += '<div class="profil-droits__summary">';
+        html += '<div class="profil-droits__stat">';
+        html += '<span class="profil-droits__stat-label">Points PVP</span>';
+        html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">' + points + '</span>';
+        html += '</div>';
+        html += '<div class="profil-droits__stat">';
+        html += '<span class="profil-droits__stat-label">Palier</span>';
+        html += '<span class="profil-droits__stat-value">' + reward.emoji + ' ' + reward.label + '</span>';
+        html += '</div>';
+        html += '</div>';
+
+        /* Recompense selon preference */
+        html += '<div class="profil-droits__reward">';
+        if (points > 0 && (reward.percepteurs_bonus > 0 || reward.pepites > 0)) {
+            if (preferePepites && reward.pepites > 0) {
+                html += '<span class="profil-droits__reward-icon">\uD83D\uDCB0</span>';
+                html += '<span class="profil-droits__reward-text">' + window.REN.formatNumber(reward.pepites) + ' p\u00e9pites PVP</span>';
+            } else if (reward.percepteurs_bonus > 0) {
+                html += '<span class="profil-droits__reward-icon">\uD83C\uDFF0</span>';
+                html += '<span class="profil-droits__reward-text">+' + reward.percepteurs_bonus + ' perco' + (reward.percepteurs_bonus > 1 ? 's' : '') + ' bonus</span>';
+            }
+        } else {
+            html += '<span class="profil-droits__reward-text text-muted">Aucune r\u00e9compense PVP</span>';
+        }
+        html += '</div>';
+
+        /* Pepites jeu */
+        html += '<div class="profil-droits__pepjeu">';
+        html += '<span class="profil-droits__pepjeu-label">P\u00e9pites jeu</span>';
+        html += '<span class="profil-droits__pepjeu-value">' + (pepJeu > 0 ? window.REN.formatNumber(pepJeu) : '0') + '</span>';
+        html += '</div>';
+
+        return html;
+    }
+
+    function setupPreferenceToggle() {
+        var toggle = document.getElementById('profil-prefere-pepites');
+        if (!toggle) return;
+
+        toggle.addEventListener('change', async function () {
+            var newValue = toggle.checked;
+
+            try {
+                var resp = await window.REN.supabase
+                    .from('profiles')
+                    .update({ prefere_pepites: newValue })
+                    .eq('id', window.REN.currentUser.id);
+
+                if (resp.error) throw resp.error;
+
+                window.REN.currentProfile.prefere_pepites = newValue;
+                window.REN.toast(
+                    newValue ? 'Pr\u00e9f\u00e9rence : p\u00e9pites' : 'Pr\u00e9f\u00e9rence : percos',
+                    'success'
+                );
+
+                /* Rafraichir le bloc pour refléter le choix */
+                await loadDroitsHebdo();
+
+            } catch (err) {
+                console.error('[REN] Erreur sauvegarde preference:', err);
+                toggle.checked = !newValue;
+                window.REN.toast('Erreur lors de la sauvegarde.', 'error');
+            }
+        });
     }
 
     /* === POPUP RECOMPENSE PALIER === */
