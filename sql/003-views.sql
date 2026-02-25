@@ -100,3 +100,45 @@ LEFT JOIN (
 ) s ON s.user_id = p.id
 WHERE p.is_validated = TRUE AND p.jetons > 0
 ORDER BY p.jetons DESC;
+
+-- === VIEW: Pépites gagnées au jeu — Semaine passée ===
+CREATE OR REPLACE VIEW public.pepites_semaine_passee AS
+SELECT
+    p.id, p.username,
+    COUNT(jh.id)::INTEGER AS tirages,
+    SUM(
+        CASE
+            WHEN jh.resultat = 'double' THEN jl.gain_pepites * 2
+            WHEN jh.resultat = 'perdu' THEN 0
+            ELSE jl.gain_pepites
+        END
+    )::INTEGER AS pepites
+FROM public.profiles p
+JOIN public.jeu_historique jh ON jh.user_id = p.id
+JOIN public.jeu_lots jl ON jl.id = jh.lot_id
+WHERE jh.created_at >= (date_trunc('week', NOW() AT TIME ZONE 'Europe/Paris') - INTERVAL '7 days')
+  AND jh.created_at < date_trunc('week', NOW() AT TIME ZONE 'Europe/Paris')
+GROUP BY p.id, p.username
+HAVING SUM(CASE WHEN jh.resultat = 'double' THEN jl.gain_pepites * 2
+                WHEN jh.resultat = 'perdu' THEN 0
+                ELSE jl.gain_pepites END) > 0
+ORDER BY pepites DESC;
+
+-- === VIEW: Pépites gagnées au jeu — Semaine en cours ===
+CREATE OR REPLACE VIEW public.pepites_semaine_courante AS
+SELECT
+    p.id, p.username,
+    COUNT(jh.id)::INTEGER AS tirages,
+    SUM(
+        CASE
+            WHEN jh.resultat = 'double' THEN jl.gain_pepites * 2
+            WHEN jh.resultat = 'perdu' THEN 0
+            ELSE jl.gain_pepites
+        END
+    )::INTEGER AS pepites
+FROM public.profiles p
+JOIN public.jeu_historique jh ON jh.user_id = p.id
+JOIN public.jeu_lots jl ON jl.id = jh.lot_id
+WHERE jh.created_at >= date_trunc('week', NOW() AT TIME ZONE 'Europe/Paris')
+GROUP BY p.id, p.username
+ORDER BY pepites DESC;

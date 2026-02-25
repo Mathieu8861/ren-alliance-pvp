@@ -685,52 +685,161 @@
     }
 
     /* === TAB: JEU HISTORIQUE === */
+    /* Helper : ISO du lundi courant (début de semaine) */
+    function getMondayISO() {
+        var now = new Date();
+        var day = now.getDay();
+        var diff = (day === 0 ? -6 : 1) - day;
+        var monday = new Date(now);
+        monday.setDate(now.getDate() + diff);
+        monday.setHours(0, 0, 0, 0);
+        return monday.toISOString();
+    }
+
     async function tabJeuHistorique(container) {
-        var { data: historique } = await window.REN.supabase
-            .from('jeu_historique')
-            .select('*, user:profiles(username), lot:jeu_lots(nom)')
-            .order('created_at', { ascending: false })
-            .limit(50);
+        var lundiISO = getMondayISO();
 
-        var html = '<div class="admin-panel__title">Historique des Tirages</div>';
+        /* Charger les 3 sources en parallèle */
+        var [lastWeekRes, currentWeekRes, historiqueRes] = await Promise.all([
+            window.REN.supabase.from('pepites_semaine_passee').select('id, username, tirages, pepites'),
+            window.REN.supabase.from('pepites_semaine_courante').select('id, username, tirages, pepites'),
+            window.REN.supabase.from('jeu_historique')
+                .select('*, user:profiles(username), lot:jeu_lots(nom)')
+                .gte('created_at', lundiISO)
+                .order('created_at', { ascending: false })
+        ]);
 
-        if (!historique || !historique.length) {
-            html += '<p class="text-muted text-center">Aucun tirage effectue.</p>';
-            container.innerHTML = html;
-            return;
+        var lastWeek = lastWeekRes.data || [];
+        var currentWeek = currentWeekRes.data || [];
+        var historique = historiqueRes.data || [];
+
+        var html = '<div class="admin-panel__title">Historique des Tirages & Distribution</div>';
+
+        /* ==============================
+           SECTION 1 : Distribution — Semaine passée
+           ============================== */
+        html += '<div style="background:var(--color-bg-tertiary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-lg);margin-bottom:var(--spacing-lg);">';
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">📋 Distribution pépites — Semaine passée</h3>';
+
+        if (lastWeek.length > 0) {
+            var totalPepites = 0;
+            html += '<div style="max-height:250px;overflow-y:auto;margin-bottom:var(--spacing-md);">';
+            html += '<table class="admin-table"><thead><tr><th>Joueur</th><th style="text-align:center;">Tirages</th><th style="text-align:right;">Pépites</th></tr></thead><tbody>';
+            lastWeek.forEach(function (p) {
+                totalPepites += p.pepites;
+                html += '<tr>';
+                html += '<td style="font-weight:600;">' + p.username + '</td>';
+                html += '<td style="text-align:center;">' + p.tirages + '</td>';
+                html += '<td style="text-align:right;color:var(--color-warning);font-weight:600;">' + p.pepites.toLocaleString('fr-FR') + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            html += '</div>';
+            html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--spacing-md);">';
+            html += '<span style="font-size:0.875rem;color:var(--color-text-secondary);">Total : <strong style="color:var(--color-warning);">' + totalPepites.toLocaleString('fr-FR') + ' pépites</strong> pour ' + lastWeek.length + ' joueur' + (lastWeek.length > 1 ? 's' : '') + '</span>';
+            html += '<button class="btn btn--primary" id="btn-distribute-purge">Distribuer & Purger</button>';
+            html += '</div>';
+        } else {
+            html += '<p class="text-muted" style="font-size:0.8125rem;">Aucune pépite à distribuer (semaine passée vide ou déjà purgée).</p>';
         }
-
-        html += '<div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm);">';
-        html += '<button class="btn btn--danger btn--small" id="btn-clear-all-hist">Tout supprimer (' + historique.length + ')</button>';
         html += '</div>';
 
-        html += '<div class="table-wrapper"><table class="table">';
-        html += '<thead><tr><th>Joueur</th><th>Lot</th><th>Resultat</th><th>Donne</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+        /* ==============================
+           SECTION 2 : Semaine en cours (info)
+           ============================== */
+        html += '<div style="background:var(--color-bg-tertiary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-lg);margin-bottom:var(--spacing-lg);">';
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">📊 Semaine en cours</h3>';
 
-        historique.forEach(function (h) {
-            html += '<tr>';
-            html += '<td>' + (h.user ? h.user.username : '?') + '</td>';
-            html += '<td>' + (h.lot ? h.lot.nom : '?') + '</td>';
-            html += '<td>' + h.resultat + '</td>';
-            html += '<td>' + (h.donne ? '<span class="text-success">Oui</span>' : '<span class="text-danger">Non</span>') + '</td>';
-            html += '<td>' + window.REN.formatDateFull(h.created_at) + '</td>';
-            html += '<td style="display:flex;gap:4px;flex-wrap:wrap;">';
-            if (!h.donne) {
-                html += '<button class="btn btn--primary btn--small admin-mark-given" data-id="' + h.id + '">Marquer donne</button>';
-            }
-            html += '<button class="btn btn--danger btn--small admin-delete-hist" data-id="' + h.id + '">Supprimer</button>';
-            html += '</td>';
-            html += '</tr>';
-        });
+        if (currentWeek.length > 0) {
+            var totalCurrent = 0;
+            html += '<div style="max-height:200px;overflow-y:auto;">';
+            html += '<table class="admin-table"><thead><tr><th>Joueur</th><th style="text-align:center;">Tirages</th><th style="text-align:right;">Pépites</th></tr></thead><tbody>';
+            currentWeek.forEach(function (p) {
+                totalCurrent += p.pepites;
+                html += '<tr>';
+                html += '<td>' + p.username + '</td>';
+                html += '<td style="text-align:center;">' + p.tirages + '</td>';
+                html += '<td style="text-align:right;color:var(--color-warning);">' + p.pepites.toLocaleString('fr-FR') + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            html += '</div>';
+            html += '<p class="text-muted" style="font-size:0.75rem;margin-top:var(--spacing-xs);">Total en cours : ' + totalCurrent.toLocaleString('fr-FR') + ' pépites — ' + currentWeek.length + ' joueur' + (currentWeek.length > 1 ? 's' : '') + '</p>';
+        } else {
+            html += '<p class="text-muted" style="font-size:0.8125rem;">Aucun tirage cette semaine.</p>';
+        }
+        html += '</div>';
 
-        html += '</tbody></table></div>';
+        /* ==============================
+           SECTION 3 : Historique détaillé (semaine en cours)
+           ============================== */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">📝 Historique détaillé (semaine en cours)</h3>';
+
+        if (historique.length > 0) {
+            html += '<div class="table-wrapper"><table class="table">';
+            html += '<thead><tr><th>Joueur</th><th>Lot</th><th>Résultat</th><th>Donné</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+
+            historique.forEach(function (h) {
+                html += '<tr>';
+                html += '<td>' + (h.user ? h.user.username : '?') + '</td>';
+                html += '<td>' + (h.lot ? h.lot.nom : '?') + '</td>';
+                html += '<td>' + h.resultat + '</td>';
+                html += '<td>' + (h.donne ? '<span class="text-success">Oui</span>' : '<span class="text-danger">Non</span>') + '</td>';
+                html += '<td>' + window.REN.formatDateFull(h.created_at) + '</td>';
+                html += '<td style="display:flex;gap:4px;flex-wrap:wrap;">';
+                if (!h.donne) {
+                    html += '<button class="btn btn--primary btn--small admin-mark-given" data-id="' + h.id + '">Marquer donné</button>';
+                }
+                html += '<button class="btn btn--danger btn--small admin-delete-hist" data-id="' + h.id + '">Supprimer</button>';
+                html += '</td>';
+                html += '</tr>';
+            });
+
+            html += '</tbody></table></div>';
+        } else {
+            html += '<p class="text-muted text-center">Aucun tirage cette semaine.</p>';
+        }
+
         container.innerHTML = html;
+
+        /* ==============================
+           EVENT LISTENERS
+           ============================== */
+
+        /* Distribuer & Purger */
+        var distBtn = document.getElementById('btn-distribute-purge');
+        if (distBtn) {
+            distBtn.addEventListener('click', async function () {
+                var totalP = lastWeek.reduce(function (s, p) { return s + p.pepites; }, 0);
+                var recap = lastWeek.map(function (p) { return p.username + ' : ' + p.pepites.toLocaleString('fr-FR'); }).join('\n');
+                if (!confirm('Distribuer & purger les pépites de la semaine passée ?\n\n' + recap + '\n\nTotal : ' + totalP.toLocaleString('fr-FR') + ' pépites\n\nLes tirages de la semaine passée seront supprimés.')) return;
+
+                distBtn.disabled = true;
+                distBtn.textContent = 'Purge en cours...';
+
+                try {
+                    var { error } = await window.REN.supabase
+                        .from('jeu_historique')
+                        .delete()
+                        .lt('created_at', lundiISO);
+
+                    if (error) throw error;
+                    window.REN.toast('Pépites distribuées, historique purgé !', 'success');
+                    loadTab('jeu-historique');
+                } catch (err) {
+                    console.error('[REN-ADMIN] Erreur purge:', err);
+                    window.REN.toast('Erreur : ' + err.message, 'error');
+                    distBtn.disabled = false;
+                    distBtn.textContent = 'Distribuer & Purger';
+                }
+            });
+        }
 
         /* Marquer comme donné */
         container.querySelectorAll('.admin-mark-given').forEach(function (btn) {
             btn.addEventListener('click', async function () {
                 await window.REN.supabase.from('jeu_historique').update({ donne: true }).eq('id', btn.dataset.id);
-                window.REN.toast('Lot marque comme donne.', 'success');
+                window.REN.toast('Lot marqué comme donné.', 'success');
                 loadTab('jeu-historique');
             });
         });
@@ -740,22 +849,10 @@
             btn.addEventListener('click', async function () {
                 if (!confirm('Supprimer ce tirage ?')) return;
                 await window.REN.supabase.from('jeu_historique').delete().eq('id', btn.dataset.id);
-                window.REN.toast('Tirage supprime.', 'success');
+                window.REN.toast('Tirage supprimé.', 'success');
                 loadTab('jeu-historique');
             });
         });
-
-        /* Tout supprimer */
-        var clearAllBtn = document.getElementById('btn-clear-all-hist');
-        if (clearAllBtn) {
-            clearAllBtn.addEventListener('click', async function () {
-                if (!confirm('Supprimer TOUT l\'historique des tirages ? Cette action est irreversible.')) return;
-                var ids = historique.map(function (h) { return h.id; });
-                await window.REN.supabase.from('jeu_historique').delete().in('id', ids);
-                window.REN.toast('Historique supprime.', 'success');
-                loadTab('jeu-historique');
-            });
-        }
     }
     /* === TAB: CADRES === */
     function tabCadres(content) {

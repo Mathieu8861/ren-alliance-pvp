@@ -158,10 +158,13 @@
     /* === SEMAINE PASSÉE === */
     async function loadLastWeek() {
         try {
-            var { data } = await window.REN.supabase
-                .from('classement_pvp_semaine_passee')
-                .select('id, username, points');
-            if (!data) return [];
+            var [pvpRes, pepitesRes] = await Promise.all([
+                window.REN.supabase.from('classement_pvp_semaine_passee').select('id, username, points'),
+                window.REN.supabase.from('pepites_semaine_passee').select('id, pepites')
+            ]);
+            var data = pvpRes.data || [];
+            var pepitesMap = {};
+            (pepitesRes.data || []).forEach(function (p) { pepitesMap[p.id] = p.pepites; });
 
             data.sort(function (a, b) { return b.points - a.points; });
 
@@ -175,7 +178,8 @@
                     recompense_pepites: reward.pepites,
                     recompense_percepteurs: reward.percepteurs_bonus,
                     tier_label: reward.label,
-                    tier_emoji: reward.emoji
+                    tier_emoji: reward.emoji,
+                    pepites_jeu: pepitesMap[p.id] || 0
                 };
             });
         } catch (err) {
@@ -187,12 +191,14 @@
     /* === SEMAINE EN COURS === */
     async function loadCurrentWeek() {
         try {
-            var { data } = await window.REN.supabase
-                .from('classement_pvp_semaine')
-                .select('id, username, points');
-            if (!data) return [];
+            var [pvpRes, pepitesRes] = await Promise.all([
+                window.REN.supabase.from('classement_pvp_semaine').select('id, username, points'),
+                window.REN.supabase.from('pepites_semaine_courante').select('id, pepites')
+            ]);
+            var data = pvpRes.data || [];
+            var pepitesMap = {};
+            (pepitesRes.data || []).forEach(function (p) { pepitesMap[p.id] = p.pepites; });
 
-            /* Trier par points décroissants */
             data.sort(function (a, b) { return b.points - a.points; });
 
             return data.map(function (p, i) {
@@ -205,7 +211,8 @@
                     recompense_pepites: reward.pepites,
                     recompense_percepteurs: reward.percepteurs_bonus,
                     tier_label: reward.label,
-                    tier_emoji: reward.emoji
+                    tier_emoji: reward.emoji,
+                    pepites_jeu: pepitesMap[p.id] || 0
                 };
             });
         } catch (err) {
@@ -234,7 +241,8 @@
                     recompense_pepites: p.recompense_pepites,
                     recompense_percepteurs: p.recompense_percepteurs,
                     tier_label: reward.label,
-                    tier_emoji: reward.emoji
+                    tier_emoji: reward.emoji,
+                    pepites_jeu: 0
                 };
             });
         } catch (err) {
@@ -269,26 +277,31 @@
         html += '<th class="board-table__th board-table__th--name">Joueur</th>';
         html += '<th class="board-table__th board-table__th--points">Points</th>';
         html += '<th class="board-table__th board-table__th--tier">Palier</th>';
-        html += '<th class="board-table__th board-table__th--perco">Percepteurs</th>';
-        html += '<th class="board-table__th board-table__th--pepites">Pépites</th>';
+        html += '<th class="board-table__th board-table__th--reward">Récompense PVP</th>';
+        html += '<th class="board-table__th board-table__th--pepjeu">Pépites jeu</th>';
         html += '</tr></thead>';
         html += '<tbody>';
 
         players.forEach(function (p) {
-            var percoText = p.recompense_percepteurs > 0
-                ? '+' + p.recompense_percepteurs
-                : '0';
-            var pepitesText = p.recompense_pepites > 0
-                ? formatNumber(p.recompense_pepites)
-                : '—';
+            /* Récompense PVP : "+X percos ou Y pépites" (le joueur choisit) */
+            var rewardPvp = '—';
+            if (p.recompense_percepteurs > 0 && p.recompense_pepites > 0) {
+                rewardPvp = '+' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '') + ' <span class="text-muted" style="font-size:0.75rem;">ou</span> ' + formatNumber(p.recompense_pepites) + ' pép';
+            } else if (p.recompense_percepteurs > 0) {
+                rewardPvp = '+' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
+            } else if (p.recompense_pepites > 0) {
+                rewardPvp = formatNumber(p.recompense_pepites) + ' pép';
+            }
+
+            var pepJeuText = p.pepites_jeu > 0 ? formatNumber(p.pepites_jeu) : '—';
 
             html += '<tr class="board-table__row">';
             html += '<td class="board-table__td board-table__td--rank">' + p.rang + '</td>';
             html += '<td class="board-table__td board-table__td--name">' + p.username + '</td>';
             html += '<td class="board-table__td board-table__td--points">' + p.points + '</td>';
             html += '<td class="board-table__td board-table__td--tier">' + p.tier_emoji + ' ' + p.tier_label + '</td>';
-            html += '<td class="board-table__td board-table__td--perco">' + percoText + '</td>';
-            html += '<td class="board-table__td board-table__td--pepites">' + pepitesText + '</td>';
+            html += '<td class="board-table__td board-table__td--reward">' + rewardPvp + '</td>';
+            html += '<td class="board-table__td board-table__td--pepjeu" style="color:var(--color-warning);">' + pepJeuText + '</td>';
             html += '</tr>';
         });
 
