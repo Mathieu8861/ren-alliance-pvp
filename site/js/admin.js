@@ -1049,10 +1049,16 @@
         /* Add tier */
         document.getElementById('btn-add-tier').addEventListener('click', async function () {
             var maxOrdre = rows.length ? Math.max.apply(null, rows.map(function (r) { return r.ordre; })) : 0;
-            await window.REN.supabase.from('recompenses_config').insert({
+            var { error } = await window.REN.supabase.from('recompenses_config').insert({
                 label: 'Nouveau', emoji: '🏅', seuil_min: 0, seuil_max: null,
                 percepteurs_bonus: 0, pepites: 0, ordre: maxOrdre + 1
             });
+            if (error) {
+                console.error('[REN-ADMIN] Erreur ajout palier:', error);
+                window.REN.toast('Erreur : ' + error.message, 'error');
+                return;
+            }
+            window.REN.toast('Palier ajouté !', 'success');
             loadTab('bareme-perco');
         });
 

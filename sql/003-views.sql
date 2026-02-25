@@ -18,6 +18,22 @@ GROUP BY p.id, p.username
 HAVING COALESCE(SUM(c.points_gagnes), 0) > 0
 ORDER BY points DESC;
 
+-- === VIEW: Classement PVP Semaine Passée ===
+CREATE OR REPLACE VIEW public.classement_pvp_semaine_passee AS
+SELECT
+    p.id,
+    p.username,
+    COALESCE(SUM(c.points_gagnes), 0)::INTEGER AS points
+FROM public.profiles p
+LEFT JOIN public.combat_participants cp ON cp.user_id = p.id
+LEFT JOIN public.combats c ON c.id = cp.combat_id
+    AND c.created_at >= (date_trunc('week', NOW() AT TIME ZONE 'Europe/Paris') - INTERVAL '7 days')
+    AND c.created_at < date_trunc('week', NOW() AT TIME ZONE 'Europe/Paris')
+WHERE p.is_validated = TRUE
+GROUP BY p.id, p.username
+HAVING COALESCE(SUM(c.points_gagnes), 0) > 0
+ORDER BY points DESC;
+
 -- === VIEW: Classement PVP Definitif ===
 CREATE OR REPLACE VIEW public.classement_pvp_definitif AS
 SELECT

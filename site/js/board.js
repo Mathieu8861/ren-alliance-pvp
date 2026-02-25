@@ -7,7 +7,7 @@
 
     var recompensesConfig = [];
     var semaines = [];
-    var currentSelection = 'current';
+    var currentSelection = 'last';
 
     document.addEventListener('ren:ready', init);
 
@@ -108,7 +108,22 @@
         var players = [];
         var periodText = '';
 
-        if (selection === 'current') {
+        if (selection === 'last') {
+            players = await loadLastWeek();
+            /* Calculer les dates de la semaine passée */
+            var now = new Date();
+            var day = now.getDay();
+            var diffToMonday = (day === 0 ? -6 : 1) - day;
+            var thisMonday = new Date(now);
+            thisMonday.setDate(now.getDate() + diffToMonday);
+            var lastMonday = new Date(thisMonday);
+            lastMonday.setDate(thisMonday.getDate() - 7);
+            var lastSunday = new Date(thisMonday);
+            lastSunday.setDate(thisMonday.getDate() - 1);
+            var thisSunday = new Date(thisMonday);
+            thisSunday.setDate(thisMonday.getDate() + 6);
+            periodText = 'Points du ' + formatDate(lastMonday) + ' au ' + formatDate(lastSunday) + ' — Droits du ' + formatDate(thisMonday) + ' au ' + formatDate(thisSunday);
+        } else if (selection === 'current') {
             players = await loadCurrentWeek();
             /* Calculer les dates de la semaine en cours */
             var now = new Date();
@@ -118,7 +133,11 @@
             monday.setDate(now.getDate() + diffToMonday);
             var sunday = new Date(monday);
             sunday.setDate(monday.getDate() + 6);
-            periodText = 'Points du ' + formatDate(monday) + ' au ' + formatDate(sunday) + ' — Droits de la semaine prochaine';
+            var nextMonday = new Date(sunday);
+            nextMonday.setDate(sunday.getDate() + 1);
+            var nextSunday = new Date(nextMonday);
+            nextSunday.setDate(nextMonday.getDate() + 6);
+            periodText = 'Points du ' + formatDate(monday) + ' au ' + formatDate(sunday) + ' — Droits du ' + formatDate(nextMonday) + ' au ' + formatDate(nextSunday);
         } else {
             var sem = semaines.find(function (s) { return s.id === parseInt(selection); });
             players = await loadArchivedWeek(parseInt(selection));
@@ -134,6 +153,35 @@
         if (periodEl) periodEl.textContent = periodText;
 
         renderTable(players, tableWrap);
+    }
+
+    /* === SEMAINE PASSÉE === */
+    async function loadLastWeek() {
+        try {
+            var { data } = await window.REN.supabase
+                .from('classement_pvp_semaine_passee')
+                .select('id, username, points');
+            if (!data) return [];
+
+            data.sort(function (a, b) { return b.points - a.points; });
+
+            return data.map(function (p, i) {
+                var reward = getReward(p.points);
+                return {
+                    user_id: p.id,
+                    username: p.username,
+                    points: p.points,
+                    rang: i + 1,
+                    recompense_pepites: reward.pepites,
+                    recompense_percepteurs: reward.percepteurs_bonus,
+                    tier_label: reward.label,
+                    tier_emoji: reward.emoji
+                };
+            });
+        } catch (err) {
+            console.error('[REN-BOARD] Erreur semaine passée:', err);
+            return [];
+        }
     }
 
     /* === SEMAINE EN COURS === */
