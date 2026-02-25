@@ -572,25 +572,46 @@
         }
         if (!lastTier) return;
 
+        var avatarUrl = window.REN.currentProfile.avatar_url || '';
+
         var overlay = document.createElement('div');
         overlay.className = 'tier-reward-overlay';
 
         var popup = document.createElement('div');
         popup.className = 'tier-reward-popup';
+        popup.setAttribute('data-tier', lastTier.key);
 
         popup.innerHTML =
+            /* Sparkles decoratifs */
+            '<div class="tier-reward-sparkles" id="tier-sparkles"></div>' +
+            /* Icone */
             '<div class="tier-reward-popup__icon">&#127942;</div>' +
-            '<h3 class="tier-reward-popup__title">Nouveau palier !</h3>' +
+            /* Titre */
+            '<h3 class="tier-reward-popup__title">Nouveau palier</h3>' +
+            /* Avatar avec rayons lumineux */
             '<div class="tier-reward-popup__frame">' +
-                window.REN.buildAvatarFrame(window.REN.currentProfile.avatar_url || '', lastTier.min, 80) +
+                '<div class="tier-reward-rays"></div>' +
+                window.REN.buildAvatarFrame(avatarUrl, lastTier.min, 90) +
             '</div>' +
-            '<span class="tier-badge tier-badge--' + lastTier.key + '">' + lastTier.name + '</span>' +
+            /* Badge palier */
+            '<div class="tier-reward-popup__tier-name">' +
+                '<span class="tier-badge tier-badge--' + lastTier.key + '">' + lastTier.name + '</span>' +
+            '</div>' +
+            /* Titre du palier */
             '<p class="tier-reward-popup__subtitle">' + lastTier.title + '</p>' +
-            '<div class="tier-reward-popup__reward">+' + result.totalBonus + ' jetons</div>' +
+            /* Separateur */
+            '<div class="tier-reward-popup__divider"></div>' +
+            /* Recompense */
+            '<div class="tier-reward-popup__reward">+' + result.totalBonus + '</div>' +
+            '<div class="tier-reward-popup__reward-label">jetons gagn\u00e9s</div>' +
+            /* Bouton */
             '<button class="btn btn--primary tier-reward-popup__btn">Merci !</button>';
 
         overlay.appendChild(popup);
         document.body.appendChild(overlay);
+
+        /* Generer les sparkles */
+        spawnSparkles(popup);
 
         /* Animation entree */
         requestAnimationFrame(function () {
@@ -600,14 +621,38 @@
         /* Fermeture */
         overlay.querySelector('.tier-reward-popup__btn').addEventListener('click', function () {
             overlay.classList.remove('tier-reward-overlay--visible');
-            setTimeout(function () { overlay.remove(); }, 300);
+            setTimeout(function () { overlay.remove(); }, 400);
         });
         overlay.addEventListener('click', function (e) {
             if (e.target === overlay) {
                 overlay.classList.remove('tier-reward-overlay--visible');
-                setTimeout(function () { overlay.remove(); }, 300);
+                setTimeout(function () { overlay.remove(); }, 400);
             }
         });
+    }
+
+    /* Generer des particules etincelles autour de la popup */
+    function spawnSparkles(popup) {
+        var container = popup.querySelector('#tier-sparkles');
+        if (!container) return;
+
+        var count = 20;
+        for (var i = 0; i < count; i++) {
+            (function (index) {
+                setTimeout(function () {
+                    var sparkle = document.createElement('div');
+                    sparkle.className = 'tier-reward-sparkle';
+                    sparkle.style.left = (Math.random() * 100) + '%';
+                    sparkle.style.top = (Math.random() * 100) + '%';
+                    sparkle.style.width = (2 + Math.random() * 4) + 'px';
+                    sparkle.style.height = sparkle.style.width;
+                    sparkle.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+                    sparkle.style.animationDelay = (Math.random() * 0.3) + 's';
+                    container.appendChild(sparkle);
+                    setTimeout(function () { sparkle.remove(); }, 3500);
+                }, index * 100);
+            })(i);
+        }
     }
 
 })();

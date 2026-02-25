@@ -3454,13 +3454,13 @@ table {
 .tier-reward-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.4s;
 }
 
 .tier-reward-overlay--visible {
@@ -3468,61 +3468,253 @@ table {
 }
 
 .tier-reward-popup {
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
+    --tier-color: #cd7f32;
+    --tier-color-rgb: 205, 127, 50;
+    position: relative;
+    background: linear-gradient(170deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+    border: 1px solid rgba(var(--tier-color-rgb), 0.4);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-xl) var(--spacing-xxl);
+    padding: 2rem 2.5rem 1.75rem;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--spacing-sm);
-    max-width: 320px;
-    transform: scale(0.9);
-    transition: transform 0.3s;
-    animation: popup-bounce 0.4s ease forwards;
+    gap: 0.5rem;
+    max-width: 340px;
+    width: 90vw;
+    animation: popup-entrance 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    box-shadow:
+        0 0 40px rgba(var(--tier-color-rgb), 0.15),
+        0 0 80px rgba(var(--tier-color-rgb), 0.08),
+        0 20px 60px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
 }
 
-@keyframes popup-bounce {
-    0% { transform: scale(0.8); }
-    60% { transform: scale(1.05); }
-    100% { transform: scale(1); }
+/* Shimmer border top */
+.tier-reward-popup::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(var(--tier-color-rgb), 0.8), transparent);
+    animation: shimmer-slide 2s ease-in-out infinite;
+}
+
+/* Radiant glow behind avatar */
+.tier-reward-popup::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200px;
+    height: 200px;
+    transform: translate(-50%, -60%);
+    background: radial-gradient(circle, rgba(var(--tier-color-rgb), 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes popup-entrance {
+    0% { transform: scale(0.6) translateY(30px); opacity: 0; }
+    50% { transform: scale(1.04) translateY(-3px); opacity: 1; }
+    100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes shimmer-slide {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+}
+
+/* Tier color overrides */
+.tier-reward-popup[data-tier="initie"] { --tier-color: #6c7077; --tier-color-rgb: 108, 112, 119; }
+.tier-reward-popup[data-tier="bronze"] { --tier-color: #cd7f32; --tier-color-rgb: 205, 127, 50; }
+.tier-reward-popup[data-tier="argent"] { --tier-color: #c0c0c0; --tier-color-rgb: 192, 192, 192; }
+.tier-reward-popup[data-tier="or"] { --tier-color: #ffd700; --tier-color-rgb: 255, 215, 0; }
+.tier-reward-popup[data-tier="saphir"] { --tier-color: #3b82f6; --tier-color-rgb: 59, 130, 246; }
+.tier-reward-popup[data-tier="emeraude"] { --tier-color: #10b981; --tier-color-rgb: 16, 185, 129; }
+.tier-reward-popup[data-tier="rubis"] { --tier-color: #ef4444; --tier-color-rgb: 239, 68, 68; }
+.tier-reward-popup[data-tier="diamant"] { --tier-color: #e0e7ff; --tier-color-rgb: 224, 231, 255; }
+.tier-reward-popup[data-tier="legendaire"] { --tier-color: #ffd700; --tier-color-rgb: 255, 215, 0; }
+
+/* Sparkles container */
+.tier-reward-sparkles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.tier-reward-sparkle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: rgba(var(--tier-color-rgb), 0.8);
+    animation: sparkle-float 2s ease-out forwards;
+}
+
+@keyframes sparkle-float {
+    0% { opacity: 0; transform: scale(0); }
+    20% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0) translateY(-40px); }
 }
 
 .tier-reward-popup__icon {
-    font-size: 2.5rem;
+    font-size: 2.75rem;
     line-height: 1;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 2px 8px rgba(var(--tier-color-rgb), 0.4));
+    animation: icon-drop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+@keyframes icon-drop {
+    0% { transform: translateY(-20px) scale(0.5); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
 }
 
 .tier-reward-popup__title {
     font-family: var(--font-title);
-    font-size: 1.25rem;
+    font-size: 1.125rem;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     margin: 0;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.4s ease 0.15s both;
 }
 
 .tier-reward-popup__frame {
-    margin: var(--spacing-sm) 0;
+    margin: 0.5rem 0;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.4s ease 0.25s both;
+}
+
+/* Light rays behind the avatar */
+.tier-reward-rays {
+    position: absolute;
+    width: 160px;
+    height: 160px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tier-reward-rays::before,
+.tier-reward-rays::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg, rgba(var(--tier-color-rgb), 0.06) 15deg,
+        transparent 30deg, rgba(var(--tier-color-rgb), 0.06) 45deg,
+        transparent 60deg, rgba(var(--tier-color-rgb), 0.06) 75deg,
+        transparent 90deg, rgba(var(--tier-color-rgb), 0.06) 105deg,
+        transparent 120deg, rgba(var(--tier-color-rgb), 0.06) 135deg,
+        transparent 150deg, rgba(var(--tier-color-rgb), 0.06) 165deg,
+        transparent 180deg, rgba(var(--tier-color-rgb), 0.06) 195deg,
+        transparent 210deg, rgba(var(--tier-color-rgb), 0.06) 225deg,
+        transparent 240deg, rgba(var(--tier-color-rgb), 0.06) 255deg,
+        transparent 270deg, rgba(var(--tier-color-rgb), 0.06) 285deg,
+        transparent 300deg, rgba(var(--tier-color-rgb), 0.06) 315deg,
+        transparent 330deg, rgba(var(--tier-color-rgb), 0.06) 345deg,
+        transparent 360deg
+    );
+    border-radius: 50%;
+    animation: rays-spin 12s linear infinite;
+}
+
+.tier-reward-rays::after {
+    animation-direction: reverse;
+    opacity: 0.6;
+}
+
+@keyframes rays-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tier-reward-popup__tier-name {
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.4s ease 0.35s both;
 }
 
 .tier-reward-popup__subtitle {
-    font-size: 0.875rem;
-    color: var(--color-text-secondary);
+    font-size: 0.9375rem;
+    font-family: var(--font-title);
+    color: var(--tier-color);
     margin: 0;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.4s ease 0.4s both;
+}
+
+.tier-reward-popup__divider {
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(var(--tier-color-rgb), 0.3), transparent);
+    margin: 0.25rem 0;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.4s ease 0.45s both;
 }
 
 .tier-reward-popup__reward {
     font-family: var(--font-title);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: #f0ad4e;
-    margin: var(--spacing-sm) 0;
+    margin: 0.25rem 0;
+    position: relative;
+    z-index: 1;
+    text-shadow: 0 0 20px rgba(240, 173, 78, 0.3);
+    animation: reward-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.55s both;
+}
+
+.tier-reward-popup__reward-label {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: -0.25rem;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.3s ease 0.65s both;
+}
+
+@keyframes reward-pop {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes fade-in-up {
+    0% { transform: translateY(10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
 }
 
 .tier-reward-popup__btn {
-    margin-top: var(--spacing-sm);
-    min-width: 120px;
+    margin-top: 0.75rem;
+    min-width: 140px;
+    position: relative;
+    z-index: 1;
+    animation: fade-in-up 0.3s ease 0.7s both;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.8125rem;
 }
 
 /* Infos joueur (liste) */
