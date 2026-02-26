@@ -309,7 +309,7 @@
             if (p.prefere_pepites && p.recompense_pepites > 0) {
                 rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
             } else if (p.recompense_percepteurs > 0) {
-                rewardPvp = '\uD83C\uDFF0 +' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
+                rewardPvp = '\uD83D\uDC34 +' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
             } else if (p.recompense_pepites > 0) {
                 rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
             }

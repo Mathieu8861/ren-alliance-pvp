@@ -60,17 +60,18 @@ GROUP BY alliance_nom
 ORDER BY total_kamas DESC;
 
 -- === VIEW: Classement Kamas Voles par Joueur ===
+-- Divise le butin par le nombre d'allies pour attribuer la part individuelle
 CREATE OR REPLACE VIEW public.classement_kamas_joueur AS
 SELECT
     p.id,
     p.username,
-    COALESCE(SUM(c.butin_kamas), 0)::BIGINT AS total_kamas
+    COALESCE(SUM(c.butin_kamas / GREATEST(c.nb_allies, 1)), 0)::BIGINT AS total_kamas
 FROM public.profiles p
 JOIN public.combat_participants cp ON cp.user_id = p.id
 JOIN public.combats c ON c.id = cp.combat_id
 WHERE c.type = 'attaque' AND c.resultat = 'victoire'
 GROUP BY p.id, p.username
-HAVING COALESCE(SUM(c.butin_kamas), 0) > 0
+HAVING COALESCE(SUM(c.butin_kamas / GREATEST(c.nb_allies, 1)), 0) > 0
 ORDER BY total_kamas DESC;
 
 -- === VIEW: Classement Jetons (avec stats tirages) ===

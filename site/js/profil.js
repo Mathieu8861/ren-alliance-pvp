@@ -661,7 +661,7 @@
                 html += '<span class="profil-droits__reward-icon">\uD83D\uDCB0</span>';
                 html += '<span class="profil-droits__reward-text">' + window.REN.formatNumber(reward.pepites) + ' p\u00e9pites PVP</span>';
             } else if (reward.percepteurs_bonus > 0) {
-                html += '<span class="profil-droits__reward-icon">\uD83C\uDFF0</span>';
+                html += '<span class="profil-droits__reward-icon">\uD83D\uDC34</span>';
                 html += '<span class="profil-droits__reward-text">+' + reward.percepteurs_bonus + ' perco' + (reward.percepteurs_bonus > 1 ? 's' : '') + ' bonus</span>';
             }
         } else {
