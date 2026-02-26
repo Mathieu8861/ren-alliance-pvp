@@ -2236,6 +2236,36 @@ table {
     animation: confetti-fall 2.5s ease-out forwards;
 }
 
+/* Icône inline pour pépites et percepteurs */
+.icon-inline {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    vertical-align: middle;
+    margin-right: 2px;
+}
+
+.icon-inline--perco {
+    width: 23px;
+    height: 23px;
+}
+
+.icon-inline--md {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-inline--md.icon-inline--perco {
+    width: 31px;
+    height: 31px;
+}
+
+.icon-inline--lg {
+    width: 54px;
+    height: 54px;
+}
+
 .pepite-rain {
     position: absolute;
     top: -40px;
@@ -3509,6 +3539,10 @@ table {
     font-size: 1rem;
     font-weight: 700;
     color: var(--color-success);
+}
+
+.profil-droits__reward-text--lg {
+    font-size: 1.5rem;
 }
 
 .profil-droits__pepjeu {

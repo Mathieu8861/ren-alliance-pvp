@@ -158,7 +158,7 @@ BEGIN
             COUNT(*) FILTER (WHERE c.type = 'attaque' AND c.resultat = 'victoire') AS win_atk,
             COUNT(*) FILTER (WHERE c.type = 'defense') AS total_def,
             COUNT(*) FILTER (WHERE c.type = 'defense' AND c.resultat = 'victoire') AS win_def,
-            SUM(CASE WHEN c.type = 'attaque' AND c.resultat = 'victoire' THEN c.butin_kamas ELSE 0 END) AS kamas,
+            SUM(CASE WHEN c.type = 'attaque' AND c.resultat = 'victoire' THEN c.butin_kamas / GREATEST(c.nb_allies, 1) ELSE 0 END) AS kamas,
             SUM(c.points_gagnes) AS points
         FROM public.combat_participants cp
         JOIN public.combats c ON c.id = cp.combat_id

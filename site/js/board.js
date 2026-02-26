@@ -94,9 +94,9 @@
         recompensesConfig.forEach(function (r) {
             var range = r.seuil_min + (r.seuil_max ? '-' + r.seuil_max : '+') + ' pts';
             var perco = r.percepteurs_bonus > 0
-                ? r.percepteurs_bonus + ' perco' + (r.percepteurs_bonus > 1 ? 's' : '')
-                : '0 perco';
-            var pepites = r.pepites > 0 ? formatNumber(r.pepites) + ' pep' : '';
+                ? r.percepteurs_bonus + ' <img class="icon-inline icon-inline--perco" src="assets/images/percepteur.png" alt="">'
+                : '0 <img class="icon-inline icon-inline--perco" src="assets/images/percepteur.png" alt="">';
+            var pepites = r.pepites > 0 ? formatNumber(r.pepites) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">' : '';
 
             html += '<div class="board-bareme__item">';
             html += '<span class="board-bareme__emoji">' + r.emoji + '</span>';
@@ -307,14 +307,14 @@
             /* Récompense PVP : affiche le choix du joueur (percos ou pépites) */
             var rewardPvp = '—';
             if (p.prefere_pepites && p.recompense_pepites > 0) {
-                rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
+                rewardPvp = formatNumber(p.recompense_pepites) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">';
             } else if (p.recompense_percepteurs > 0) {
-                rewardPvp = '\uD83D\uDC34 +' + p.recompense_percepteurs + ' perco' + (p.recompense_percepteurs > 1 ? 's' : '');
+                rewardPvp = '+' + p.recompense_percepteurs + ' <img class="icon-inline icon-inline--perco" src="assets/images/percepteur.png" alt="">';
             } else if (p.recompense_pepites > 0) {
-                rewardPvp = '\uD83D\uDCB0 ' + formatNumber(p.recompense_pepites) + ' p\u00e9p';
+                rewardPvp = formatNumber(p.recompense_pepites) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">';
             }
 
-            var pepJeuText = p.pepites_jeu > 0 ? formatNumber(p.pepites_jeu) : '—';
+            var pepJeuText = p.pepites_jeu > 0 ? formatNumber(p.pepites_jeu) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">' : '—';
 
             html += '<tr class="board-table__row">';
             html += '<td class="board-table__td board-table__td--rank">' + p.rang + '</td>';

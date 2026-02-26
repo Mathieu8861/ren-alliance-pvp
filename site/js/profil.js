@@ -658,11 +658,9 @@
         html += '<div class="profil-droits__reward">';
         if (points > 0 && (reward.percepteurs_bonus > 0 || reward.pepites > 0)) {
             if (preferePepites && reward.pepites > 0) {
-                html += '<span class="profil-droits__reward-icon">\uD83D\uDCB0</span>';
-                html += '<span class="profil-droits__reward-text">' + window.REN.formatNumber(reward.pepites) + ' p\u00e9pites PVP</span>';
+                html += '<span class="profil-droits__reward-text">' + window.REN.formatNumber(reward.pepites) + ' <img class="icon-inline icon-inline--md" src="assets/images/pepite.png" alt=""></span>';
             } else if (reward.percepteurs_bonus > 0) {
-                html += '<span class="profil-droits__reward-icon">\uD83D\uDC34</span>';
-                html += '<span class="profil-droits__reward-text">+' + reward.percepteurs_bonus + ' perco' + (reward.percepteurs_bonus > 1 ? 's' : '') + ' bonus</span>';
+                html += '<span class="profil-droits__reward-text profil-droits__reward-text--lg">+' + reward.percepteurs_bonus + ' <img class="icon-inline icon-inline--lg" src="assets/images/percepteur.png" alt=""></span>';
             }
         } else {
             html += '<span class="profil-droits__reward-text text-muted">Aucune r\u00e9compense PVP</span>';
@@ -672,7 +670,7 @@
         /* Pepites jeu */
         html += '<div class="profil-droits__pepjeu">';
         html += '<span class="profil-droits__pepjeu-label">P\u00e9pites jeu</span>';
-        html += '<span class="profil-droits__pepjeu-value">' + (pepJeu > 0 ? window.REN.formatNumber(pepJeu) : '0') + '</span>';
+        html += '<span class="profil-droits__pepjeu-value">' + (pepJeu > 0 ? window.REN.formatNumber(pepJeu) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">' : '0') + '</span>';
         html += '</div>';
 
         return html;
