@@ -51,6 +51,8 @@
         var grid = document.getElementById('history-grid');
         if (!grid) return;
 
+        var isAdmin = window.REN.currentProfile && window.REN.currentProfile.is_admin;
+
         var filtered = allCombats.filter(function (c) {
             switch (currentFilter) {
                 case 'attaques': return c.type === 'attaque';
@@ -81,6 +83,9 @@
             }
 
             html += '<div class="history-card">';
+            if (isAdmin) {
+                html += '<button class="history-card__delete" data-id="' + c.id + '" title="Supprimer ce combat">&times;</button>';
+            }
             html += '<div class="history-card__header">' + badgeType + ' ' + badgeResult + '</div>';
             html += '<div class="history-card__body">';
             html += '<strong>' + auteur + '</strong> vs <strong>' + alliance + '</strong><br>';
@@ -99,5 +104,34 @@
         });
 
         grid.innerHTML = html;
+
+        /* Admin : listeners suppression */
+        if (isAdmin) {
+            grid.querySelectorAll('.history-card__delete').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var combatId = parseInt(btn.dataset.id);
+                    deleteCombat(combatId);
+                });
+            });
+        }
+    }
+
+    /* === SUPPRESSION COMBAT (admin) === */
+    async function deleteCombat(combatId) {
+        if (!confirm('Supprimer ce combat ? Les stats seront recalculees.')) return;
+        try {
+            var { error } = await window.REN.supabase
+                .from('combats')
+                .delete()
+                .eq('id', combatId);
+            if (error) throw error;
+
+            allCombats = allCombats.filter(function (c) { return c.id !== combatId; });
+            renderCombats();
+            window.REN.toast('Combat supprime.', 'success');
+        } catch (err) {
+            console.error('[REN] Erreur suppression combat:', err);
+            window.REN.toast('Erreur : ' + err.message, 'error');
+        }
     }
 })();

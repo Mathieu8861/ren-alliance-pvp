@@ -209,7 +209,7 @@
 
     /* === ACHETER DES JETONS (KAMAS) === */
     function setupKamasForm() {
-        var input = document.getElementById('kamas-input');
+        var input = document.getElementById('jetons-input');
         var result = document.getElementById('kamas-result');
         var btn = document.getElementById('btn-demande-kamas');
 
@@ -217,24 +217,19 @@
 
         /* Calcul live */
         input.addEventListener('input', function () {
-            var kamas = parseInt(input.value) || 0;
-            var jetons = Math.floor(kamas / tauxKamas);
-            result.textContent = jetons + ' jeton' + (jetons > 1 ? 's' : '');
+            var jetons = parseInt(input.value) || 0;
+            var kamas = jetons * tauxKamas;
+            result.textContent = kamas > 0 ? window.REN.formatKamas(kamas) + ' kamas' : '0 kamas';
         });
 
         /* Envoi demande */
         btn.addEventListener('click', function () {
             if (btn.disabled) return;
-            var kamas = parseInt(input.value) || 0;
-            var jetons = Math.floor(kamas / tauxKamas);
-
-            if (kamas <= 0) {
-                window.REN.toast('Entre un montant de kamas valide.', 'error');
-                return;
-            }
+            var jetons = parseInt(input.value) || 0;
+            var kamas = jetons * tauxKamas;
 
             if (jetons < 1) {
-                window.REN.toast('Le montant doit \u00eatre d\'au moins ' + window.REN.formatKamas(tauxKamas) + ' kamas (= 1 jeton).', 'error');
+                window.REN.toast('Entre un nombre de jetons valide (minimum 1).', 'error');
                 return;
             }
 
@@ -252,7 +247,7 @@
         if (!overlay) return;
 
         /* Remplir la modale */
-        montantEl.innerHTML = window.REN.formatKamas(kamas) + ' kamas = ' + jetons + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons">';
+        montantEl.innerHTML = jetons + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> = ' + window.REN.formatKamas(kamas) + ' kamas';
 
         overlay.classList.add('active');
 
@@ -285,7 +280,7 @@
 
                 overlay.classList.remove('active');
                 input.value = '';
-                result.textContent = '0 jetons';
+                result.textContent = '0 kamas';
                 window.REN.toast('Demande envoy\u00e9e ! Un admin validera apr\u00e8s l\'\u00e9change en jeu.', 'success');
                 await loadMesDemandes();
 

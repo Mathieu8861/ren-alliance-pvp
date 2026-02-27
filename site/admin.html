@@ -14,34 +14,58 @@
 
     <!-- ADMIN HEADER -->
     <header class="admin-header">
-        <h1>PANNEAU ADMIN</h1>
+        <div class="admin-header__left">
+            <button class="admin-sidebar__toggle" id="admin-sidebar-toggle" aria-label="Menu admin">
+                <span></span><span></span><span></span>
+            </button>
+            <h1>PANNEAU ADMIN</h1>
+        </div>
         <div class="admin-header__actions">
             <a href="index.html" class="btn btn--secondary btn--small">Retour au site</a>
             <button class="btn btn--danger btn--small" id="btn-logout">Deconnexion</button>
         </div>
     </header>
 
-    <main class="main">
-        <div class="admin-tabs" id="admin-tabs">
-            <button class="admin-tabs__btn active" data-tab="validation">Validation</button>
-            <button class="admin-tabs__btn" data-tab="utilisateurs">Utilisateurs</button>
-            <button class="admin-tabs__btn" data-tab="alliances">Alliances</button>
-            <button class="admin-tabs__btn" data-tab="bareme">Bareme</button>
-            <button class="admin-tabs__btn" data-tab="builds">Builds</button>
-            <button class="admin-tabs__btn" data-tab="jeu-config">Jeu Config</button>
-            <button class="admin-tabs__btn" data-tab="jeu-lots">Jeu Lots</button>
-            <button class="admin-tabs__btn" data-tab="jeu-historique">Jeu Historique</button>
-            <button class="admin-tabs__btn" data-tab="cadres">Cadres</button>
-            <button class="admin-tabs__btn" data-tab="board">Board Hebdo</button>
-            <button class="admin-tabs__btn" data-tab="bareme-perco">Barème Perco</button>
-            <button class="admin-tabs__btn" data-tab="boutique">Boutique</button>
-            <button class="admin-tabs__btn" data-tab="demandes-kamas">Demandes Kamas</button>
-        </div>
+    <div class="admin-layout">
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" id="admin-sidebar">
+            <div class="admin-sidebar__group">
+                <div class="admin-sidebar__group-title">Gestion</div>
+                <button class="admin-sidebar__btn active" data-tab="validation">Validation</button>
+                <button class="admin-sidebar__btn" data-tab="utilisateurs">Utilisateurs</button>
+                <button class="admin-sidebar__btn" data-tab="alliances">Alliances</button>
+            </div>
+            <div class="admin-sidebar__group">
+                <div class="admin-sidebar__group-title">PVP & Points</div>
+                <button class="admin-sidebar__btn" data-tab="bareme">Bareme</button>
+                <button class="admin-sidebar__btn" data-tab="builds">Builds</button>
+                <button class="admin-sidebar__btn" data-tab="cadres">Cadres</button>
+            </div>
+            <div class="admin-sidebar__group">
+                <div class="admin-sidebar__group-title">Jeux & Lots</div>
+                <button class="admin-sidebar__btn" data-tab="jeu-config">Configuration</button>
+                <button class="admin-sidebar__btn" data-tab="jeu-lots">Lots</button>
+                <button class="admin-sidebar__btn" data-tab="jeu-historique">Historique</button>
+            </div>
+            <div class="admin-sidebar__group">
+                <div class="admin-sidebar__group-title">Economie</div>
+                <button class="admin-sidebar__btn" data-tab="board">Board Hebdo</button>
+                <button class="admin-sidebar__btn" data-tab="bareme-perco">Bareme Perco</button>
+                <button class="admin-sidebar__btn" data-tab="boutique">Boutique</button>
+                <button class="admin-sidebar__btn" data-tab="demandes-kamas">Demandes Kamas</button>
+            </div>
+        </aside>
 
-        <div class="admin-panel" id="admin-content">
-            <div class="loading"><div class="spinner"></div> Chargement...</div>
+        <!-- OVERLAY MOBILE -->
+        <div class="admin-sidebar__overlay" id="admin-sidebar-overlay"></div>
+
+        <!-- CONTENT -->
+        <div class="admin-content">
+            <div class="admin-panel" id="admin-content">
+                <div class="loading"><div class="spinner"></div> Chargement...</div>
+            </div>
         </div>
-    </main>
+    </div>
 
     <footer class="footer">
         <div class="footer__left">
