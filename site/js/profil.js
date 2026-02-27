@@ -920,12 +920,24 @@
                 html += '<span class="profil-achats-item__detail">' + window.REN.formatKamas(d.montant_kamas) + ' kamas \u00b7 ' + date + '</span>';
                 html += '</div>';
                 html += '<span class="' + badgeClass + '">' + badgeText + '</span>';
+                if (!isEnAttente) {
+                    html += '<button class="profil-achats-item__dismiss" data-id="' + d.id + '" title="Supprimer">&times;</button>';
+                }
                 html += '</div>';
             });
             html += '</div>';
 
             container.innerHTML = html;
             updateBoutiqueEmpty();
+
+            /* Listeners suppression */
+            container.querySelectorAll('.profil-achats-item__dismiss').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    var demandeId = parseInt(btn.dataset.id);
+                    await window.REN.supabase.from('boutique_demandes_kamas').delete().eq('id', demandeId);
+                    await loadDemandesKamas();
+                });
+            });
 
         } catch (err) {
             console.error('[REN-PROFIL] Erreur demandes kamas:', err);

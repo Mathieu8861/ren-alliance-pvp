@@ -222,8 +222,8 @@
             result.textContent = jetons + ' jeton' + (jetons > 1 ? 's' : '');
         });
 
-        /* Envoi demande (anti double-clic) */
-        btn.addEventListener('click', async function () {
+        /* Envoi demande */
+        btn.addEventListener('click', function () {
             if (btn.disabled) return;
             var kamas = parseInt(input.value) || 0;
             var jetons = Math.floor(kamas / tauxKamas);
@@ -238,9 +238,41 @@
                 return;
             }
 
-            if (!confirm('Envoyer une demande pour ' + window.REN.formatKamas(kamas) + ' kamas (' + jetons + ' jetons) ?\n\nUn admin devra valider apr\u00e8s avoir re\u00e7u vos kamas en jeu.')) return;
+            showModalKamas(kamas, jetons, input, result);
+        });
+    }
 
-            btn.disabled = true;
+    /* === MODALE CONFIRMATION DEMANDE KAMAS === */
+    function showModalKamas(kamas, jetons, input, result) {
+        var overlay = document.getElementById('modal-kamas');
+        var montantEl = document.getElementById('modal-kamas-montant');
+        var btnConfirm = document.getElementById('modal-kamas-confirm');
+        var btnCancel = document.getElementById('modal-kamas-cancel');
+
+        if (!overlay) return;
+
+        /* Remplir la modale */
+        montantEl.innerHTML = window.REN.formatKamas(kamas) + ' kamas = ' + jetons + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons">';
+
+        overlay.classList.add('active');
+
+        /* Cleanup anciens listeners */
+        var newConfirm = btnConfirm.cloneNode(true);
+        var newCancel = btnCancel.cloneNode(true);
+        btnConfirm.replaceWith(newConfirm);
+        btnCancel.replaceWith(newCancel);
+
+        newCancel.addEventListener('click', function () {
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('active');
+        });
+
+        newConfirm.addEventListener('click', async function () {
+            newConfirm.disabled = true;
+            newConfirm.textContent = 'Envoi en cours...';
             try {
                 var { error } = await window.REN.supabase
                     .from('boutique_demandes_kamas')
@@ -251,6 +283,7 @@
                     });
                 if (error) throw error;
 
+                overlay.classList.remove('active');
                 input.value = '';
                 result.textContent = '0 jetons';
                 window.REN.toast('Demande envoy\u00e9e ! Un admin validera apr\u00e8s l\'\u00e9change en jeu.', 'success');
@@ -260,7 +293,8 @@
                 console.error('[REN-BOUTIQUE] Erreur demande kamas:', err);
                 window.REN.toast('Erreur : ' + err.message, 'error');
             } finally {
-                btn.disabled = false;
+                newConfirm.disabled = false;
+                newConfirm.textContent = 'Confirmer la demande';
             }
         });
     }
