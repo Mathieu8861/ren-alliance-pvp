@@ -61,6 +61,8 @@
                 case 'cadres': tabCadres(content); break;
                 case 'board': await tabBoard(content); break;
                 case 'bareme-perco': await tabBaremePerco(content); break;
+                case 'boutique': await tabBoutique(content); break;
+                case 'demandes-kamas': await tabDemandesKamas(content); break;
                 default: content.innerHTML = '<p class="text-muted">Onglet inconnu.</p>';
             }
         } catch (err) {
@@ -1165,6 +1167,395 @@
                 if (!confirm('Supprimer ce palier ?')) return;
                 await window.REN.supabase.from('recompenses_config').delete().eq('id', parseInt(btn.getAttribute('data-id')));
                 loadTab('bareme-perco');
+            });
+        });
+    }
+
+    /* ============================================ */
+    /* ONGLET BOUTIQUE (gestion catalogue + achats) */
+    /* ============================================ */
+    async function tabBoutique(container) {
+        var results = await Promise.all([
+            window.REN.supabase.from('boutique_items').select('*').order('created_at', { ascending: false }),
+            window.REN.supabase.from('boutique_achats').select('*, profiles:user_id(username), boutique_items:item_id(image_url)').eq('statut', 'en_attente').order('created_at', { ascending: false }),
+            window.REN.supabase.from('boutique_config').select('*').single(),
+            window.REN.supabase.from('boutique_achats').select('*, profiles:user_id(username), boutique_items:item_id(image_url)').eq('statut', 'distribue').order('created_at', { ascending: false }).limit(30)
+        ]);
+
+        var items = (results[0].data || []);
+        var achatsEnAttente = (results[1].data || []);
+        var config = results[2].data;
+        var achatsDistribues = (results[3].data || []);
+        var taux = config ? config.taux_kamas_par_jeton : 5000;
+
+        var html = '<div class="admin-panel__title">Gestion Boutique</div>';
+
+        /* Config taux */
+        html += '<div style="margin-bottom:var(--spacing-lg);padding:var(--spacing-md);background:var(--color-bg-primary);border-radius:var(--radius-md);border:1px solid var(--color-border);">';
+        html += '<label class="form-label">Taux kamas par jeton</label>';
+        html += '<div style="display:flex;gap:var(--spacing-sm);align-items:center;">';
+        html += '<input class="form-input" id="boutique-taux" type="number" value="' + taux + '" min="1" style="width:120px;">';
+        html += '<span class="text-muted">kamas = 1 jeton</span>';
+        html += '<button class="btn btn--primary btn--small" id="btn-save-taux">Sauver</button>';
+        html += '</div></div>';
+
+        /* Achats à distribuer */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);color:var(--color-warning);">Achats \u00e0 distribuer (' + achatsEnAttente.length + ')</h3>';
+        if (achatsEnAttente.length > 0) {
+            html += '<div class="admin-achats-list" style="margin-bottom:var(--spacing-lg);">';
+            achatsEnAttente.forEach(function (a) {
+                var username = a.profiles ? a.profiles.username : 'Inconnu';
+                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
+                var date = new Date(a.created_at).toLocaleDateString('fr-FR');
+                html += '<div class="admin-achat-card">';
+                html += '<div class="admin-achat-card__image">';
+                if (imageUrl) {
+                    html += '<img src="' + imageUrl + '" alt="' + a.item_nom + '">';
+                } else {
+                    html += '<span class="text-muted" style="font-size:1.25rem;">?</span>';
+                }
+                html += '</div>';
+                html += '<div class="admin-achat-card__info">';
+                html += '<span class="admin-achat-card__article">' + a.item_nom + '</span>';
+                html += '<span class="admin-achat-card__detail">Achet\u00e9 par <strong>' + username + '</strong> \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
+                html += '</div>';
+                html += '<button class="btn btn--primary btn--small btn-distribue" data-id="' + a.id + '">Distribu\u00e9 \u2713</button>';
+                html += '</div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<p class="text-muted" style="margin-bottom:var(--spacing-lg);">Aucun achat en attente.</p>';
+        }
+
+        /* Historique distribués */
+        html += '<details style="margin-bottom:var(--spacing-lg);">';
+        html += '<summary style="cursor:pointer;font-family:var(--font-title);font-size:0.9rem;font-weight:700;color:var(--color-text-muted);margin-bottom:var(--spacing-sm);">Historique distribu\u00e9s (' + achatsDistribues.length + ')</summary>';
+        if (achatsDistribues.length > 0) {
+            html += '<div class="admin-achats-list" style="margin-top:var(--spacing-sm);">';
+            achatsDistribues.forEach(function (a) {
+                var username = a.profiles ? a.profiles.username : 'Inconnu';
+                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
+                var date = new Date(a.created_at).toLocaleDateString('fr-FR');
+                html += '<div class="admin-achat-card" style="opacity:0.7;">';
+                html += '<div class="admin-achat-card__image">';
+                if (imageUrl) {
+                    html += '<img src="' + imageUrl + '" alt="' + a.item_nom + '" loading="lazy">';
+                } else {
+                    html += '<span class="text-muted" style="font-size:1.25rem;">?</span>';
+                }
+                html += '</div>';
+                html += '<div class="admin-achat-card__info">';
+                html += '<span class="admin-achat-card__article">' + a.item_nom + '</span>';
+                html += '<span class="admin-achat-card__detail">' + username + ' \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
+                html += '</div>';
+                html += '<span class="badge-statut badge-statut--distribue">Distribu\u00e9</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        } else {
+            html += '<p class="text-muted" style="margin-top:var(--spacing-sm);">Aucun achat distribu\u00e9.</p>';
+        }
+        html += '</details>';
+
+        /* Ajouter un article */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Ajouter un article</h3>';
+        html += '<div style="display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-bottom:var(--spacing-sm);align-items:flex-end;">';
+        html += '<div><label class="form-label">Nom</label><input class="form-input" id="add-item-nom" placeholder="Bl\u00e9 x100" style="width:160px;"></div>';
+        html += '<div><label class="form-label">Description</label><input class="form-input" id="add-item-desc" placeholder="Optionnel" style="width:180px;"></div>';
+        html += '<div><label class="form-label">Prix (jetons)</label><input class="form-input" id="add-item-prix" type="number" min="1" value="1" style="width:90px;"></div>';
+        html += '<div><label class="form-label">Stock (-1=illimit\u00e9)</label><input class="form-input" id="add-item-stock" type="number" value="-1" style="width:90px;"></div>';
+        html += '</div>';
+
+        /* Image : ID DofusDB */
+        html += '<div style="display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-bottom:var(--spacing-sm);align-items:flex-end;">';
+        html += '<div><label class="form-label">Image - ID DofusDB</label><div style="display:flex;gap:var(--spacing-xs);align-items:center;"><input class="form-input" id="add-item-dofusdb" placeholder="Ex: 28203" style="width:120px;"><button class="btn btn--secondary btn--small" id="btn-preview-dofusdb" type="button">Importer</button></div>';
+        html += '<span class="text-muted" style="font-size:0.75rem;">dofusdb.fr/database/object/<strong>28203</strong></span></div>';
+        html += '</div>';
+        html += '<div id="add-item-preview" style="margin-bottom:var(--spacing-sm);"></div>';
+
+        html += '<button class="btn btn--primary" id="btn-add-item" style="margin-bottom:var(--spacing-lg);">Ajouter</button>';
+
+        /* Liste des articles */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Catalogue (' + items.length + ' articles)</h3>';
+        if (items.length > 0) {
+            html += '<table class="admin-table"><thead><tr><th>Image</th><th>Nom</th><th>Description</th><th>Prix</th><th>Stock</th><th>Actif</th><th>Actions</th></tr></thead><tbody>';
+            items.forEach(function (item) {
+                var imgHtml = item.image_url
+                    ? '<img src="' + item.image_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">'
+                    : '<span class="text-muted">-</span>';
+
+                html += '<tr data-row-id="' + item.id + '">';
+                html += '<td>' + imgHtml + '</td>';
+
+                /* Display */
+                html += '<td class="cell-display" data-field="nom">' + item.nom + '</td>';
+                html += '<td class="cell-display" data-field="desc">' + (item.description || '') + '</td>';
+                html += '<td class="cell-display" data-field="prix">' + item.prix_jetons + '</td>';
+                html += '<td class="cell-display" data-field="stock">' + (item.stock === -1 ? '\u221e' : item.stock) + '</td>';
+                html += '<td class="cell-display" data-field="actif">' + (item.actif ? '\u2705' : '\u274c') + '</td>';
+
+                /* Edit */
+                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-nom" value="' + item.nom + '" style="width:120px;"></td>';
+                html += '<td class="cell-edit" data-field="desc" style="display:none;"><input class="form-input edit-desc" value="' + (item.description || '') + '" style="width:140px;"></td>';
+                html += '<td class="cell-edit" data-field="prix" style="display:none;"><input class="form-input edit-prix" type="number" value="' + item.prix_jetons + '" style="width:70px;"></td>';
+                html += '<td class="cell-edit" data-field="stock" style="display:none;"><input class="form-input edit-stock" type="number" value="' + item.stock + '" style="width:70px;"></td>';
+                html += '<td class="cell-edit" data-field="actif" style="display:none;"><select class="form-select edit-actif"><option value="true"' + (item.actif ? ' selected' : '') + '>Oui</option><option value="false"' + (!item.actif ? ' selected' : '') + '>Non</option></select></td>';
+
+                /* Actions */
+                html += '<td>';
+                html += '<span class="actions-display">';
+                html += '<button class="table__action admin-edit-item" data-id="' + item.id + '">Modifier</button> ';
+                html += '<button class="table__action table__action--danger admin-delete-item" data-id="' + item.id + '">Supprimer</button>';
+                html += '</span>';
+                html += '<span class="actions-edit" style="display:none;">';
+                html += '<button class="btn btn--primary btn--small admin-save-item" data-id="' + item.id + '">Sauver</button> ';
+                html += '<button class="btn btn--secondary btn--small admin-cancel-item" data-id="' + item.id + '">Annuler</button>';
+                html += '</span>';
+                html += '</td>';
+
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        } else {
+            html += '<p class="text-muted">Aucun article.</p>';
+        }
+
+        container.innerHTML = html;
+
+        /* === EVENT LISTENERS === */
+
+        /* Save taux */
+        document.getElementById('btn-save-taux').addEventListener('click', async function () {
+            var newTaux = parseInt(document.getElementById('boutique-taux').value) || 5000;
+            if (config && config.id) {
+                await window.REN.supabase.from('boutique_config').update({ taux_kamas_par_jeton: newTaux }).eq('id', config.id);
+            }
+            window.REN.toast('Taux sauvegard\u00e9 !', 'success');
+        });
+
+        /* Distribué */
+        container.querySelectorAll('.btn-distribue').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Confirmer que la ressource a \u00e9t\u00e9 donn\u00e9e en jeu ?')) return;
+                await window.REN.supabase.from('boutique_achats').update({ statut: 'distribue' }).eq('id', parseInt(btn.dataset.id));
+                window.REN.toast('Achat marqu\u00e9 comme distribu\u00e9.', 'success');
+                loadTab('boutique');
+            });
+        });
+
+        /* Fonction utilitaire : fetch DofusDB */
+        async function fetchDofusDB(dofusId) {
+            var resp = await fetch('https://api.dofusdb.fr/items/' + encodeURIComponent(dofusId));
+            if (!resp.ok) throw new Error('ID introuvable');
+            return await resp.json();
+        }
+
+        /* Importer depuis DofusDB */
+        document.getElementById('btn-preview-dofusdb').addEventListener('click', async function () {
+            var dofusId = document.getElementById('add-item-dofusdb').value.trim();
+            var previewDiv = document.getElementById('add-item-preview');
+            if (!dofusId) { window.REN.toast('Entre un ID DofusDB.', 'error'); return; }
+            previewDiv.innerHTML = '<span class="text-muted">Chargement...</span>';
+            try {
+                var data = await fetchDofusDB(dofusId);
+                if (data.img) {
+                    previewDiv.innerHTML = '<div style="display:flex;align-items:center;gap:var(--spacing-sm);"><img src="' + data.img + '" style="width:64px;height:64px;object-fit:contain;border-radius:4px;border:1px solid var(--color-border);background:var(--color-bg-primary);"><span style="color:var(--color-success);">\u2713 Import\u00e9</span></div>';
+                    previewDiv.dataset.resolvedUrl = data.img;
+                    /* Auto-remplir le nom si vide */
+                    if (data.name && data.name.fr && !document.getElementById('add-item-nom').value.trim()) {
+                        document.getElementById('add-item-nom').value = data.name.fr;
+                    }
+                } else {
+                    previewDiv.innerHTML = '<span class="text-muted">Pas d\'image trouv\u00e9e.</span>';
+                }
+            } catch (err) {
+                previewDiv.innerHTML = '<span style="color:var(--color-danger);">Erreur : ' + err.message + '</span>';
+            }
+        });
+
+        /* Add item */
+        document.getElementById('btn-add-item').addEventListener('click', async function () {
+            var nom = document.getElementById('add-item-nom').value.trim();
+            var desc = document.getElementById('add-item-desc').value.trim();
+            var prix = parseInt(document.getElementById('add-item-prix').value) || 1;
+            var stock = parseInt(document.getElementById('add-item-stock').value);
+            var previewDiv = document.getElementById('add-item-preview');
+            var dofusId = document.getElementById('add-item-dofusdb').value.trim();
+            var imageUrl = previewDiv.dataset.resolvedUrl || '';
+
+            /* Si ID DofusDB rempli mais pas encore importé, le faire auto */
+            if (!imageUrl && dofusId) {
+                try {
+                    var data = await fetchDofusDB(dofusId);
+                    if (data.img) imageUrl = data.img;
+                    if (data.name && data.name.fr && !nom) nom = data.name.fr;
+                } catch (err) {
+                    window.REN.toast('Erreur DofusDB : ' + err.message, 'error');
+                    return;
+                }
+            }
+
+            if (!nom) { window.REN.toast('Le nom est obligatoire.', 'error'); return; }
+
+            await window.REN.supabase.from('boutique_items').insert({
+                nom: nom,
+                description: desc,
+                prix_jetons: prix,
+                stock: isNaN(stock) ? -1 : stock,
+                image_url: imageUrl,
+                actif: true
+            });
+            window.REN.toast('Article ajout\u00e9 !', 'success');
+            loadTab('boutique');
+        });
+
+        /* Edit item */
+        container.querySelectorAll('.admin-edit-item').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var row = container.querySelector('tr[data-row-id="' + btn.dataset.id + '"]');
+                if (!row) return;
+                row.querySelectorAll('.cell-display').forEach(function (td) { td.style.display = 'none'; });
+                row.querySelectorAll('.cell-edit').forEach(function (td) { td.style.display = ''; });
+                row.querySelector('.actions-display').style.display = 'none';
+                row.querySelector('.actions-edit').style.display = '';
+            });
+        });
+
+        /* Save item */
+        container.querySelectorAll('.admin-save-item').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var row = container.querySelector('tr[data-row-id="' + btn.dataset.id + '"]');
+                if (!row) return;
+                var updateData = {
+                    nom: row.querySelector('.edit-nom').value.trim(),
+                    description: row.querySelector('.edit-desc').value.trim(),
+                    prix_jetons: parseInt(row.querySelector('.edit-prix').value) || 1,
+                    stock: parseInt(row.querySelector('.edit-stock').value),
+                    actif: row.querySelector('.edit-actif').value === 'true'
+                };
+                if (!updateData.nom) { window.REN.toast('Le nom est obligatoire.', 'error'); return; }
+                await window.REN.supabase.from('boutique_items').update(updateData).eq('id', parseInt(btn.dataset.id));
+                window.REN.toast('Article modifi\u00e9 !', 'success');
+                loadTab('boutique');
+            });
+        });
+
+        /* Cancel edit */
+        container.querySelectorAll('.admin-cancel-item').forEach(function (btn) {
+            btn.addEventListener('click', function () { loadTab('boutique'); });
+        });
+
+        /* Delete item */
+        container.querySelectorAll('.admin-delete-item').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Supprimer cet article ?')) return;
+                await window.REN.supabase.from('boutique_items').delete().eq('id', parseInt(btn.dataset.id));
+                window.REN.toast('Article supprim\u00e9.', 'info');
+                loadTab('boutique');
+            });
+        });
+    }
+
+    /* ============================================ */
+    /* ONGLET DEMANDES KAMAS                        */
+    /* ============================================ */
+    async function tabDemandesKamas(container) {
+        var { data, error } = await window.REN.supabase
+            .from('boutique_demandes_kamas')
+            .select('*, profiles:user_id(username)')
+            .order('created_at', { ascending: false });
+
+        var demandes = data || [];
+        var enAttente = demandes.filter(function (d) { return d.statut === 'en_attente'; });
+        var traitees = demandes.filter(function (d) { return d.statut !== 'en_attente'; });
+
+        var html = '<div class="admin-panel__title">Demandes d\'achat de jetons (kamas)</div>';
+
+        /* En attente */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);color:var(--color-warning);">En attente (' + enAttente.length + ')</h3>';
+        if (enAttente.length > 0) {
+            html += '<table class="admin-table" style="margin-bottom:var(--spacing-lg);"><thead><tr><th>Joueur</th><th>Kamas</th><th>Jetons demand\u00e9s</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
+            enAttente.forEach(function (d) {
+                var username = d.profiles ? d.profiles.username : 'Inconnu';
+                var date = new Date(d.created_at).toLocaleDateString('fr-FR');
+                html += '<tr>';
+                html += '<td><strong>' + username + '</strong></td>';
+                html += '<td>' + window.REN.formatKamas(d.montant_kamas) + '</td>';
+                html += '<td style="color:var(--color-warning);font-weight:700;">' + d.jetons_demandes + ' jetons</td>';
+                html += '<td>' + date + '</td>';
+                html += '<td>';
+                html += '<button class="btn btn--primary btn--small btn-valider-kamas" data-id="' + d.id + '" data-user="' + d.user_id + '" data-jetons="' + d.jetons_demandes + '">Valider \u2713</button> ';
+                html += '<button class="btn btn--secondary btn--small btn-refuser-kamas" data-id="' + d.id + '">Refuser</button>';
+                html += '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        } else {
+            html += '<p class="text-muted" style="margin-bottom:var(--spacing-lg);">Aucune demande en attente.</p>';
+        }
+
+        /* Historique traité */
+        if (traitees.length > 0) {
+            html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Historique</h3>';
+            html += '<table class="admin-table"><thead><tr><th>Joueur</th><th>Kamas</th><th>Jetons</th><th>Date</th><th>Statut</th></tr></thead><tbody>';
+            traitees.forEach(function (d) {
+                var username = d.profiles ? d.profiles.username : 'Inconnu';
+                var date = new Date(d.created_at).toLocaleDateString('fr-FR');
+                var badgeClass = 'badge-statut badge-statut--' + d.statut;
+                var statutText = d.statut === 'valide' ? 'Valid\u00e9' : 'Refus\u00e9';
+                html += '<tr>';
+                html += '<td>' + username + '</td>';
+                html += '<td>' + window.REN.formatKamas(d.montant_kamas) + '</td>';
+                html += '<td>' + d.jetons_demandes + '</td>';
+                html += '<td>' + date + '</td>';
+                html += '<td><span class="' + badgeClass + '">' + statutText + '</span></td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        container.innerHTML = html;
+
+        /* === EVENT LISTENERS === */
+
+        /* Valider : crédite les jetons au joueur */
+        container.querySelectorAll('.btn-valider-kamas').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var demandeId = parseInt(btn.dataset.id);
+                var targetUserId = btn.dataset.user;
+                var jetons = parseInt(btn.dataset.jetons);
+
+                if (!confirm('Valider cette demande et cr\u00e9diter ' + jetons + ' jetons au joueur ?')) return;
+
+                try {
+                    /* Créditer les jetons */
+                    await window.REN.supabase.rpc('ajouter_jetons', {
+                        p_user_id: targetUserId,
+                        p_points: jetons
+                    });
+
+                    /* Marquer comme validé */
+                    await window.REN.supabase.from('boutique_demandes_kamas')
+                        .update({ statut: 'valide' })
+                        .eq('id', demandeId);
+
+                    window.REN.toast('Demande valid\u00e9e, ' + jetons + ' jetons cr\u00e9dit\u00e9s !', 'success');
+                    loadTab('demandes-kamas');
+                } catch (err) {
+                    window.REN.toast('Erreur : ' + err.message, 'error');
+                }
+            });
+        });
+
+        /* Refuser */
+        container.querySelectorAll('.btn-refuser-kamas').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Refuser cette demande ?')) return;
+                await window.REN.supabase.from('boutique_demandes_kamas')
+                    .update({ statut: 'refuse' })
+                    .eq('id', parseInt(btn.dataset.id));
+                window.REN.toast('Demande refus\u00e9e.', 'info');
+                loadTab('demandes-kamas');
             });
         });
     }

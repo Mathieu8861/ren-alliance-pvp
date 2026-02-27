@@ -20,6 +20,7 @@
         setupPasswordForm();
         await loadStats();
         await loadDroitsHebdo();
+        await loadAchatsBoutique();
     }
 
     /* === PRE-REMPLIR LE FORMULAIRE === */
@@ -448,8 +449,9 @@
             html += '<h3 class="profil-stats-section__title">Recompenses</h3>';
             html += '<div class="profil-stats-row">';
             html += buildStatItem('Points', myStats.total_points || 0, 'accent');
+            html += buildStatItem('Jetons', (myStats.jetons || 0) + ' <img class="icon-inline" src="assets/images/jeton.png" alt="">');
             html += buildStatItem('Kamas', window.REN.formatKamas(myStats.total_kamas || 0), 'warning');
-            html += buildStatItem('Jetons', myStats.jetons || 0);
+            html += buildStatItem('Winrate', winrateGlobal + '%', winrateGlobal >= 50 ? 'success' : 'danger');
             html += '</div>';
             html += '</div>';
 
@@ -642,7 +644,7 @@
     function buildWeekBlock(points, reward, pepJeu, preferePepites) {
         var html = '';
 
-        /* Ligne recap : points + palier */
+        /* Ligne 1 : points + palier */
         html += '<div class="profil-droits__summary">';
         html += '<div class="profil-droits__stat">';
         html += '<span class="profil-droits__stat-label">Points PVP</span>';
@@ -654,23 +656,33 @@
         html += '</div>';
         html += '</div>';
 
-        /* Recompense selon preference */
-        html += '<div class="profil-droits__reward">';
-        if (points > 0 && (reward.percepteurs_bonus > 0 || reward.pepites > 0)) {
-            if (preferePepites && reward.pepites > 0) {
-                html += '<span class="profil-droits__reward-text">' + window.REN.formatNumber(reward.pepites) + ' <img class="icon-inline icon-inline--md" src="assets/images/pepite.png" alt=""></span>';
-            } else if (reward.percepteurs_bonus > 0) {
-                html += '<span class="profil-droits__reward-text profil-droits__reward-text--lg">+' + reward.percepteurs_bonus + ' <img class="icon-inline icon-inline--lg" src="assets/images/percepteur.png" alt=""></span>';
-            }
+        /* Ligne 2 : récompense choisie + pépites jeu */
+        html += '<div class="profil-droits__summary">';
+
+        /* Bloc récompense PVP (selon préférence) */
+        html += '<div class="profil-droits__stat">';
+        if (points > 0 && preferePepites && reward.pepites > 0) {
+            html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
+            html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">' + window.REN.formatNumber(reward.pepites) + ' <img class="icon-inline" src="assets/images/pepite.png" alt=""></span>';
+        } else if (points > 0 && reward.percepteurs_bonus > 0) {
+            html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
+            html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">+' + reward.percepteurs_bonus + ' <img class="icon-inline icon-inline--lg" src="assets/images/percepteur.png" alt=""></span>';
         } else {
-            html += '<span class="profil-droits__reward-text text-muted">Aucune r\u00e9compense PVP</span>';
+            html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
+            html += '<span class="profil-droits__stat-value text-muted">Aucune</span>';
         }
         html += '</div>';
 
-        /* Pepites jeu */
-        html += '<div class="profil-droits__pepjeu">';
-        html += '<span class="profil-droits__pepjeu-label">P\u00e9pites jeu</span>';
-        html += '<span class="profil-droits__pepjeu-value">' + (pepJeu > 0 ? window.REN.formatNumber(pepJeu) + ' <img class="icon-inline" src="assets/images/pepite.png" alt="">' : '0') + '</span>';
+        /* Bloc pépites jeu (semaine) */
+        html += '<div class="profil-droits__stat">';
+        html += '<span class="profil-droits__stat-label">P\u00e9pites jeu</span>';
+        if (pepJeu > 0) {
+            html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">' + window.REN.formatNumber(pepJeu) + ' <img class="icon-inline" src="assets/images/pepite.png" alt=""></span>';
+        } else {
+            html += '<span class="profil-droits__stat-value text-muted">0</span>';
+        }
+        html += '</div>';
+
         html += '</div>';
 
         return html;
@@ -798,6 +810,72 @@
                     setTimeout(function () { sparkle.remove(); }, 3500);
                 }, index * 100);
             })(i);
+        }
+    }
+
+    /* ============================================ */
+    /* ACHATS BOUTIQUE                              */
+    /* ============================================ */
+    async function loadAchatsBoutique() {
+        var section = document.getElementById('profil-achats-section');
+        var container = document.getElementById('profil-achats-boutique');
+        if (!section || !container) return;
+
+        try {
+            var { data: achats, error } = await window.REN.supabase
+                .from('boutique_achats')
+                .select('*, boutique_items:item_id(image_url)')
+                .eq('user_id', window.REN.currentProfile.id)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            if (!achats || achats.length === 0) return;
+
+            /* Afficher la section */
+            section.style.display = '';
+
+            var html = '<div class="profil-achats-list">';
+            achats.forEach(function (a) {
+                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
+                var date = new Date(a.created_at).toLocaleDateString('fr-FR');
+                var isEnAttente = a.statut === 'en_attente';
+                var badgeClass = 'badge-statut badge-statut--' + a.statut;
+                var badgeText = isEnAttente ? 'En attente' : 'Distribu\u00e9';
+
+                html += '<div class="profil-achats-item' + (isEnAttente ? ' profil-achats-item--pending' : '') + '">';
+                html += '<div class="profil-achats-item__image">';
+                if (imageUrl) {
+                    html += '<img src="' + imageUrl + '" alt="' + a.item_nom + '">';
+                } else {
+                    html += '<span class="text-muted">?</span>';
+                }
+                html += '</div>';
+                html += '<div class="profil-achats-item__info">';
+                html += '<span class="profil-achats-item__nom">' + a.item_nom + '</span>';
+                html += '<span class="profil-achats-item__detail">' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
+                html += '</div>';
+                html += '<span class="' + badgeClass + '">' + badgeText + '</span>';
+                if (!isEnAttente) {
+                    html += '<button class="profil-achats-item__dismiss" data-id="' + a.id + '" title="Supprimer">&times;</button>';
+                }
+                html += '</div>';
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+
+            /* Listeners suppression */
+            container.querySelectorAll('.profil-achats-item__dismiss').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    var achatId = parseInt(btn.dataset.id);
+                    await window.REN.supabase.from('boutique_achats').delete().eq('id', achatId);
+                    await loadAchatsBoutique();
+                });
+            });
+
+        } catch (err) {
+            console.error('[REN-PROFIL] Erreur achats boutique:', err);
         }
     }
 

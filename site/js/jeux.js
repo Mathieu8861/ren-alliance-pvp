@@ -93,7 +93,7 @@
                 html += '<span class="ranking-item__name">' + player.username + '</span>';
                 html += '</div>';
                 html += '<div class="ranking-item__right">';
-                html += '<span class="ranking-item__value" style="color:var(--color-warning);">' + (player.jetons || 0) + ' jetons</span>';
+                html += '<span class="ranking-item__value" style="color:var(--color-warning);">' + (player.jetons || 0) + ' jetons <img class="icon-inline" src="assets/images/jeton.png" alt=""></span>';
                 if (tirages > 0) {
                     html += '<span class="ranking-item__sub">' + tirages + ' tirage' + (tirages > 1 ? 's' : '') + ' · +' + pepites + ' <img class="icon-inline" src="assets/images/pepite.png" alt=""></span>';
                 }

@@ -30,6 +30,7 @@
                     <a href="builds.html" class="nav__link" data-page="builds">Builds</a>
                     <a href="liens.html" class="nav__link" data-page="liens">Liens</a>
                     <a href="board.html" class="nav__link" data-page="board">Board</a>
+                    <a href="boutique.html" class="nav__link" data-page="boutique">Boutique</a>
                     <a href="jeux.html" class="nav__link nav__link--cta" data-page="jeux">Jeux</a>
                 </div>
             </nav>
@@ -176,14 +177,22 @@
                     </div>
                 </section>
 
-                <section class="profil-card profil-card--stats">
-                    <h2 class="dashboard-section__title">Mes Statistiques</h2>
-                    <div class="profil-stats-grid" id="profil-stats">
-                        <div class="loading"><div class="spinner"></div> Chargement...</div>
-                    </div>
+                <!-- Achats boutique -->
+                <section class="profil-card" id="profil-achats-section" style="display:none;">
+                    <h2 class="dashboard-section__title">Mes achats boutique</h2>
+                    <div id="profil-achats-boutique"></div>
                 </section>
+
             </div>
         </div>
+
+        <!-- Stats full-width sous les 2 colonnes -->
+        <section class="profil-card profil-card--stats" style="margin-top: var(--spacing-lg);">
+            <h2 class="dashboard-section__title">Mes Statistiques</h2>
+            <div class="profil-stats-grid" id="profil-stats">
+                <div class="loading"><div class="spinner"></div> Chargement...</div>
+            </div>
+        </section>
     </main>
 
     <footer class="footer">
