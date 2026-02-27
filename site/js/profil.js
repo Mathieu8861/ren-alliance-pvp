@@ -20,7 +20,7 @@
         setupPasswordForm();
         await loadStats();
         await loadDroitsHebdo();
-        await loadAchatsBoutique();
+        await Promise.all([loadAchatsBoutique(), loadDemandesKamas()]);
     }
 
     /* === PRE-REMPLIR LE FORMULAIRE === */
@@ -817,9 +817,8 @@
     /* ACHATS BOUTIQUE                              */
     /* ============================================ */
     async function loadAchatsBoutique() {
-        var section = document.getElementById('profil-achats-section');
         var container = document.getElementById('profil-achats-boutique');
-        if (!section || !container) return;
+        if (!container) return;
 
         try {
             var { data: achats, error } = await window.REN.supabase
@@ -830,12 +829,14 @@
                 .limit(10);
 
             if (error) throw error;
-            if (!achats || achats.length === 0) return;
+            if (!achats || achats.length === 0) {
+                container.innerHTML = '';
+                updateBoutiqueEmpty();
+                return;
+            }
 
-            /* Afficher la section */
-            section.style.display = '';
-
-            var html = '<div class="profil-achats-list">';
+            var html = '<h3 class="profil-boutique__subtitle">Achats</h3>';
+            html += '<div class="profil-achats-list">';
             achats.forEach(function (a) {
                 var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
                 var date = new Date(a.created_at).toLocaleDateString('fr-FR');
@@ -864,6 +865,7 @@
             html += '</div>';
 
             container.innerHTML = html;
+            updateBoutiqueEmpty();
 
             /* Listeners suppression */
             container.querySelectorAll('.profil-achats-item__dismiss').forEach(function (btn) {
@@ -876,6 +878,78 @@
 
         } catch (err) {
             console.error('[REN-PROFIL] Erreur achats boutique:', err);
+        }
+    }
+
+    /* ============================================ */
+    /* DEMANDES KAMAS (jetons)                      */
+    /* ============================================ */
+    async function loadDemandesKamas() {
+        var container = document.getElementById('profil-demandes-kamas');
+        if (!container) return;
+
+        try {
+            var { data: demandes, error } = await window.REN.supabase
+                .from('boutique_demandes_kamas')
+                .select('*')
+                .eq('user_id', window.REN.currentProfile.id)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            if (error) throw error;
+            if (!demandes || demandes.length === 0) {
+                container.innerHTML = '';
+                updateBoutiqueEmpty();
+                return;
+            }
+
+            var html = '<h3 class="profil-boutique__subtitle">Demandes de jetons</h3>';
+            html += '<div class="profil-achats-list">';
+            demandes.forEach(function (d) {
+                var date = new Date(d.created_at).toLocaleDateString('fr-FR');
+                var isEnAttente = d.statut === 'en_attente';
+                var badgeClass = 'badge-statut badge-statut--' + d.statut;
+                var badgeText = isEnAttente ? 'En attente' : d.statut === 'valide' ? 'Valid\u00e9' : 'Refus\u00e9';
+
+                html += '<div class="profil-achats-item' + (isEnAttente ? ' profil-achats-item--pending' : '') + '">';
+                html += '<div class="profil-achats-item__image">';
+                html += '<img src="assets/images/jeton.png" alt="jetons">';
+                html += '</div>';
+                html += '<div class="profil-achats-item__info">';
+                html += '<span class="profil-achats-item__nom">' + d.jetons_demandes + ' jetons</span>';
+                html += '<span class="profil-achats-item__detail">' + window.REN.formatKamas(d.montant_kamas) + ' kamas \u00b7 ' + date + '</span>';
+                html += '</div>';
+                html += '<span class="' + badgeClass + '">' + badgeText + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            updateBoutiqueEmpty();
+
+        } catch (err) {
+            console.error('[REN-PROFIL] Erreur demandes kamas:', err);
+        }
+    }
+
+    /* === Etat vide boutique === */
+    function updateBoutiqueEmpty() {
+        var emptyDiv = document.getElementById('profil-boutique-empty');
+        var achatsDiv = document.getElementById('profil-achats-boutique');
+        var demandesDiv = document.getElementById('profil-demandes-kamas');
+        if (!emptyDiv) return;
+
+        var hasContent = (achatsDiv && achatsDiv.innerHTML.trim()) || (demandesDiv && demandesDiv.innerHTML.trim());
+        if (hasContent) {
+            emptyDiv.innerHTML = '';
+        } else {
+            emptyDiv.innerHTML = '<div class="profil-boutique-empty">' +
+                '<img class="profil-boutique-empty__icon" src="assets/images/jeton.png" alt="">' +
+                '<div class="profil-boutique-empty__body">' +
+                '<span class="profil-boutique-empty__text">Aucun achat ni demande en cours. D\u00e9pense tes jetons ou \u00e9change des kamas !</span>' +
+                '<a href="boutique.html" class="btn btn--primary btn--small">Voir la boutique</a>' +
+                '</div>' +
+                '</div>';
         }
     }
 

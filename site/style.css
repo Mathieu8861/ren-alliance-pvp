@@ -3395,6 +3395,55 @@ table {
     color: var(--color-danger);
 }
 
+.profil-boutique__subtitle {
+    font-family: var(--font-title);
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: var(--spacing-xs);
+}
+
+#profil-demandes-kamas:not(:empty) {
+    margin-top: var(--spacing-md);
+}
+
+.profil-boutique-empty {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-primary);
+}
+
+.profil-boutique-empty__icon {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+}
+
+.profil-boutique-empty__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.profil-boutique-empty__text {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.4;
+}
+
+.profil-boutique-empty .btn {
+    align-self: stretch;
+    text-align: center;
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.8rem;
+}
+
 /* Stats profil — sections */
 .profil-stats-grid {
     display: grid;
