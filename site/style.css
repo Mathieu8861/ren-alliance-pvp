@@ -1435,6 +1435,22 @@ table {
 /* === HISTORY GRID === */
 .history-filter {
     margin-bottom: var(--spacing-lg);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.history-filter__inputs {
+    display: flex;
+    gap: var(--spacing-sm);
+    margin-left: auto;
+}
+
+.history-filter__search {
+    width: 180px;
+    font-size: 0.8125rem !important;
+    padding: var(--spacing-xs) var(--spacing-sm) !important;
 }
 
 .history-grid {
@@ -2509,8 +2525,29 @@ table {
     width: 100px;
 }
 
+.board-table__th--name {
+    width: 180px;
+}
+
 .board-table__th--tier {
-    width: 140px;
+    width: 110px;
+}
+
+.board-table__th--zone {
+    width: 160px;
+}
+
+.board-table__td--zone {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
+.board-table__th--reward {
+    width: 130px;
+}
+
+.board-table__th--pepjeu {
+    width: 110px;
 }
 
 .board-table__row {
@@ -2590,8 +2627,24 @@ table {
     }
 
     .board-table__th--pepites,
-    .board-table__td--pepites {
+    .board-table__td--pepites,
+    .board-table__th--zone,
+    .board-table__td--zone {
         display: none;
+    }
+
+    .history-filter {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .history-filter__inputs {
+        margin-left: 0;
+    }
+
+    .history-filter__search {
+        width: auto;
+        flex: 1;
     }
 
     .board-table__td,
@@ -3833,6 +3886,38 @@ table {
     font-size: 0.8125rem;
     color: var(--color-text-secondary);
     cursor: pointer;
+}
+
+.profil-droits__zone-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+}
+
+.profil-droits__zone-row .form-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.8125rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.profil-droits__zone-btn {
+    flex-shrink: 0;
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: 0.75rem;
+    background-color: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-title);
+    font-weight: 600;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.profil-droits__zone-btn:hover {
+    background-color: var(--color-accent-light);
 }
 
 /* === TOGGLE SWITCH (reusable) === */

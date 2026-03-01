@@ -622,8 +622,26 @@
             html += '</label>';
             html += '</div>';
 
+            /* Zone réservée (75+ pts semaine en cours OU semaine passée) */
+            html += '<div class="profil-droits__separator"></div>';
+            if (pointsCurrent >= 75 || pointsLast >= 75) {
+                var currentZone = window.REN.currentProfile.zone_reservee || '';
+                html += '<div class="profil-droits__zone">';
+                html += '<label class="profil-droits__toggle-label">Zone r\u00e9serv\u00e9e</label>';
+                html += '<div class="profil-droits__zone-row">';
+                html += '<input type="text" class="form-input" id="profil-zone" placeholder="Ex: Bonta centre" value="' + currentZone + '">';
+                html += '<button class="profil-droits__zone-btn" id="btn-save-zone">OK</button>';
+                html += '</div>';
+                html += '</div>';
+            } else {
+                html += '<div class="profil-droits__zone profil-droits__zone--locked">';
+                html += '<span class="text-muted" style="font-size:0.8125rem;">Zone r\u00e9serv\u00e9e — disponible \u00e0 partir de 75 pts/semaine</span>';
+                html += '</div>';
+            }
+
             container.innerHTML = html;
             setupPreferenceToggle();
+            setupZoneReservee();
 
         } catch (err) {
             console.error('[REN] Erreur droits hebdo:', err);
@@ -716,6 +734,33 @@
                 console.error('[REN] Erreur sauvegarde preference:', err);
                 toggle.checked = !newValue;
                 window.REN.toast('Erreur lors de la sauvegarde.', 'error');
+            }
+        });
+    }
+
+    function setupZoneReservee() {
+        var btn = document.getElementById('btn-save-zone');
+        var input = document.getElementById('profil-zone');
+        if (!btn || !input) return;
+
+        btn.addEventListener('click', async function () {
+            var zone = input.value.trim() || null;
+            btn.disabled = true;
+            btn.textContent = '...';
+            try {
+                var { error } = await window.REN.supabase
+                    .from('profiles')
+                    .update({ zone_reservee: zone })
+                    .eq('id', window.REN.currentUser.id);
+                if (error) throw error;
+                window.REN.currentProfile.zone_reservee = zone;
+                window.REN.toast(zone ? 'Zone enregistr\u00e9e : ' + zone : 'Zone retir\u00e9e', 'success');
+            } catch (err) {
+                console.error('[REN] Erreur zone reservee:', err);
+                window.REN.toast('Erreur : ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'OK';
             }
         });
     }

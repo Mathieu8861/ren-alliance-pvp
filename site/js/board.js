@@ -8,6 +8,7 @@
     var recompensesConfig = [];
     var semaines = [];
     var preferencesMap = {};
+    var zonesMap = {};
     var currentSelection = 'last';
 
     document.addEventListener('ren:ready', init);
@@ -40,11 +41,13 @@
         try {
             var { data } = await window.REN.supabase
                 .from('profiles')
-                .select('id, prefere_pepites')
+                .select('id, prefere_pepites, zone_reservee')
                 .eq('is_validated', true);
             preferencesMap = {};
+            zonesMap = {};
             (data || []).forEach(function (p) {
                 preferencesMap[p.id] = p.prefere_pepites || false;
+                if (p.zone_reservee) zonesMap[p.id] = p.zone_reservee;
             });
         } catch (err) {
             console.error('[REN-BOARD] Erreur preferences:', err);
@@ -198,7 +201,8 @@
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
                     pepites_jeu: pepitesMap[p.id] || 0,
-                    prefere_pepites: preferencesMap[p.id] || false
+                    prefere_pepites: preferencesMap[p.id] || false,
+                    zone_reservee: zonesMap[p.id] || null
                 };
             });
         } catch (err) {
@@ -232,7 +236,8 @@
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
                     pepites_jeu: pepitesMap[p.id] || 0,
-                    prefere_pepites: preferencesMap[p.id] || false
+                    prefere_pepites: preferencesMap[p.id] || false,
+                    zone_reservee: zonesMap[p.id] || null
                 };
             });
         } catch (err) {
@@ -298,6 +303,7 @@
         html += '<th class="board-table__th board-table__th--name">Joueur</th>';
         html += '<th class="board-table__th board-table__th--points">Points</th>';
         html += '<th class="board-table__th board-table__th--tier">Palier</th>';
+        html += '<th class="board-table__th board-table__th--zone">Zone r\u00e9serv\u00e9e</th>';
         html += '<th class="board-table__th board-table__th--reward">R\u00e9compense PVP</th>';
         html += '<th class="board-table__th board-table__th--pepjeu">Pépites jeu</th>';
         html += '</tr></thead>';
@@ -321,6 +327,7 @@
             html += '<td class="board-table__td board-table__td--name">' + p.username + '</td>';
             html += '<td class="board-table__td board-table__td--points">' + p.points + '</td>';
             html += '<td class="board-table__td board-table__td--tier">' + p.tier_emoji + ' ' + p.tier_label + '</td>';
+            html += '<td class="board-table__td board-table__td--zone">' + (p.points >= 75 && p.zone_reservee ? p.zone_reservee : '—') + '</td>';
             html += '<td class="board-table__td board-table__td--reward">' + rewardPvp + '</td>';
             html += '<td class="board-table__td board-table__td--pepjeu" style="color:var(--color-warning);">' + pepJeuText + '</td>';
             html += '</tr>';

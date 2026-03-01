@@ -6,6 +6,8 @@
     'use strict';
 
     var currentFilter = 'tous';
+    var searchAlliance = '';
+    var searchZone = '';
     var allCombats = [];
 
     document.addEventListener('ren:ready', init);
@@ -13,6 +15,7 @@
     async function init() {
         if (!window.REN.supabase || !window.REN.currentProfile) return;
         setupTabs();
+        setupSearchFilters();
         await loadCombats();
     }
 
@@ -27,6 +30,24 @@
             currentFilter = btn.getAttribute('data-tab');
             renderCombats();
         });
+    }
+
+    function setupSearchFilters() {
+        var allianceInput = document.getElementById('history-search-alliance');
+        var zoneInput = document.getElementById('history-search-zone');
+
+        if (allianceInput) {
+            allianceInput.addEventListener('input', function () {
+                searchAlliance = allianceInput.value.trim().toLowerCase();
+                renderCombats();
+            });
+        }
+        if (zoneInput) {
+            zoneInput.addEventListener('input', function () {
+                searchZone = zoneInput.value.trim().toLowerCase();
+                renderCombats();
+            });
+        }
     }
 
     async function loadCombats() {
@@ -54,13 +75,25 @@
         var isAdmin = window.REN.currentProfile && window.REN.currentProfile.is_admin;
 
         var filtered = allCombats.filter(function (c) {
+            /* Filtre type/resultat */
             switch (currentFilter) {
-                case 'attaques': return c.type === 'attaque';
-                case 'defenses': return c.type === 'defense';
-                case 'victoires': return c.resultat === 'victoire';
-                case 'defaites': return c.resultat === 'defaite';
-                default: return true;
+                case 'attaques': if (c.type !== 'attaque') return false; break;
+                case 'defenses': if (c.type !== 'defense') return false; break;
+                case 'victoires': if (c.resultat !== 'victoire') return false; break;
+                case 'defaites': if (c.resultat !== 'defaite') return false; break;
             }
+            /* Filtre alliance */
+            if (searchAlliance) {
+                var allianceName = c.alliance ? c.alliance.nom : (c.alliance_ennemie_nom || '');
+                var allianceTag = c.alliance && c.alliance.tag ? c.alliance.tag : '';
+                if (allianceName.toLowerCase().indexOf(searchAlliance) === -1 && allianceTag.toLowerCase().indexOf(searchAlliance) === -1) return false;
+            }
+            /* Filtre zone (dans commentaire) */
+            if (searchZone) {
+                var comment = (c.commentaire || '').toLowerCase();
+                if (comment.indexOf(searchZone) === -1) return false;
+            }
+            return true;
         });
 
         if (!filtered.length) {
