@@ -150,6 +150,20 @@
             isDrawing = true;
             btn.disabled = true;
 
+            /* Deduire les jetons IMMEDIATEMENT (anti-exploit refresh) */
+            try {
+                var newJetonsAfterPay = jetonsActuels - prixTirage;
+                await window.REN.supabase.from('profiles').update({ jetons: newJetonsAfterPay }).eq('id', window.REN.currentProfile.id);
+                window.REN.currentProfile.jetons = newJetonsAfterPay;
+                updateJetonsDisplay();
+            } catch (err) {
+                console.error('[REN-JEU] Erreur deduction jetons:', err);
+                window.REN.toast('Erreur, réessayez.', 'error');
+                isDrawing = false;
+                btn.disabled = false;
+                return;
+            }
+
             /* Determiner le lot AVANT le melange (le joueur ne le sait pas) */
             selectedLot = drawRandomLot();
 
@@ -305,11 +319,13 @@
     async function finalizeResult(jetonsActuels, gainFinal, resultat, showConfetti) {
         console.log('[REN-JEU] finalizeResult()', { jetonsActuels: jetonsActuels, gainFinal: gainFinal, resultat: resultat, showConfetti: showConfetti });
         try {
-            var newJetons = jetonsActuels - prixTirage + gainFinal;
-
-            await window.REN.supabase.from('profiles').update({ jetons: newJetons }).eq('id', window.REN.currentProfile.id);
-            window.REN.currentProfile.jetons = newJetons;
-            updateJetonsDisplay();
+            /* Jetons deja deduits au clic du bouton ; ici on ajoute seulement les gains */
+            if (gainFinal > 0) {
+                var newJetons = window.REN.currentProfile.jetons + gainFinal;
+                await window.REN.supabase.from('profiles').update({ jetons: newJetons }).eq('id', window.REN.currentProfile.id);
+                window.REN.currentProfile.jetons = newJetons;
+                updateJetonsDisplay();
+            }
 
             await window.REN.supabase.from('jeu_historique').insert({
                 user_id: window.REN.currentProfile.id,
