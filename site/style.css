@@ -5003,6 +5003,9 @@ table {
     border: 3px solid #ffd700;
     box-shadow: 0 0 16px rgba(255, 215, 0, 0.3);
     animation: glow-or 2.5s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 @keyframes glow-or {
     0%, 100% { box-shadow: 0 0 12px rgba(255, 215, 0, 0.2); }
@@ -5015,6 +5018,9 @@ table {
     border: 3px solid #3b82f6;
     box-shadow: 0 0 24px rgba(59, 130, 246, 0.5), 0 0 48px rgba(37, 99, 235, 0.2), inset 0 0 14px rgba(59, 130, 246, 0.15);
     animation: glow-saphir 2s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 .avatar-frame--saphir::before {
     content: '';
@@ -5051,6 +5057,9 @@ table {
     border: 3px solid #10b981;
     box-shadow: 0 0 26px rgba(16,185,129,0.5), 0 0 52px rgba(5,150,105,0.2), inset 0 0 14px rgba(16,185,129,0.15);
     animation: glow-emeraude 2s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 .avatar-frame--emeraude::before {
     content: '';
@@ -5087,6 +5096,9 @@ table {
     border: 3px solid #ef4444;
     box-shadow: 0 0 28px rgba(239,68,68,0.55), 0 0 56px rgba(219,41,41,0.2), inset 0 0 16px rgba(239,68,68,0.15);
     animation: glow-rubis 1.8s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 .avatar-frame--rubis::before {
     content: '';
@@ -5123,6 +5135,9 @@ table {
     border: 3px solid #e0e7ff;
     box-shadow: 0 0 30px rgba(224,231,255,0.5), 0 0 60px rgba(165,180,252,0.2), 0 0 80px rgba(147,197,253,0.1), inset 0 0 16px rgba(224,231,255,0.15);
     animation: glow-diamant 1.8s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 .avatar-frame--diamant::before {
     content: '';
@@ -5164,6 +5179,9 @@ table {
     background-clip: padding-box;
     box-shadow: 0 0 22px rgba(219,41,41,0.5), 0 0 44px rgba(255,107,53,0.15), inset 0 0 12px rgba(219,41,41,0.1);
     animation: glow-legendaire 2s ease-in-out infinite;
+    will-change: box-shadow;
+    transform: translate3d(0,0,0);
+    backface-visibility: hidden;
 }
 .avatar-frame--legendaire::before {
     content: '';
