@@ -154,7 +154,8 @@ BEGIN
 
     RETURN v_jetons - v_prix;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 -- === STORAGE: Bucket pour images boutique ===
 -- INSERT INTO storage.buckets (id, name, public) VALUES ('boutique', 'boutique', true);

@@ -17,7 +17,8 @@ BEGIN
     );
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
@@ -62,7 +63,8 @@ BEGIN
 
     RETURN base_points * mult;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 -- === FUNCTION: Stats du dashboard ===
 CREATE OR REPLACE FUNCTION public.get_dashboard_stats()
@@ -108,7 +110,8 @@ BEGIN
 
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 -- === FUNCTION: Stats par membre ===
 CREATE OR REPLACE FUNCTION public.get_member_stats()
@@ -167,4 +170,5 @@ BEGIN
     WHERE p.is_validated = TRUE
     ORDER BY p.username;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;

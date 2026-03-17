@@ -17,7 +17,8 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 DROP TRIGGER IF EXISTS trigger_protect_admin_fields ON public.profiles;
 CREATE TRIGGER trigger_protect_admin_fields
@@ -40,7 +41,8 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public;
 
 DROP TRIGGER IF EXISTS trigger_protect_jetons ON public.profiles;
 CREATE TRIGGER trigger_protect_jetons
