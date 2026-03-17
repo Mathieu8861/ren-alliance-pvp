@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alliance REN - Builds</title>
+    <title>Alliance REN - Machine a Sous</title>
     <link rel="icon" type="image/png" href="assets/images/logo-ren.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
         <div class="header__inner">
             <div class="header__brand">
                 <img class="header__logo" src="assets/images/logo-ren.png" alt="Logo Alliance REN">
-                
+
             </div>
 
             <nav class="nav" id="nav">
@@ -51,53 +51,71 @@
         </div>
     </header>
 
-    <main class="main">
+    <main class="main main--slot">
         <div class="mb-lg">
-            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Builds</h1>
-            <p class="text-muted" style="font-size: 0.8125rem;">Builds recommandés par l'alliance</p>
+            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Machine a Sous du Dieu Enutrof</h1>
+            <p class="text-muted" style="font-size: 0.8125rem;">Misez vos jetons et tentez de decrocher le jackpot</p>
         </div>
 
-        <div class="builds-toolbar" id="builds-filters">
-            <div class="builds-toolbar__left">
-                <div class="tabs" id="builds-type-tabs">
-                    <button class="tabs__btn active" data-tab="tous">Tous</button>
-                    <button class="tabs__btn" data-tab="pvp">PVP</button>
-                    <button class="tabs__btn" data-tab="pvm">PVM</button>
+        <div class="slot-layout">
+
+            <!-- Zone 3D -->
+            <div class="slot-machine">
+                <div class="slot-machine__canvas-wrap" id="slot-canvas-wrap">
+                    <!-- Three.js canvas sera injecte ici -->
                 </div>
-                <select class="form-select builds-filter-select" id="builds-filter-classe">
-                    <option value="">Toutes les classes</option>
-                    <option value="Cra">Cra</option>
-                    <option value="Ecaflip">Ecaflip</option>
-                    <option value="Eliotrope">Eliotrope</option>
-                    <option value="Eniripsa">Eniripsa</option>
-                    <option value="Enutrof">Enutrof</option>
-                    <option value="Feca">Feca</option>
-                    <option value="Forge">Forge</option>
-                    <option value="Huppermage">Huppermage</option>
-                    <option value="Iop">Iop</option>
-                    <option value="Osamodas">Osamodas</option>
-                    <option value="Ouginak">Ouginak</option>
-                    <option value="Pandawa">Pandawa</option>
-                    <option value="Roublard">Roublard</option>
-                    <option value="Sacrieur">Sacrieur</option>
-                    <option value="Sadida">Sadida</option>
-                    <option value="Sram">Sram</option>
-                    <option value="Steamer">Steamer</option>
-                    <option value="Xelor">Xelor</option>
-                    <option value="Zobal">Zobal</option>
-                </select>
-                <select class="form-select builds-filter-select" id="builds-filter-sort">
-                    <option value="recent">Plus récents</option>
-                    <option value="prix-asc">Prix croissant</option>
-                    <option value="prix-desc">Prix décroissant</option>
-                </select>
+
+                <!-- Ligne de resultat (symboles 2D fallback + affichage gain) -->
+                <div class="slot-result" id="slot-result" style="display:none;">
+                    <div class="slot-result__symbols" id="slot-result-symbols"></div>
+                    <div class="slot-result__gain" id="slot-result-gain"></div>
+                </div>
+
+                <!-- Controles -->
+                <div class="slot-controls">
+                    <div class="slot-controls__mise">
+                        <label class="form-label">Mise</label>
+                        <div class="slot-mise-selector">
+                            <button class="slot-mise-btn" id="mise-down">-</button>
+                            <span class="slot-mise-value" id="mise-value">5</span>
+                            <img class="icon-inline" src="assets/images/jeton.png" alt="jetons">
+                            <button class="slot-mise-btn" id="mise-up">+</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn--primary btn--cta slot-spin-btn" id="btn-spin">SPIN !</button>
+
+                    <div class="slot-controls__solde">
+                        <span class="text-muted">Solde :</span>
+                        <span class="slot-solde" id="slot-solde">0</span>
+                        <img class="icon-inline" src="assets/images/jeton.png" alt="jetons">
+                    </div>
+                </div>
             </div>
-            <input type="text" class="form-input builds-search" id="builds-search" placeholder="Rechercher...">
+
+            <!-- Historique des tirages -->
+            <div class="slot-history">
+                <div class="slot-history__title">Derniers tirages</div>
+                <div class="slot-history__list" id="slot-history-list">
+                    <p class="text-muted text-center" style="padding:var(--spacing-md);">Aucun tirage pour le moment.</p>
+                </div>
+            </div>
+
         </div>
 
-        <div class="builds-grid" id="builds-grid">
-            <div class="loading"><div class="spinner"></div> Chargement...</div>
+        <!-- Modal Jackpot -->
+        <div class="modal-overlay" id="modal-jackpot">
+            <div class="modal modal--jackpot">
+                <div class="modal__header">
+                    <h2 class="modal__title" id="jackpot-title">JACKPOT !</h2>
+                    <button class="modal__close" id="jackpot-close">&times;</button>
+                </div>
+                <div class="modal__body" id="jackpot-body"></div>
+            </div>
         </div>
+
+        <!-- Confetti container -->
+        <div class="confetti-container" id="confetti-container"></div>
     </main>
 
     <footer class="footer">
@@ -108,7 +126,9 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
     <script src="script.js"></script>
-    <script src="js/builds.js"></script>
+    <script src="js/slot.js"></script>
 </body>
 </html>

@@ -5612,3 +5612,316 @@ table {
         width: 100%;
     }
 }
+
+/* ============================================ */
+/* SLOT MACHINE - Machine a Sous Enutrof       */
+/* ============================================ */
+
+.main--slot {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: var(--spacing-xl) var(--spacing-md);
+}
+
+.slot-layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xl);
+}
+
+/* --- Machine --- */
+.slot-machine {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-lg);
+}
+
+.slot-machine__canvas-wrap {
+    width: 100%;
+    max-width: 700px;
+    aspect-ratio: 16 / 9;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    position: relative;
+    border: 2px solid var(--color-border);
+}
+
+.slot-machine__canvas-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* --- Resultat --- */
+.slot-result {
+    text-align: center;
+}
+
+.slot-result__symbols {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+}
+
+.slot-result__symbols img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+}
+
+.slot-result__gain {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.slot-result__gain--win {
+    color: var(--color-warning);
+}
+
+.slot-result__gain--lose {
+    color: var(--color-text-muted);
+}
+
+.slot-result__gain--jackpot {
+    color: var(--color-warning);
+    font-size: 1.5rem;
+    text-shadow: 0 0 20px rgba(243, 156, 18, 0.5);
+}
+
+/* --- Controles --- */
+.slot-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-xl);
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.slot-controls__mise {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.slot-mise-selector {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.slot-mise-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 1.125rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.slot-mise-btn:hover {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+}
+
+.slot-mise-value {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--color-warning);
+    min-width: 40px;
+    text-align: center;
+}
+
+.slot-spin-btn {
+    padding: var(--spacing-md) var(--spacing-2xl);
+    font-size: 1.125rem;
+    letter-spacing: 0.1em;
+    min-width: 160px;
+}
+
+.slot-spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    animation: none;
+}
+
+.slot-controls__solde {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: var(--font-title);
+    font-weight: 600;
+}
+
+.slot-solde {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--color-warning);
+}
+
+/* --- Historique tirages --- */
+.slot-history {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.slot-history__title {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-secondary);
+}
+
+.slot-history__list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.slot-history-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+    transition: background var(--transition-fast);
+}
+
+.slot-history-item:last-child {
+    border-bottom: none;
+}
+
+.slot-history-item:hover {
+    background: var(--color-bg-elevated);
+}
+
+.slot-history-item__left {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.slot-history-item__time {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    min-width: 40px;
+}
+
+.slot-history-item__symbols {
+    display: flex;
+    gap: 4px;
+}
+
+.slot-history-item__symbols img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.slot-history-item__gain {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.slot-history-item__gain--win {
+    color: var(--color-warning);
+}
+
+.slot-history-item__gain--lose {
+    color: var(--color-text-muted);
+}
+
+/* --- Modal Jackpot --- */
+.modal--jackpot {
+    text-align: center;
+    max-width: 500px;
+}
+
+.modal--jackpot .modal__title {
+    font-size: 2rem;
+    color: var(--color-warning);
+    text-shadow: 0 0 30px rgba(243, 156, 18, 0.4);
+}
+
+.jackpot-amount {
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 2.5rem;
+    color: var(--color-warning);
+    margin: var(--spacing-md) 0;
+    text-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+}
+
+.jackpot-symbols {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.jackpot-symbols img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    animation: jackpot-bounce 0.6s ease infinite alternate;
+}
+
+@keyframes jackpot-bounce {
+    from { transform: translateY(0); }
+    to { transform: translateY(-8px); }
+}
+
+/* --- Responsive Slot --- */
+@media (max-width: 768px) {
+    .slot-controls {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .slot-machine__canvas-wrap {
+        aspect-ratio: 4 / 3;
+    }
+}
+
+@media (max-width: 480px) {
+    .slot-controls {
+        gap: var(--spacing-sm);
+    }
+
+    .slot-mise-selector {
+        gap: var(--spacing-xs);
+    }
+
+    .slot-spin-btn {
+        width: 100%;
+        min-width: unset;
+    }
+}

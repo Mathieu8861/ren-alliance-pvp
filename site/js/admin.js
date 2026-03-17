@@ -1234,10 +1234,10 @@
         html += '</div></div>';
 
         /* Achats à distribuer */
+        var esc2 = window.REN.escapeHtml;
         html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);color:var(--color-warning);">Achats \u00e0 distribuer (' + achatsEnAttente.length + ')</h3>';
         if (achatsEnAttente.length > 0) {
             html += '<div class="admin-achats-list" style="margin-bottom:var(--spacing-lg);">';
-            var esc2 = window.REN.escapeHtml;
             achatsEnAttente.forEach(function (a) {
                 var username = a.profiles ? esc2(a.profiles.username) : 'Inconnu';
                 var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? window.REN.sanitizeUrl(a.boutique_items.image_url) : '';
