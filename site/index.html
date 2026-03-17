@@ -135,26 +135,15 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:6px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
                 Mises à jour
             </h2>
-            <div class="changelog">
+            <div class="changelog" id="changelog-list">
                 <div class="changelog__entry">
                     <div class="changelog__date">17 Mars 2026</div>
                     <div class="changelog__content">
-                        <div class="changelog__tag changelog__tag--feature">Nouveau</div>
+                        <div class="changelog__tag changelog__tag--security">Sécurité</div>
                         <div class="changelog__items">
-                            <div class="changelog__item">Ajout du champ "Perco de" dans le formulaire de défense pour indiquer à quel membre appartient le percepteur</div>
-                            <div class="changelog__item">Section mises à jour ajoutée sur la page d'accueil</div>
-                            <div class="changelog__item">Notification popup lors de nouvelles mises à jour</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="changelog__entry">
-                    <div class="changelog__date">17 Mars 2026</div>
-                    <div class="changelog__content">
-                        <div class="changelog__tag changelog__tag--improvement">Amélioration</div>
-                        <div class="changelog__items">
-                            <div class="changelog__item">Les zones réservées s'affichent désormais sur les deux semaines (passée et en cours) du board</div>
-                            <div class="changelog__item">Formulaires d'attaque et de défense réorganisés en grille pour une meilleure lisibilité</div>
-                            <div class="changelog__item">Optimisation des performances des animations de cadres de profil</div>
+                            <div class="changelog__item">Renforcement de la sécurité des données côté serveur</div>
+                            <div class="changelog__item">Protection contre les injections XSS sur les formulaires</div>
+                            <div class="changelog__item">Validation renforcée des entrées utilisateur</div>
                         </div>
                     </div>
                 </div>
@@ -170,15 +159,30 @@
                 <div class="changelog__entry">
                     <div class="changelog__date">17 Mars 2026</div>
                     <div class="changelog__content">
-                        <div class="changelog__tag changelog__tag--security">Sécurité</div>
+                        <div class="changelog__tag changelog__tag--improvement">Amélioration visuelle</div>
                         <div class="changelog__items">
-                            <div class="changelog__item">Renforcement de la sécurité des données côté serveur</div>
-                            <div class="changelog__item">Protection contre les injections XSS sur les formulaires</div>
-                            <div class="changelog__item">Validation renforcée des entrées utilisateur</div>
+                            <div class="changelog__item">Les zones réservées s'affichent désormais sur les deux semaines (passée et en cours) du board</div>
+                            <div class="changelog__item">Formulaires d'attaque et de défense réorganisés en grille pour une meilleure lisibilité</div>
+                            <div class="changelog__item">Optimisation des performances des animations de cadres de profil</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="changelog__entry">
+                    <div class="changelog__date">17 Mars 2026</div>
+                    <div class="changelog__content">
+                        <div class="changelog__tag changelog__tag--feature">Nouvelles fonctionnalités</div>
+                        <div class="changelog__items">
+                            <div class="changelog__item">Ajout du champ "Perco de" dans le formulaire de défense pour indiquer à quel membre appartient le percepteur</div>
+                            <div class="changelog__item">Section mises à jour ajoutée sur la page d'accueil</div>
+                            <div class="changelog__item">Notification popup lors de nouvelles mises à jour</div>
                         </div>
                     </div>
                 </div>
             </div>
+            <button class="changelog__show-more" id="changelog-show-more" style="display:none;">
+                <span>Voir les mises à jour précédentes</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
         </section>
 
     </main>

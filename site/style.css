@@ -789,6 +789,32 @@ table {
     border-radius: 50%;
     background: var(--color-text-muted);
 }
+.changelog__show-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.changelog__show-more:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--color-text-secondary);
+}
+.changelog__show-more svg {
+    transition: transform 0.3s ease;
+}
+.changelog__show-more--expanded svg {
+    transform: rotate(180deg);
+}
 @media (max-width: 600px) {
     .changelog__entry {
         grid-template-columns: 1fr;

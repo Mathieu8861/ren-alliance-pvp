@@ -415,6 +415,29 @@
         });
     }
 
+    /* === CHANGELOG COLLAPSE === */
+    function initChangelog() {
+        var list = document.getElementById('changelog-list');
+        var btn = document.getElementById('changelog-show-more');
+        if (!list || !btn) return;
+        var entries = list.querySelectorAll('.changelog__entry');
+        var MAX_VISIBLE = 4;
+        if (entries.length <= MAX_VISIBLE) { btn.style.display = 'none'; return; }
+        for (var i = MAX_VISIBLE; i < entries.length; i++) {
+            entries[i].style.display = 'none';
+        }
+        btn.style.display = 'flex';
+        var expanded = false;
+        btn.addEventListener('click', function () {
+            expanded = !expanded;
+            for (var i = MAX_VISIBLE; i < entries.length; i++) {
+                entries[i].style.display = expanded ? '' : 'none';
+            }
+            btn.querySelector('span').textContent = expanded ? 'Masquer les anciennes mises à jour' : 'Voir les mises à jour précédentes';
+            btn.classList.toggle('changelog__show-more--expanded', expanded);
+        });
+    }
+
     /* === INIT === */
     function init() {
         setActiveNav();
@@ -422,6 +445,7 @@
         initLogout();
         checkAuth();
         showUpdateNotif();
+        initChangelog();
     }
 
     if (document.readyState === 'loading') {
