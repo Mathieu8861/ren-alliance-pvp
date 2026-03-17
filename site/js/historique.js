@@ -102,16 +102,19 @@
         }
 
         var html = '';
+        var esc = window.REN.escapeHtml;
         filtered.forEach(function (c) {
-            var badgeType = '<span class="badge badge--' + c.type + '">' + c.type.toUpperCase() + '</span>';
-            var badgeResult = '<span class="badge badge--' + c.resultat + '">' + c.resultat.toUpperCase() + '</span>';
-            var auteur = c.auteur ? c.auteur.username : 'Inconnu';
-            var alliance = c.alliance ? c.alliance.nom + (c.alliance.tag ? ' [' + c.alliance.tag + ']' : '') : (c.alliance_ennemie_nom || 'N/A');
+            var safeType = esc(c.type);
+            var safeResultat = esc(c.resultat);
+            var badgeType = '<span class="badge badge--' + safeType + '">' + safeType.toUpperCase() + '</span>';
+            var badgeResult = '<span class="badge badge--' + safeResultat + '">' + safeResultat.toUpperCase() + '</span>';
+            var auteur = c.auteur ? esc(c.auteur.username) : 'Inconnu';
+            var alliance = c.alliance ? esc(c.alliance.nom) + (c.alliance.tag ? ' [' + esc(c.alliance.tag) + ']' : '') : esc(c.alliance_ennemie_nom || 'N/A');
 
             var participants = [];
             if (c.participants) {
                 c.participants.forEach(function (p) {
-                    if (p.user) participants.push(p.user.username);
+                    if (p.user) participants.push(esc(p.user.username));
                 });
             }
 
@@ -129,7 +132,7 @@
                 html += '<br><span class="text-muted">Avec: ' + participants.filter(function(p) { return p !== auteur; }).join(', ') + '</span>';
             }
             if (c.commentaire) {
-                html += '<br><span class="text-muted">&#128205; ' + c.commentaire + '</span>';
+                html += '<br><span class="text-muted">&#128205; ' + esc(c.commentaire) + '</span>';
             }
             html += '</div>';
             html += '<div class="history-card__footer">' + window.REN.formatDateFull(c.created_at) + '</div>';

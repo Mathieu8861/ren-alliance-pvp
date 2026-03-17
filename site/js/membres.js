@@ -57,6 +57,7 @@
             return;
         }
 
+        var esc = window.REN.escapeHtml;
         var html = '';
         filtered.forEach(function (m) {
             var totalCombats = (m.total_attaques || 0) + (m.total_defenses || 0);
@@ -74,14 +75,14 @@
             html += window.REN.buildAvatarFrame(m.avatar_url, m.total_points);
             html += '</div>';
             html += '<div class="member-card__identity">';
-            html += '<div class="member-card__name">' + m.username + '</div>';
-            html += '<div class="member-card__class">' + (m.classe || '?') + ' &bull; ' + (m.element || '?') + '</div>';
-            html += '<span class="tier-badge tier-badge--' + tier.key + '">' + tier.name + '</span>';
+            html += '<div class="member-card__name">' + esc(m.username) + '</div>';
+            html += '<div class="member-card__class">' + esc(m.classe || '?') + ' &bull; ' + esc(m.element || '?') + '</div>';
+            html += '<span class="tier-badge tier-badge--' + esc(tier.key) + '">' + esc(tier.name) + '</span>';
             html += '</div>';
             html += '</div>';
 
             if (m.mules && m.mules.length > 0) {
-                html += '<div class="member-card__mules">Mules : ' + m.mules.join(', ') + '</div>';
+                html += '<div class="member-card__mules">Mules : ' + m.mules.map(esc).join(', ') + '</div>';
             }
 
             /* Stats 4 colonnes */
@@ -101,8 +102,9 @@
             html += '</div>';
 
             /* Lien Dofusbook */
-            if (m.dofusbook_url) {
-                html += '<a href="' + m.dofusbook_url + '" target="_blank" rel="noopener" class="member-card__dofusbook">';
+            var safeUrl = window.REN.sanitizeUrl(m.dofusbook_url);
+            if (safeUrl) {
+                html += '<a href="' + esc(safeUrl) + '" target="_blank" rel="noopener" class="member-card__dofusbook">';
                 html += '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>';
                 html += ' Dofusbook';
                 html += '</a>';

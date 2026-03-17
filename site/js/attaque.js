@@ -70,11 +70,12 @@
 
         selectedAllies = [window.REN.currentProfile.id];
 
+        var esc = window.REN.escapeHtml;
         var html = '';
-        var selfText = window.REN.currentProfile.username;
+        var selfText = esc(window.REN.currentProfile.username);
         var myMules = window.REN.currentProfile.mules || [];
         if (myMules.length > 0) {
-            selfText += ' <span class="combat-form__ally-sep">/</span> ' + myMules.join(' <span class="combat-form__ally-sep">/</span> ');
+            selfText += ' <span class="combat-form__ally-sep">/</span> ' + myMules.map(esc).join(' <span class="combat-form__ally-sep">/</span> ');
         }
         html += '<div class="combat-form__ally-self">' + selfText + ' <span>(vous)</span></div>';
 
@@ -97,6 +98,7 @@
         var input = wrap.querySelector('.ally-search');
         var hidden = wrap.querySelector('.ally-value');
         var dropdown = wrap.querySelector('.ally-dropdown');
+        var esc = window.REN.escapeHtml;
 
         /* Construire la liste des options (profils + mules) */
         var options = [];
@@ -125,7 +127,7 @@
 
             var html = '';
             matches.forEach(function (o) {
-                html += '<div class="ally-dropdown__item' + (o.isMule ? ' ally-dropdown__item--mule' : '') + '" data-id="' + o.id + '" data-label="' + o.label.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+                html += '<div class="ally-dropdown__item' + (o.isMule ? ' ally-dropdown__item--mule' : '') + '" data-id="' + o.id + '" data-label="' + esc(o.label) + '">' + esc(o.label) + '</div>';
             });
             dropdown.innerHTML = html;
             dropdown.classList.add('active');

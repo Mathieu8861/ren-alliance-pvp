@@ -66,10 +66,11 @@
         var container = document.getElementById('allies-list');
         if (!container) return;
         selectedAllies = [window.REN.currentProfile.id];
-        var selfText = window.REN.currentProfile.username;
+        var esc = window.REN.escapeHtml;
+        var selfText = esc(window.REN.currentProfile.username);
         var myMules = window.REN.currentProfile.mules || [];
         if (myMules.length > 0) {
-            selfText += ' <span class="combat-form__ally-sep">/</span> ' + myMules.join(' <span class="combat-form__ally-sep">/</span> ');
+            selfText += ' <span class="combat-form__ally-sep">/</span> ' + myMules.map(esc).join(' <span class="combat-form__ally-sep">/</span> ');
         }
         var html = '<div class="combat-form__ally-self">' + selfText + ' <span>(vous)</span></div>';
         for (var i = 1; i < nbAllies; i++) {
@@ -89,6 +90,7 @@
         var input = wrap.querySelector('.ally-search');
         var hidden = wrap.querySelector('.ally-value');
         var dropdown = wrap.querySelector('.ally-dropdown');
+        var esc = window.REN.escapeHtml;
 
         var options = [];
         allProfiles.forEach(function (p) {
@@ -116,7 +118,7 @@
 
             var html = '';
             matches.forEach(function (o) {
-                html += '<div class="ally-dropdown__item' + (o.isMule ? ' ally-dropdown__item--mule' : '') + '" data-id="' + o.id + '" data-label="' + o.label.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+                html += '<div class="ally-dropdown__item' + (o.isMule ? ' ally-dropdown__item--mule' : '') + '" data-id="' + o.id + '" data-label="' + esc(o.label) + '">' + esc(o.label) + '</div>';
             });
             dropdown.innerHTML = html;
             dropdown.classList.add('active');
@@ -200,6 +202,7 @@
         var hidden = document.getElementById('input-perco-owner-id');
         var dropdown = document.getElementById('perco-owner-dropdown');
         if (!input || !hidden || !dropdown) return;
+        var esc = window.REN.escapeHtml;
 
         var options = [];
         allProfiles.forEach(function (p) {
@@ -223,7 +226,7 @@
             }
             var html = '';
             matches.forEach(function (o) {
-                html += '<div class="ally-dropdown__item" data-id="' + o.id + '" data-label="' + o.label.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+                html += '<div class="ally-dropdown__item" data-id="' + o.id + '" data-label="' + esc(o.label) + '">' + esc(o.label) + '</div>';
             });
             dropdown.innerHTML = html;
             dropdown.classList.add('active');

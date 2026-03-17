@@ -333,6 +333,7 @@
         html += '</tr></thead>';
         html += '<tbody>';
 
+        var esc = window.REN.escapeHtml;
         players.forEach(function (p) {
             /* Récompense PVP : affiche le choix du joueur (percos ou pépites) */
             var rewardPvp = '—';
@@ -348,11 +349,11 @@
 
             html += '<tr class="board-table__row">';
             html += '<td class="board-table__td board-table__td--rank">' + p.rang + '</td>';
-            html += '<td class="board-table__td board-table__td--name">' + p.username + '</td>';
+            html += '<td class="board-table__td board-table__td--name">' + esc(p.username) + '</td>';
             html += '<td class="board-table__td board-table__td--points">' + p.points + '</td>';
-            html += '<td class="board-table__td board-table__td--tier">' + p.tier_emoji + ' ' + p.tier_label + '</td>';
+            html += '<td class="board-table__td board-table__td--tier">' + esc(p.tier_emoji) + ' ' + esc(p.tier_label) + '</td>';
             var showZone = p.zone_reservee && (p.is_live ? zoneEligibleMap[p.user_id] : p.points >= 75);
-            html += '<td class="board-table__td board-table__td--zone">' + (showZone ? p.zone_reservee : '—') + '</td>';
+            html += '<td class="board-table__td board-table__td--zone">' + (showZone ? esc(p.zone_reservee) : '—') + '</td>';
             html += '<td class="board-table__td board-table__td--reward">' + rewardPvp + '</td>';
             html += '<td class="board-table__td board-table__td--pepjeu" style="color:var(--color-warning);">' + pepJeuText + '</td>';
             html += '</tr>';

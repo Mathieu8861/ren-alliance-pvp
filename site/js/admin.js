@@ -113,11 +113,12 @@
         html += '<div class="table-wrapper"><table class="table">';
         html += '<thead><tr><th>Pseudo</th><th>Classe</th><th>Element</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
 
+        var esc = window.REN.escapeHtml;
         pending.forEach(function (p) {
             html += '<tr>';
-            html += '<td>' + p.username + '</td>';
-            html += '<td>' + (p.classe || '-') + '</td>';
-            html += '<td>' + (p.element || '-') + '</td>';
+            html += '<td>' + esc(p.username) + '</td>';
+            html += '<td>' + esc(p.classe || '-') + '</td>';
+            html += '<td>' + esc(p.element || '-') + '</td>';
             html += '<td>' + window.REN.formatDateFull(p.created_at) + '</td>';
             html += '<td>';
             html += '<button class="btn btn--primary btn--small admin-validate" data-id="' + p.id + '">Valider</button> ';
@@ -157,11 +158,12 @@
         html += '<div class="table-wrapper"><table class="table">';
         html += '<thead><tr><th>Pseudo</th><th>Classe</th><th>Element</th><th>Jetons</th><th>Admin</th><th>Actions</th></tr></thead><tbody>';
 
+        var esc = window.REN.escapeHtml;
         (users || []).forEach(function (u) {
             html += '<tr>';
-            html += '<td>' + u.username + '</td>';
-            html += '<td>' + (u.classe || '-') + '</td>';
-            html += '<td>' + (u.element || '-') + '</td>';
+            html += '<td>' + esc(u.username) + '</td>';
+            html += '<td>' + esc(u.classe || '-') + '</td>';
+            html += '<td>' + esc(u.element || '-') + '</td>';
             html += '<td>' + (u.jetons || 0) + '</td>';
             html += '<td>' + (u.is_admin ? '<span class="text-accent">OUI</span>' : 'Non') + '</td>';
             html += '<td>';
@@ -217,12 +219,14 @@
         (alliances || []).forEach(function (a) {
             html += '<tr data-row-id="' + a.id + '">';
             /* Mode affichage */
-            html += '<td class="cell-display" data-field="nom">' + a.nom + '</td>';
-            html += '<td class="cell-display" data-field="tag">' + (a.tag || '-') + '</td>';
+            var escNom = window.REN.escapeHtml(a.nom);
+            var escTag = window.REN.escapeHtml(a.tag || '');
+            html += '<td class="cell-display" data-field="nom">' + escNom + '</td>';
+            html += '<td class="cell-display" data-field="tag">' + (escTag || '-') + '</td>';
             html += '<td class="cell-display" data-field="mult">x' + a.multiplicateur + '</td>';
             /* Mode edition (masque par defaut) */
-            html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-alliance-nom" value="' + a.nom + '" style="width:100%;"></td>';
-            html += '<td class="cell-edit" data-field="tag" style="display:none;"><input class="form-input edit-alliance-tag" value="' + (a.tag || '') + '" style="width:100%;"></td>';
+            html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-alliance-nom" value="' + escNom + '" style="width:100%;"></td>';
+            html += '<td class="cell-edit" data-field="tag" style="display:none;"><input class="form-input edit-alliance-tag" value="' + escTag + '" style="width:100%;"></td>';
             html += '<td class="cell-edit" data-field="mult" style="display:none;"><input class="form-input edit-alliance-mult" type="number" value="' + a.multiplicateur + '" min="1" style="width:80px;"></td>';
             /* Boutons */
             html += '<td>';
@@ -408,24 +412,26 @@
         if (builds && builds.length) {
             html += '<div class="table-wrapper"><table class="table">';
             html += '<thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Classe</th><th>Kamas</th><th>Lien</th><th>Actions</th></tr></thead><tbody>';
+            var esc = window.REN.escapeHtml;
             builds.forEach(function (b) {
-                html += '<tr data-id="' + b.id + '" data-image="' + (b.image_url || '') + '">';
+                var safeImageUrl = window.REN.sanitizeUrl(b.image_url);
+                html += '<tr data-id="' + b.id + '" data-image="' + esc(b.image_url || '') + '">';
                 /* Image */
                 html += '<td>';
-                if (b.image_url) {
-                    html += '<img src="' + b.image_url + '" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">';
+                if (safeImageUrl) {
+                    html += '<img src="' + esc(safeImageUrl) + '" alt="" style="width:60px;height:40px;object-fit:cover;border-radius:4px;">';
                 } else {
                     html += '<span class="text-muted">-</span>';
                 }
                 html += '</td>';
                 /* Titre : display / edit */
-                html += '<td class="cell-display" data-field="titre">' + b.titre + '</td>';
-                html += '<td class="cell-edit" data-field="titre" style="display:none;"><input class="form-input edit-build-titre" value="' + (b.titre || '') + '" style="width:100%;"></td>';
+                html += '<td class="cell-display" data-field="titre">' + esc(b.titre) + '</td>';
+                html += '<td class="cell-edit" data-field="titre" style="display:none;"><input class="form-input edit-build-titre" value="' + esc(b.titre || '') + '" style="width:100%;"></td>';
                 /* Type : display / edit */
-                html += '<td class="cell-display" data-field="type">' + (b.type_build ? '<span class="badge badge--' + b.type_build + '">' + b.type_build.toUpperCase() + '</span>' : '-') + '</td>';
+                html += '<td class="cell-display" data-field="type">' + (b.type_build ? '<span class="badge badge--' + esc(b.type_build) + '">' + esc(b.type_build).toUpperCase() + '</span>' : '-') + '</td>';
                 html += '<td class="cell-edit" data-field="type" style="display:none;"><select class="form-input edit-build-type" style="width:100%;"><option value="">-</option><option value="pvp"' + (b.type_build === 'pvp' ? ' selected' : '') + '>PVP</option><option value="pvm"' + (b.type_build === 'pvm' ? ' selected' : '') + '>PVM</option></select></td>';
                 /* Classe : display / edit */
-                html += '<td class="cell-display" data-field="classe">' + (b.classe ? '<span class="badge badge--classe">' + b.classe + '</span>' : '-') + '</td>';
+                html += '<td class="cell-display" data-field="classe">' + (b.classe ? '<span class="badge badge--classe">' + esc(b.classe) + '</span>' : '-') + '</td>';
                 html += '<td class="cell-edit" data-field="classe" style="display:none;"><select class="form-input edit-build-classe" style="width:100%;"><option value="">-</option>';
                 html += '<option value="Cra"' + (b.classe === 'Cra' ? ' selected' : '') + '>Cra</option>';
                 html += '<option value="Ecaflip"' + (b.classe === 'Ecaflip' ? ' selected' : '') + '>Ecaflip</option>';
@@ -451,8 +457,9 @@
                 html += '<td class="cell-display" data-field="kamas">' + (b.valeur_kamas ? Number(b.valeur_kamas).toLocaleString('fr-FR') + ' M' : '-') + '</td>';
                 html += '<td class="cell-edit" data-field="kamas" style="display:none;"><input class="form-input edit-build-kamas" type="number" min="0" value="' + (b.valeur_kamas || 0) + '" style="width:100px;"></td>';
                 /* Lien : display / edit */
-                html += '<td class="cell-display" data-field="lien">' + (b.lien_dofusbook ? '<a href="' + b.lien_dofusbook + '" target="_blank" class="text-accent">Lien</a>' : '-') + '</td>';
-                html += '<td class="cell-edit" data-field="lien" style="display:none;"><input class="form-input edit-build-lien" value="' + (b.lien_dofusbook || '') + '" style="width:100%;"></td>';
+                var safeLien = window.REN.sanitizeUrl(b.lien_dofusbook);
+                html += '<td class="cell-display" data-field="lien">' + (safeLien ? '<a href="' + esc(safeLien) + '" target="_blank" class="text-accent">Lien</a>' : '-') + '</td>';
+                html += '<td class="cell-edit" data-field="lien" style="display:none;"><input class="form-input edit-build-lien" value="' + esc(b.lien_dofusbook || '') + '" style="width:100%;"></td>';
                 /* Actions : display / edit */
                 html += '<td class="cell-display" data-field="actions">';
                 html += '<button class="table__action admin-edit-build" data-id="' + b.id + '">Modifier</button> ';
@@ -614,11 +621,12 @@
             lots.forEach(function (l) {
                 html += '<tr data-row-id="' + l.id + '">';
                 /* Mode affichage */
-                html += '<td class="cell-display" data-field="nom">' + l.nom + '</td>';
+                var escLotNom = window.REN.escapeHtml(l.nom);
+                html += '<td class="cell-display" data-field="nom">' + escLotNom + '</td>';
                 html += '<td class="cell-display" data-field="pourcentage">' + l.pourcentage + '%</td>';
                 html += '<td class="cell-display" data-field="gain_jetons">' + (l.gain_jetons || 0) + '</td>';
                 /* Mode edition (masque par defaut) */
-                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-lot-nom" value="' + l.nom + '" style="width:100%;"></td>';
+                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-lot-nom" value="' + escLotNom + '" style="width:100%;"></td>';
                 html += '<td class="cell-edit" data-field="pourcentage" style="display:none;"><input class="form-input edit-lot-pourcent" type="number" value="' + l.pourcentage + '" step="0.01" min="0" max="100" style="width:80px;"></td>';
                 html += '<td class="cell-edit" data-field="gain_jetons" style="display:none;"><input class="form-input edit-lot-jetons" type="number" value="' + (l.gain_jetons || 0) + '" min="0" style="width:80px;"></td>';
                 /* Boutons */
@@ -756,7 +764,7 @@
             lastWeek.forEach(function (p) {
                 totalPepites += p.pepites;
                 html += '<tr>';
-                html += '<td style="font-weight:600;">' + p.username + '</td>';
+                html += '<td style="font-weight:600;">' + window.REN.escapeHtml(p.username) + '</td>';
                 html += '<td style="text-align:center;">' + p.tirages + '</td>';
                 html += '<td style="text-align:right;color:var(--color-warning);font-weight:600;">' + p.pepites.toLocaleString('fr-FR') + '</td>';
                 html += '</tr>';
@@ -785,7 +793,7 @@
             currentWeek.forEach(function (p) {
                 totalCurrent += p.pepites;
                 html += '<tr>';
-                html += '<td>' + p.username + '</td>';
+                html += '<td>' + window.REN.escapeHtml(p.username) + '</td>';
                 html += '<td style="text-align:center;">' + p.tirages + '</td>';
                 html += '<td style="text-align:right;color:var(--color-warning);">' + p.pepites.toLocaleString('fr-FR') + '</td>';
                 html += '</tr>';
@@ -809,9 +817,9 @@
 
             historique.forEach(function (h) {
                 html += '<tr>';
-                html += '<td>' + (h.user ? h.user.username : '?') + '</td>';
-                html += '<td>' + (h.lot ? h.lot.nom : '?') + '</td>';
-                html += '<td>' + h.resultat + '</td>';
+                html += '<td>' + window.REN.escapeHtml(h.user ? h.user.username : '?') + '</td>';
+                html += '<td>' + window.REN.escapeHtml(h.lot ? h.lot.nom : '?') + '</td>';
+                html += '<td>' + window.REN.escapeHtml(h.resultat) + '</td>';
                 html += '<td>' + (h.donne ? '<span class="text-success">Oui</span>' : '<span class="text-danger">Non</span>') + '</td>';
                 html += '<td>' + window.REN.formatDateFull(h.created_at) + '</td>';
                 html += '<td style="display:flex;gap:4px;flex-wrap:wrap;">';
@@ -980,7 +988,7 @@
                 var reward = findReward(config, p.points);
                 html += '<div style="display:flex;align-items:center;gap:var(--spacing-sm);padding:4px 0;font-size:0.8125rem;">';
                 html += '<span style="min-width:24px;color:var(--color-text-muted);">' + (i + 1) + '.</span>';
-                html += '<span style="flex:1;">' + p.username + '</span>';
+                html += '<span style="flex:1;">' + window.REN.escapeHtml(p.username) + '</span>';
                 html += '<span style="color:var(--color-warning);font-weight:600;">' + p.points + ' pts</span>';
                 html += '<span style="color:var(--color-success);font-size:0.75rem;">' + (reward ? reward.emoji + ' ' + reward.label : '') + '</span>';
                 html += '</div>';
@@ -1229,20 +1237,21 @@
         html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);color:var(--color-warning);">Achats \u00e0 distribuer (' + achatsEnAttente.length + ')</h3>';
         if (achatsEnAttente.length > 0) {
             html += '<div class="admin-achats-list" style="margin-bottom:var(--spacing-lg);">';
+            var esc2 = window.REN.escapeHtml;
             achatsEnAttente.forEach(function (a) {
-                var username = a.profiles ? a.profiles.username : 'Inconnu';
-                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
+                var username = a.profiles ? esc2(a.profiles.username) : 'Inconnu';
+                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? window.REN.sanitizeUrl(a.boutique_items.image_url) : '';
                 var date = new Date(a.created_at).toLocaleDateString('fr-FR');
                 html += '<div class="admin-achat-card">';
                 html += '<div class="admin-achat-card__image">';
                 if (imageUrl) {
-                    html += '<img src="' + imageUrl + '" alt="' + a.item_nom + '">';
+                    html += '<img src="' + esc2(imageUrl) + '" alt="' + esc2(a.item_nom) + '">';
                 } else {
                     html += '<span class="text-muted" style="font-size:1.25rem;">?</span>';
                 }
                 html += '</div>';
                 html += '<div class="admin-achat-card__info">';
-                html += '<span class="admin-achat-card__article">' + a.item_nom + '</span>';
+                html += '<span class="admin-achat-card__article">' + esc2(a.item_nom) + '</span>';
                 html += '<span class="admin-achat-card__detail">Achet\u00e9 par <strong>' + username + '</strong> \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
                 html += '</div>';
                 html += '<button class="btn btn--primary btn--small btn-distribue" data-id="' + a.id + '">Distribu\u00e9 \u2713</button>';
@@ -1259,19 +1268,19 @@
         if (achatsDistribues.length > 0) {
             html += '<div class="admin-achats-list" style="margin-top:var(--spacing-sm);">';
             achatsDistribues.forEach(function (a) {
-                var username = a.profiles ? a.profiles.username : 'Inconnu';
-                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? a.boutique_items.image_url : '';
+                var username = a.profiles ? esc2(a.profiles.username) : 'Inconnu';
+                var imageUrl = (a.boutique_items && a.boutique_items.image_url) ? window.REN.sanitizeUrl(a.boutique_items.image_url) : '';
                 var date = new Date(a.created_at).toLocaleDateString('fr-FR');
                 html += '<div class="admin-achat-card" style="opacity:0.7;">';
                 html += '<div class="admin-achat-card__image">';
                 if (imageUrl) {
-                    html += '<img src="' + imageUrl + '" alt="' + a.item_nom + '" loading="lazy">';
+                    html += '<img src="' + imageUrl + '" alt="' + esc2(a.item_nom) + '" loading="lazy">';
                 } else {
                     html += '<span class="text-muted" style="font-size:1.25rem;">?</span>';
                 }
                 html += '</div>';
                 html += '<div class="admin-achat-card__info">';
-                html += '<span class="admin-achat-card__article">' + a.item_nom + '</span>';
+                html += '<span class="admin-achat-card__article">' + esc2(a.item_nom) + '</span>';
                 html += '<span class="admin-achat-card__detail">' + username + ' \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
                 html += '</div>';
                 html += '<span class="badge-statut badge-statut--distribue">Distribu\u00e9</span>';
@@ -1305,24 +1314,26 @@
         html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Catalogue (' + items.length + ' articles)</h3>';
         if (items.length > 0) {
             html += '<table class="admin-table"><thead><tr><th>Image</th><th>Nom</th><th>Description</th><th>Prix</th><th>Stock</th><th>Actif</th><th>Actions</th></tr></thead><tbody>';
+            var escI = window.REN.escapeHtml;
             items.forEach(function (item) {
-                var imgHtml = item.image_url
-                    ? '<img src="' + item.image_url + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">'
+                var safeImgUrl = window.REN.sanitizeUrl(item.image_url);
+                var imgHtml = safeImgUrl
+                    ? '<img src="' + escI(safeImgUrl) + '" style="width:40px;height:40px;object-fit:cover;border-radius:4px;">'
                     : '<span class="text-muted">-</span>';
 
                 html += '<tr data-row-id="' + item.id + '">';
                 html += '<td>' + imgHtml + '</td>';
 
                 /* Display */
-                html += '<td class="cell-display" data-field="nom">' + item.nom + '</td>';
-                html += '<td class="cell-display" data-field="desc">' + (item.description || '') + '</td>';
+                html += '<td class="cell-display" data-field="nom">' + escI(item.nom) + '</td>';
+                html += '<td class="cell-display" data-field="desc">' + escI(item.description || '') + '</td>';
                 html += '<td class="cell-display" data-field="prix">' + item.prix_jetons + '</td>';
                 html += '<td class="cell-display" data-field="stock">' + (item.stock === -1 ? '\u221e' : item.stock) + '</td>';
                 html += '<td class="cell-display" data-field="actif">' + (item.actif ? '\u2705' : '\u274c') + '</td>';
 
                 /* Edit */
-                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-nom" value="' + item.nom + '" style="width:120px;"></td>';
-                html += '<td class="cell-edit" data-field="desc" style="display:none;"><input class="form-input edit-desc" value="' + (item.description || '') + '" style="width:140px;"></td>';
+                html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-nom" value="' + escI(item.nom) + '" style="width:120px;"></td>';
+                html += '<td class="cell-edit" data-field="desc" style="display:none;"><input class="form-input edit-desc" value="' + escI(item.description || '') + '" style="width:140px;"></td>';
                 html += '<td class="cell-edit" data-field="prix" style="display:none;"><input class="form-input edit-prix" type="number" value="' + item.prix_jetons + '" style="width:70px;"></td>';
                 html += '<td class="cell-edit" data-field="stock" style="display:none;"><input class="form-input edit-stock" type="number" value="' + item.stock + '" style="width:70px;"></td>';
                 html += '<td class="cell-edit" data-field="actif" style="display:none;"><select class="form-select edit-actif"><option value="true"' + (item.actif ? ' selected' : '') + '>Oui</option><option value="false"' + (!item.actif ? ' selected' : '') + '>Non</option></select></td>';
@@ -1502,7 +1513,7 @@
         if (enAttente.length > 0) {
             html += '<table class="admin-table" style="margin-bottom:var(--spacing-lg);"><thead><tr><th>Joueur</th><th>Kamas</th><th>Jetons demand\u00e9s</th><th>Date</th><th>Actions</th></tr></thead><tbody>';
             enAttente.forEach(function (d) {
-                var username = d.profiles ? d.profiles.username : 'Inconnu';
+                var username = d.profiles ? window.REN.escapeHtml(d.profiles.username) : 'Inconnu';
                 var date = new Date(d.created_at).toLocaleDateString('fr-FR');
                 html += '<tr>';
                 html += '<td><strong>' + username + '</strong></td>';
@@ -1525,9 +1536,9 @@
             html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Historique</h3>';
             html += '<table class="admin-table"><thead><tr><th>Joueur</th><th>Kamas</th><th>Jetons</th><th>Date</th><th>Statut</th></tr></thead><tbody>';
             traitees.forEach(function (d) {
-                var username = d.profiles ? d.profiles.username : 'Inconnu';
+                var username = d.profiles ? window.REN.escapeHtml(d.profiles.username) : 'Inconnu';
                 var date = new Date(d.created_at).toLocaleDateString('fr-FR');
-                var badgeClass = 'badge-statut badge-statut--' + d.statut;
+                var badgeClass = 'badge-statut badge-statut--' + window.REN.escapeHtml(d.statut);
                 var statutText = d.statut === 'valide' ? 'Valid\u00e9' : 'Refus\u00e9';
                 html += '<tr>';
                 html += '<td>' + username + '</td>';

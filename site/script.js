@@ -225,6 +225,26 @@
         if (loader) loader.remove();
     };
 
+    /* === SECURITE - ANTI XSS === */
+    window.REN.escapeHtml = function (str) {
+        if (!str && str !== 0) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    };
+
+    /* Valide et nettoie une URL (retourne '' si suspecte) */
+    window.REN.sanitizeUrl = function (url) {
+        if (!url) return '';
+        var trimmed = url.trim();
+        if (trimmed.indexOf('javascript:') !== -1 || trimmed.indexOf('data:') !== -1) return '';
+        if (trimmed.indexOf('http://') === 0 || trimmed.indexOf('https://') === 0) return trimmed;
+        return '';
+    };
+
     /* === FORMAT HELPERS === */
     window.REN.formatKamas = function (value) {
         if (!value || value === 0) return '0 K';
@@ -260,7 +280,8 @@
         var sz = size || 100;
         var containerSz = tier.key === 'legendaire' ? sz * 1.2 : sz * 1.15;
         var userSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-        var imgContent = avatarUrl ? '<img src="' + avatarUrl + '" alt="Avatar">' : userSvg;
+        var safeAvatarUrl = window.REN.sanitizeUrl(avatarUrl);
+        var imgContent = safeAvatarUrl ? '<img src="' + window.REN.escapeHtml(safeAvatarUrl) + '" alt="Avatar">' : userSvg;
         var flames = '';
         if (tier.key === 'legendaire') {
             flames = '<div class="frame-flames">';

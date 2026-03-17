@@ -160,13 +160,23 @@
                 return;
             }
 
-            if (username.length < 2) {
-                showMessage(registerMessage, 'Le pseudo doit faire au moins 2 caracteres.', 'error');
+            if (username.length < 2 || username.length > 30) {
+                showMessage(registerMessage, 'Le pseudo doit faire entre 2 et 30 caractères.', 'error');
                 return;
             }
 
-            if (!password || password.length < 6) {
-                showMessage(registerMessage, 'Le mot de passe doit faire au moins 6 caracteres.', 'error');
+            if (/[<>"'&;(){}]/.test(username)) {
+                showMessage(registerMessage, 'Le pseudo contient des caractères non autorisés.', 'error');
+                return;
+            }
+
+            if (!password || password.length < 8) {
+                showMessage(registerMessage, 'Le mot de passe doit faire au moins 8 caractères.', 'error');
+                return;
+            }
+
+            if (!/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+                showMessage(registerMessage, 'Le mot de passe doit contenir au moins une majuscule et un chiffre.', 'error');
                 return;
             }
 
@@ -237,6 +247,11 @@
     async function uploadAvatar(userId, file) {
         try {
             var ext = file.name.split('.').pop().toLowerCase();
+            var allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+            if (allowedExts.indexOf(ext) === -1) {
+                console.error('[REN] Extension avatar non autorisée:', ext);
+                return;
+            }
             var filePath = userId + '.' + ext;
 
             /* Upload vers le bucket "avatars" */
