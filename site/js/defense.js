@@ -21,6 +21,7 @@
         setupCountButtons();
         setupAllianceSelect();
         setupResultButtons();
+        setupPercoOwnerAutocomplete();
         setupSubmit();
         renderAlliesList();
     }
@@ -175,13 +176,13 @@
     function setupResultButtons() {
         var btnV = document.getElementById('btn-victoire');
         var btnD = document.getElementById('btn-defaite');
-        var sectionCommentaire = document.getElementById('section-commentaire');
+        var sectionPercoDetails = document.getElementById('section-perco-details');
         if (btnV) {
             btnV.addEventListener('click', function () {
                 resultat = 'victoire';
                 btnV.classList.add('active');
                 if (btnD) btnD.classList.remove('active');
-                if (sectionCommentaire) sectionCommentaire.style.display = '';
+                if (sectionPercoDetails) sectionPercoDetails.style.display = '';
             });
         }
         if (btnD) {
@@ -189,9 +190,61 @@
                 resultat = 'defaite';
                 btnD.classList.add('active');
                 if (btnV) btnV.classList.remove('active');
-                if (sectionCommentaire) sectionCommentaire.style.display = '';
+                if (sectionPercoDetails) sectionPercoDetails.style.display = '';
             });
         }
+    }
+
+    function setupPercoOwnerAutocomplete() {
+        var input = document.getElementById('input-perco-owner');
+        var hidden = document.getElementById('input-perco-owner-id');
+        var dropdown = document.getElementById('perco-owner-dropdown');
+        if (!input || !hidden || !dropdown) return;
+
+        var options = [];
+        allProfiles.forEach(function (p) {
+            options.push({ id: p.id, label: p.username });
+            if (p.mules && p.mules.length > 0) {
+                p.mules.forEach(function (mule) {
+                    options.push({ id: p.id, label: '\u21B3 ' + mule });
+                });
+            }
+        });
+
+        function showDropdown(filter) {
+            var query = (filter || '').toLowerCase();
+            var matches = options.filter(function (o) {
+                return o.label.toLowerCase().indexOf(query) !== -1;
+            });
+            if (!matches.length) {
+                dropdown.innerHTML = '<div class="ally-dropdown__empty">Aucun r\u00e9sultat</div>';
+                dropdown.classList.add('active');
+                return;
+            }
+            var html = '';
+            matches.forEach(function (o) {
+                html += '<div class="ally-dropdown__item" data-id="' + o.id + '" data-label="' + o.label.replace(/"/g, '&quot;') + '">' + o.label + '</div>';
+            });
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+            dropdown.querySelectorAll('.ally-dropdown__item').forEach(function (item) {
+                item.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    input.value = item.getAttribute('data-label');
+                    hidden.value = item.getAttribute('data-id');
+                    dropdown.classList.remove('active');
+                });
+            });
+        }
+
+        input.addEventListener('focus', function () { showDropdown(input.value); });
+        input.addEventListener('input', function () {
+            hidden.value = '';
+            showDropdown(input.value);
+        });
+        input.addEventListener('blur', function () {
+            setTimeout(function () { dropdown.classList.remove('active'); }, 150);
+        });
     }
 
     function setupSubmit() {
@@ -218,6 +271,9 @@
             var inputCommentaire = document.getElementById('input-commentaire');
             var commentaire = inputCommentaire && inputCommentaire.value.trim() ? inputCommentaire.value.trim() : null;
 
+            var inputPercoOwnerId = document.getElementById('input-perco-owner-id');
+            var percoOwnerId = inputPercoOwnerId && inputPercoOwnerId.value ? inputPercoOwnerId.value : null;
+
             btn.disabled = true;
             btn.textContent = 'Envoi...';
 
@@ -232,7 +288,7 @@
 
                 var points = pointsRes.data || 0;
 
-                var combatRes = await window.REN.supabase.from('combats').insert({
+                var insertData = {
                     type: combatType,
                     auteur_id: window.REN.currentProfile.id,
                     alliance_ennemie_id: allianceId,
@@ -243,7 +299,10 @@
                     butin_kamas: 0,
                     points_gagnes: points,
                     commentaire: commentaire
-                }).select().single();
+                };
+                if (percoOwnerId) insertData.perco_owner_id = percoOwnerId;
+
+                var combatRes = await window.REN.supabase.from('combats').insert(insertData).select().single();
 
                 if (combatRes.error) throw combatRes.error;
 

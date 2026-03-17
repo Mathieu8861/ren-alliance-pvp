@@ -236,11 +236,11 @@
 
     /* === CADRES PROFIL - TIERS === */
     var TIERS = [
-        { key: 'legendaire', min: 2000, name: 'Legendaire', title: 'Dieu du PVP', reward: 400 },
-        { key: 'diamant', min: 1500, name: 'Diamant', title: 'Faucheuse des Champs', reward: 200 },
-        { key: 'rubis', min: 1000, name: 'Rubis', title: 'Machine de Guerre', reward: 150 },
-        { key: 'emeraude', min: 750, name: 'Emeraude', title: 'Seigneur de Guerre', reward: 100 },
-        { key: 'saphir', min: 500, name: 'Saphir', title: 'Veteran des Arenes', reward: 70 },
+        { key: 'legendaire', min: 4000, name: 'Legendaire', title: 'Dieu du PVP', reward: 200 },
+        { key: 'diamant', min: 2500, name: 'Diamant', title: 'Faucheuse des Champs', reward: 100 },
+        { key: 'rubis', min: 1500, name: 'Rubis', title: 'Machine de Guerre', reward: 80 },
+        { key: 'emeraude', min: 1000, name: 'Emeraude', title: 'Seigneur de Guerre', reward: 70 },
+        { key: 'saphir', min: 500, name: 'Saphir', title: 'Veteran des Arenes', reward: 50 },
         { key: 'or', min: 300, name: 'Or', title: 'Elite PVP', reward: 40 },
         { key: 'argent', min: 150, name: 'Argent', title: 'Combattant Confirme', reward: 20 },
         { key: 'bronze', min: 50, name: 'Bronze', title: 'Guerrier de Base', reward: 10 },
@@ -361,12 +361,46 @@
         };
     };
 
+    /* === UPDATE NOTIFICATION === */
+    var REN_UPDATE_VERSION = '2026-03-17';
+
+    function showUpdateNotif() {
+        var seen = localStorage.getItem('ren_update_seen');
+        if (seen === REN_UPDATE_VERSION) return;
+
+        var notif = document.createElement('div');
+        notif.className = 'update-notif';
+        notif.innerHTML = '<div class="update-notif__header">'
+            + '<div class="update-notif__title"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Nouvelle mise \u00e0 jour</div>'
+            + '<button class="update-notif__close" title="Fermer">&times;</button>'
+            + '</div>'
+            + '<div class="update-notif__desc">Des am\u00e9liorations et corrections ont \u00e9t\u00e9 d\u00e9ploy\u00e9es sur le site.</div>'
+            + '<a href="index.html#changelog" class="update-notif__btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Voir les mises \u00e0 jour</a>';
+
+        document.body.appendChild(notif);
+
+        setTimeout(function () { notif.classList.add('update-notif--visible'); }, 100);
+
+        notif.querySelector('.update-notif__close').addEventListener('click', function () {
+            localStorage.setItem('ren_update_seen', REN_UPDATE_VERSION);
+            notif.classList.remove('update-notif--visible');
+            setTimeout(function () { notif.remove(); }, 300);
+        });
+
+        notif.querySelector('.update-notif__btn').addEventListener('click', function () {
+            localStorage.setItem('ren_update_seen', REN_UPDATE_VERSION);
+            notif.classList.remove('update-notif--visible');
+            setTimeout(function () { notif.remove(); }, 300);
+        });
+    }
+
     /* === INIT === */
     function init() {
         setActiveNav();
         initMobileMenu();
         initLogout();
         checkAuth();
+        showUpdateNotif();
     }
 
     if (document.readyState === 'loading') {

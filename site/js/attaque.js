@@ -193,16 +193,16 @@
     function setupResultButtons() {
         var btnV = document.getElementById('btn-victoire');
         var btnD = document.getElementById('btn-defaite');
+        var sectionDetails = document.getElementById('section-attaque-details');
         var sectionButin = document.getElementById('section-butin');
-        var sectionCommentaire = document.getElementById('section-commentaire');
 
         if (btnV) {
             btnV.addEventListener('click', function () {
                 resultat = 'victoire';
                 btnV.classList.add('active');
                 if (btnD) btnD.classList.remove('active');
+                if (sectionDetails) sectionDetails.style.display = '';
                 if (sectionButin) sectionButin.style.display = '';
-                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
 
@@ -211,8 +211,8 @@
                 resultat = 'defaite';
                 btnD.classList.add('active');
                 if (btnV) btnV.classList.remove('active');
+                if (sectionDetails) sectionDetails.style.display = '';
                 if (sectionButin) sectionButin.style.display = 'none';
-                if (sectionCommentaire) sectionCommentaire.style.display = '';
             });
         }
     }

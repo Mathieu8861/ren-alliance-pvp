@@ -889,11 +889,11 @@
             { key: 'bronze', name: 'Bronze', min: 50, max: 149, title: 'Guerrier de Base', desc: 'Bordure bronze + lueur', reward: 10 },
             { key: 'argent', name: 'Argent', min: 150, max: 299, title: 'Combattant Confirme', desc: 'Bordure argent + lueur', reward: 20 },
             { key: 'or', name: 'Or', min: 300, max: 499, title: 'Elite PVP', desc: 'Bordure doree + glow pulsante', reward: 40 },
-            { key: 'saphir', name: 'Saphir', min: 500, max: 749, title: 'Veteran des Arenes', desc: 'Ring bleu rotatif + glow', reward: 70 },
-            { key: 'emeraude', name: 'Emeraude', min: 750, max: 999, title: 'Seigneur de Guerre', desc: 'Ring vert rotatif + glow intense', reward: 100 },
-            { key: 'rubis', name: 'Rubis', min: 1000, max: 1499, title: 'Machine de Guerre', desc: 'Ring rouge rotatif + glow intense', reward: 150 },
-            { key: 'diamant', name: 'Diamant', min: 1500, max: 1999, title: 'Faucheuse des Champs', desc: 'Ring irise rotatif + glow prismatique', reward: 200 },
-            { key: 'legendaire', name: 'Legendaire', min: 2000, max: null, title: 'Dieu du PVP', desc: 'Ring rouge/or + braises + mega glow', reward: 400 }
+            { key: 'saphir', name: 'Saphir', min: 500, max: 999, title: 'Veteran des Arenes', desc: 'Ring bleu rotatif + glow', reward: 50 },
+            { key: 'emeraude', name: 'Emeraude', min: 1000, max: 1499, title: 'Seigneur de Guerre', desc: 'Ring vert rotatif + glow intense', reward: 70 },
+            { key: 'rubis', name: 'Rubis', min: 1500, max: 2499, title: 'Machine de Guerre', desc: 'Ring rouge rotatif + glow intense', reward: 80 },
+            { key: 'diamant', name: 'Diamant', min: 2500, max: 3999, title: 'Faucheuse des Champs', desc: 'Ring irise rotatif + glow prismatique', reward: 100 },
+            { key: 'legendaire', name: 'Legendaire', min: 4000, max: null, title: 'Dieu du PVP', desc: 'Ring rouge/or + braises + mega glow', reward: 200 }
         ];
 
         var userSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';

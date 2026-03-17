@@ -9,6 +9,7 @@
     var semaines = [];
     var preferencesMap = {};
     var zonesMap = {};
+    var zoneEligibleMap = {};
     var currentSelection = 'last';
 
     document.addEventListener('ren:ready', init);
@@ -17,6 +18,7 @@
         if (!window.REN.supabase || !window.REN.currentProfile) return;
         await loadRecompensesConfig();
         await loadPreferences();
+        await loadZoneEligibility();
         await loadSemaines();
         setupWeekSelect();
         renderBareme();
@@ -51,6 +53,25 @@
             });
         } catch (err) {
             console.error('[REN-BOARD] Erreur preferences:', err);
+        }
+    }
+
+    /* === CALCULER ÉLIGIBILITÉ ZONE (>=75 pts sur l'une des 2 semaines live) === */
+    async function loadZoneEligibility() {
+        zoneEligibleMap = {};
+        try {
+            var [lastRes, currentRes] = await Promise.all([
+                window.REN.supabase.from('classement_pvp_semaine_passee').select('id, points'),
+                window.REN.supabase.from('classement_pvp_semaine').select('id, points')
+            ]);
+            (lastRes.data || []).forEach(function (p) {
+                if (p.points >= 75) zoneEligibleMap[p.id] = true;
+            });
+            (currentRes.data || []).forEach(function (p) {
+                if (p.points >= 75) zoneEligibleMap[p.id] = true;
+            });
+        } catch (err) {
+            console.error('[REN-BOARD] Erreur zone eligibility:', err);
         }
     }
 
@@ -202,7 +223,8 @@
                     tier_emoji: reward.emoji,
                     pepites_jeu: pepitesMap[p.id] || 0,
                     prefere_pepites: preferencesMap[p.id] || false,
-                    zone_reservee: zonesMap[p.id] || null
+                    zone_reservee: zonesMap[p.id] || null,
+                    is_live: true
                 };
             });
         } catch (err) {
@@ -237,7 +259,8 @@
                     tier_emoji: reward.emoji,
                     pepites_jeu: pepitesMap[p.id] || 0,
                     prefere_pepites: preferencesMap[p.id] || false,
-                    zone_reservee: zonesMap[p.id] || null
+                    zone_reservee: zonesMap[p.id] || null,
+                    is_live: true
                 };
             });
         } catch (err) {
@@ -268,7 +291,8 @@
                     tier_label: reward.label,
                     tier_emoji: reward.emoji,
                     pepites_jeu: 0,
-                    prefere_pepites: preferencesMap[p.user_id] || false
+                    prefere_pepites: preferencesMap[p.user_id] || false,
+                    is_live: false
                 };
             });
         } catch (err) {
@@ -327,7 +351,8 @@
             html += '<td class="board-table__td board-table__td--name">' + p.username + '</td>';
             html += '<td class="board-table__td board-table__td--points">' + p.points + '</td>';
             html += '<td class="board-table__td board-table__td--tier">' + p.tier_emoji + ' ' + p.tier_label + '</td>';
-            html += '<td class="board-table__td board-table__td--zone">' + (p.points >= 75 && p.zone_reservee ? p.zone_reservee : '—') + '</td>';
+            var showZone = p.zone_reservee && (p.is_live ? zoneEligibleMap[p.user_id] : p.points >= 75);
+            html += '<td class="board-table__td board-table__td--zone">' + (showZone ? p.zone_reservee : '—') + '</td>';
             html += '<td class="board-table__td board-table__td--reward">' + rewardPvp + '</td>';
             html += '<td class="board-table__td board-table__td--pepjeu" style="color:var(--color-warning);">' + pepJeuText + '</td>';
             html += '</tr>';
