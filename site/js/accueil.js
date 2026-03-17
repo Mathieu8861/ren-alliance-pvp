@@ -13,6 +13,13 @@
         loadMyRank();
         loadActivityFeed();
         setupPointsModal();
+        // Scroll vers changelog si #changelog dans l'URL
+        if (window.location.hash === '#changelog') {
+            setTimeout(function () {
+                var el = document.getElementById('changelog');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 300);
+        }
     }
 
     /* === DASHBOARD STATS === */

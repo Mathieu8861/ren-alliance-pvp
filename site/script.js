@@ -388,6 +388,9 @@
     function showUpdateNotif() {
         var seen = localStorage.getItem('ren_update_seen');
         if (seen === REN_UPDATE_VERSION) return;
+        // Ne pas afficher sur la page de connexion
+        var page = window.location.pathname.split('/').pop();
+        if (page === 'connexion.html' || page === '') return;
 
         var notif = document.createElement('div');
         notif.className = 'update-notif';
