@@ -764,6 +764,10 @@ table {
     background: rgba(239, 68, 68, 0.15);
     color: #f87171;
 }
+.changelog__tag--security {
+    background: rgba(139, 92, 246, 0.15);
+    color: #a78bfa;
+}
 .changelog__items {
     display: flex;
     flex-direction: column;
