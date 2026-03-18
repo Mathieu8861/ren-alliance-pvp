@@ -383,7 +383,7 @@
     };
 
     /* === UPDATE NOTIFICATION === */
-    var REN_UPDATE_VERSION = '2026-03-17';
+    var REN_UPDATE_VERSION = '2026-03-18';
 
     function showUpdateNotif() {
         var seen = localStorage.getItem('ren_update_seen');

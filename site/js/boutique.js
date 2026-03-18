@@ -15,14 +15,16 @@
         userId = window.REN.currentProfile.id;
 
         updateSolde();
-        await Promise.all([loadConfig(), loadItems(), loadMesAchats(), loadMesDemandes()]);
-        setupKamasForm();
+        await Promise.all([loadConfig(), loadItems(), loadMesAchats()]);
+        setupTabs();
     }
 
     /* === SOLDE DISPLAY === */
     function updateSolde() {
         var el = document.getElementById('boutique-jetons');
         if (el) el.textContent = window.REN.currentProfile.jetons || 0;
+        var elEnutrosor = document.getElementById('boutique-jetons-enutrosor');
+        if (elEnutrosor) elEnutrosor.textContent = window.REN.currentProfile.jetons_slot || 0;
     }
 
     /* === LOAD CONFIG (taux kamas) === */
@@ -61,17 +63,16 @@
         }
     }
 
-    function renderItems() {
-        var container = document.getElementById('boutique-grid');
+    function renderItemsToContainer(container, filteredItems, btnLabel) {
         if (!container) return;
 
-        if (!items.length) {
-            container.innerHTML = '<p class="text-muted">Aucun article en vente pour le moment.</p>';
+        if (!filteredItems.length) {
+            container.innerHTML = '<p class="text-muted">Aucun article disponible pour le moment.</p>';
             return;
         }
 
         var html = '';
-        items.forEach(function (item) {
+        filteredItems.forEach(function (item) {
             var stockText = '';
             if (item.stock > 0) {
                 stockText = '<span class="boutique-card__stock">' + item.stock + ' en stock</span>';
@@ -97,9 +98,12 @@
             html += stockText;
             html += '</div>';
             html += '<div class="boutique-card__footer">';
-            html += '<span class="boutique-card__prix">' + item.prix_jetons + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"></span>';
-            html += '<button class="boutique-card__btn btn-acheter" data-id="' + item.id + '" data-nom="' + item.nom + '" data-prix="' + item.prix_jetons + '"' + (!canBuy ? ' disabled' : '') + '>';
-            html += canBuy ? 'Acheter' : 'Indisponible';
+            var deviseIcon = (item.devise === 'enutrosor') ? 'assets/images/kamatrix.png' : (item.devise === 'kamas') ? 'assets/images/Kama.webp' : 'assets/images/jeton.png';
+            var deviseAlt = (item.devise === 'enutrosor') ? 'enutrosor' : (item.devise === 'kamas') ? 'kamas' : 'jetons';
+            var prixDisplay = (item.devise === 'kamas') ? Number(item.prix_jetons).toLocaleString('fr-FR') : item.prix_jetons;
+            html += '<span class="boutique-card__prix">' + prixDisplay + ' <img class="icon-inline" src="' + deviseIcon + '" alt="' + deviseAlt + '"></span>';
+            html += '<button class="boutique-card__btn btn-acheter" data-id="' + item.id + '" data-nom="' + item.nom + '" data-prix="' + item.prix_jetons + '" data-devise="' + (item.devise || 'classique') + '"' + (!canBuy ? ' disabled' : '') + '>';
+            html += canBuy ? (btnLabel || 'Acheter') : 'Indisponible';
             html += '</button>';
             html += '</div>';
             html += '</div>';
@@ -114,13 +118,36 @@
                 var id = parseInt(btn.dataset.id);
                 var nom = btn.dataset.nom;
                 var prix = parseInt(btn.dataset.prix);
-                acheterItem(id, nom, prix);
+                var devise = btn.dataset.devise || 'classique';
+                acheterItem(id, nom, prix, devise);
+            });
+        });
+    }
+
+    function renderItems() {
+        var acheterItems = items.filter(function (i) { var d = i.devise || 'classique'; return d === 'classique' || d === 'kamas'; });
+        var vendreItems = items.filter(function (i) { return i.devise === 'enutrosor'; });
+        renderItemsToContainer(document.getElementById('boutique-grid'), acheterItems, 'Acheter');
+        renderItemsToContainer(document.getElementById('boutique-grid-echanger'), vendreItems, 'Echanger');
+    }
+
+    function setupTabs() {
+        var tabs = document.querySelectorAll('.boutique-tab');
+        var contents = document.querySelectorAll('.boutique-tab-content');
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                tabs.forEach(function (t) { t.classList.remove('boutique-tab--active'); });
+                tab.classList.add('boutique-tab--active');
+                var target = tab.dataset.tab;
+                contents.forEach(function (c) {
+                    c.style.display = (c.id === 'tab-' + target) ? '' : 'none';
+                });
             });
         });
     }
 
     /* === MODALE CONFIRMATION ACHAT === */
-    function showModalAchat(itemId, itemNom, prix, imageUrl) {
+    function showModalAchat(itemId, itemNom, prix, imageUrl, devise) {
         var overlay = document.getElementById('modal-achat');
         var imgDiv = document.getElementById('modal-achat-image');
         var nomEl = document.getElementById('modal-achat-nom');
@@ -131,13 +158,23 @@
 
         if (!overlay) return;
 
-        var jetons = window.REN.currentProfile.jetons || 0;
+        var isKamas = devise === 'kamas';
+        var isEnutrosor = devise === 'enutrosor';
+        var deviseIcon = isKamas ? 'assets/images/Kama.webp' : isEnutrosor ? 'assets/images/kamatrix.png' : 'assets/images/jeton.png';
+        var deviseNom = isKamas ? 'kamas' : isEnutrosor ? 'Kamatrix' : 'jetons';
 
         /* Remplir la modale */
         imgDiv.innerHTML = imageUrl ? '<img src="' + imageUrl + '" alt="' + itemNom + '">' : '<span style="font-size:2rem;color:var(--color-text-muted);">?</span>';
         nomEl.textContent = itemNom;
-        prixEl.innerHTML = prix + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons">';
-        soldeEl.textContent = 'Solde apr\u00e8s achat : ' + (jetons - prix) + ' jetons';
+        prixEl.innerHTML = prix + ' <img class="icon-inline" src="' + deviseIcon + '" alt="' + deviseNom + '">';
+        if (isKamas) {
+            var item = items.find(function (i) { return i.id === itemId; });
+            var reward = item ? (item.jetons_reward || 0) : 0;
+            soldeEl.innerHTML = 'Vous recevrez <strong>' + reward + '</strong> jetons apres validation par un admin.';
+        } else {
+            var solde = isEnutrosor ? (window.REN.currentProfile.jetons_slot || 0) : (window.REN.currentProfile.jetons || 0);
+            soldeEl.textContent = 'Solde apres : ' + (solde - prix) + ' ' + deviseNom;
+        }
 
         overlay.classList.add('active');
 
@@ -169,18 +206,24 @@
     }
 
     /* === ACHETER UN ARTICLE === */
-    function acheterItem(itemId, itemNom, prix) {
-        var jetons = window.REN.currentProfile.jetons || 0;
-        if (jetons < prix) {
-            window.REN.toast('Pas assez de jetons ! (' + jetons + '/' + prix + ')', 'error');
-            return;
+    function acheterItem(itemId, itemNom, prix, devise) {
+        /* Pour les achats en kamas, pas de verification de solde (le joueur paie in-game) */
+        if (devise !== 'kamas') {
+            var isEnutrosor = devise === 'enutrosor';
+            var solde = isEnutrosor ? (window.REN.currentProfile.jetons_slot || 0) : (window.REN.currentProfile.jetons || 0);
+            var deviseNom = isEnutrosor ? 'Kamatrix' : 'jetons';
+
+            if (solde < prix) {
+                window.REN.toast('Pas assez de ' + deviseNom + ' ! (' + solde + '/' + prix + ')', 'error');
+                return;
+            }
         }
 
         /* Trouver l'image de l'item */
         var item = items.find(function (i) { return i.id === itemId; });
         var imageUrl = item ? item.image_url : '';
 
-        showModalAchat(itemId, itemNom, prix, imageUrl);
+        showModalAchat(itemId, itemNom, prix, imageUrl, devise);
     }
 
     async function processAchat(itemId, itemNom, prix) {
@@ -193,8 +236,13 @@
                 });
             if (error) throw error;
 
-            /* Mettre à jour le solde local */
-            window.REN.currentProfile.jetons = newJetons;
+            /* Mettre à jour les deux soldes */
+            if (newJetons && typeof newJetons === 'object') {
+                window.REN.currentProfile.jetons = newJetons.jetons;
+                window.REN.currentProfile.jetons_slot = newJetons.jetons_slot;
+            } else {
+                window.REN.currentProfile.jetons = newJetons;
+            }
             updateSolde();
 
             window.REN.toast('Achat effectu\u00e9 ! Un admin vous distribuera la ressource.', 'success');

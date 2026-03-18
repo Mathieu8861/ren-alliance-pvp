@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alliance REN - Jeu de Cartes</title>
+    <title>Alliance REN - Jeux</title>
     <link rel="icon" type="image/png" href="assets/images/logo-ren.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -50,90 +50,35 @@
         </div>
     </header>
 
-    <main class="main main--jeux">
-        <div class="mb-lg">
-            <h1 style="font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; margin-bottom: var(--spacing-xs);">Jeu de Cartes du Dieu Ecaflip</h1>
-            <p class="text-muted" style="font-size: 0.8125rem;">Tentez votre chance avec vos jetons</p>
+    <main class="main main--jeux-hub">
+
+        <div class="jeux-hub">
+            <!-- Jeu de Cartes - Ecaflip -->
+            <a href="cartes.html" class="jeux-hub__card">
+                <div class="jeux-hub__card-image">
+                    <img src="assets/images/capture_ecran_ecaflipus.jpg" alt="Jeu de Cartes">
+                </div>
+                <div class="jeux-hub__card-body">
+                    <h2 class="jeux-hub__card-title">Jeu de Cartes</h2>
+                    <p class="jeux-hub__card-god">Dieu Ecaflip</p>
+                    <p class="jeux-hub__card-desc">Melangez les cartes et choisissez la bonne pour remporter des lots</p>
+                    <span class="btn btn--primary btn--small">JOUER</span>
+                </div>
+            </a>
+
+            <!-- Machine a Sous - Enutrof -->
+            <a href="slot.html" class="jeux-hub__card">
+                <div class="jeux-hub__card-image">
+                    <img src="assets/images/capture_ecran_enutrosors.jpg" alt="Machine a Sous">
+                </div>
+                <div class="jeux-hub__card-body">
+                    <h2 class="jeux-hub__card-title">Machine a Sous</h2>
+                    <p class="jeux-hub__card-god">Dieu Enutrof</p>
+                    <p class="jeux-hub__card-desc">Faites tourner les rouleaux et decrochez le jackpot</p>
+                    <span class="btn btn--primary btn--small">JOUER</span>
+                </div>
+            </a>
         </div>
-
-        <div class="game-layout game-layout--jeux">
-
-            <!-- Gauche : Jeu de Cartes (centré, plus gros) -->
-            <div class="game-section game-section--game">
-                <div class="game-section__title">Tenter sa chance</div>
-
-                <!-- Solde + prix -->
-                <div class="game-info--prominent">
-                    <span class="game-info__solde">Vos jetons : <span class="jetons-count" id="jetons-count">0</span></span>
-                    <span class="game-info__prix">Cout : <strong id="prix-tirage">12</strong> jetons</span>
-                </div>
-
-                <!-- 3 cartes -->
-                <div class="game-cards" id="game-cards">
-                    <div class="game-card" data-index="0">
-                        <div class="game-card__inner">
-                            <div class="game-card__front">
-                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
-                            </div>
-                            <div class="game-card__back">
-                                <span class="lot-name">?</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="game-card" data-index="1">
-                        <div class="game-card__inner">
-                            <div class="game-card__front">
-                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
-                            </div>
-                            <div class="game-card__back">
-                                <span class="lot-name">?</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="game-card" data-index="2">
-                        <div class="game-card__inner">
-                            <div class="game-card__front">
-                                <img class="game-card__logo" src="assets/images/logo-ren.png" alt="REN">
-                            </div>
-                            <div class="game-card__back">
-                                <span class="lot-name">?</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Instruction -->
-                <p class="game-instruction text-muted text-center" id="game-instruction" style="font-size:0.875rem;margin-bottom:var(--spacing-md);">Cliquez sur "Tenter sa chance" pour mélanger les cartes</p>
-
-                <!-- Bouton CTA -->
-                <div class="text-center">
-                    <button class="btn btn--primary btn--cta" id="btn-tirer">TENTER SA CHANCE</button>
-                </div>
-            </div>
-
-            <!-- Droite : Classement Jetons -->
-            <div class="game-section game-section--ranking">
-                <div class="game-section__title">Classement Jetons</div>
-                <div id="jetons-ranking">
-                    <div class="loading"><div class="spinner"></div> Chargement...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Modal resultat -->
-        <div class="modal-overlay" id="modal-result">
-            <div class="modal modal--result">
-                <img class="result-ecaflip" src="assets/images/dieu_ecaflip.png" alt="">
-                <div class="modal__header">
-                    <h2 class="modal__title" id="result-title">Résultat</h2>
-                    <button class="modal__close" id="result-close">&times;</button>
-                </div>
-                <div class="modal__body" id="result-body"></div>
-            </div>
-        </div>
-
-        <!-- Confetti container -->
-        <div class="confetti-container" id="confetti-container"></div>
     </main>
 
     <footer class="footer">
@@ -145,6 +90,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>
-    <script src="js/jeux.js"></script>
 </body>
 </html>

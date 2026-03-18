@@ -89,6 +89,7 @@
                 case 'bareme-perco': await tabBaremePerco(content); break;
                 case 'boutique': await tabBoutique(content); break;
                 case 'demandes-kamas': await tabDemandesKamas(content); break;
+                case 'slot': await tabSlot(content); break;
                 default: content.innerHTML = '<p class="text-muted">Onglet inconnu.</p>';
             }
         } catch (err) {
@@ -141,9 +142,12 @@
 
         container.querySelectorAll('.admin-reject').forEach(function (btn) {
             btn.addEventListener('click', async function () {
-                if (!confirm('Supprimer cet utilisateur ?')) return;
-                await window.REN.supabase.from('profiles').delete().eq('id', btn.dataset.id);
-                window.REN.toast('Utilisateur supprime.', 'info');
+                if (!confirm('Refuser et supprimer cet utilisateur ?')) return;
+                var uid = btn.dataset.id;
+                /* Supprimer le profil d'abord, puis le compte auth */
+                await window.REN.supabase.from('profiles').delete().eq('id', uid);
+                await window.REN.supabase.rpc('admin_delete_user', { p_user_id: uid }).catch(function () {});
+                window.REN.toast('Utilisateur refuse et supprime.', 'info');
                 loadTab('validation');
             });
         });
@@ -152,14 +156,20 @@
     /* === TAB: UTILISATEURS === */
     async function tabUtilisateurs(container) {
         var { data: users } = await window.REN.supabase
-            .from('profiles').select('*').eq('is_validated', true).order('username');
+            .from('profiles').select('*').order('username');
+
+        var activeUsers = (users || []).filter(function (u) { return u.is_validated; });
+        var blockedUsers = (users || []).filter(function (u) { return !u.is_validated; });
 
         var html = '<div class="admin-panel__title">Gestion des Utilisateurs</div>';
+
+        /* Membres actifs */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;color:var(--color-success);margin-bottom:var(--spacing-sm);">Membres actifs (' + activeUsers.length + ')</h3>';
         html += '<div class="table-wrapper"><table class="table">';
         html += '<thead><tr><th>Pseudo</th><th>Classe</th><th>Element</th><th>Jetons</th><th>Admin</th><th>Actions</th></tr></thead><tbody>';
 
         var esc = window.REN.escapeHtml;
-        (users || []).forEach(function (u) {
+        activeUsers.forEach(function (u) {
             html += '<tr>';
             html += '<td>' + esc(u.username) + '</td>';
             html += '<td>' + esc(u.classe || '-') + '</td>';
@@ -169,12 +179,31 @@
             html += '<td>';
             html += '<button class="btn btn--secondary btn--small admin-toggle-admin" data-id="' + u.id + '" data-admin="' + u.is_admin + '">' + (u.is_admin ? 'Retirer admin' : 'Rendre admin') + '</button> ';
             html += '<input type="number" class="bareme-grid__input admin-jetons-input" data-id="' + u.id + '" value="' + (u.jetons || 0) + '" style="width:70px;"> ';
-            html += '<button class="btn btn--primary btn--small admin-save-jetons" data-id="' + u.id + '">Sauver jetons</button>';
+            html += '<button class="btn btn--primary btn--small admin-save-jetons" data-id="' + u.id + '">Sauver jetons</button> ';
+            html += '<button class="btn btn--small admin-block-user" data-id="' + u.id + '" data-username="' + esc(u.username) + '" style="background:var(--color-danger);color:#fff;">Bloquer</button>';
             html += '</td>';
             html += '</tr>';
         });
-
         html += '</tbody></table></div>';
+
+        /* Membres bloqués */
+        if (blockedUsers.length > 0) {
+            html += '<h3 style="font-family:var(--font-title);font-size:1rem;color:var(--color-danger);margin:var(--spacing-lg) 0 var(--spacing-sm);">Membres bloques (' + blockedUsers.length + ')</h3>';
+            html += '<div class="table-wrapper"><table class="table">';
+            html += '<thead><tr><th>Pseudo</th><th>Classe</th><th>Element</th><th>Actions</th></tr></thead><tbody>';
+            blockedUsers.forEach(function (u) {
+                html += '<tr style="opacity:0.6;">';
+                html += '<td>' + esc(u.username) + '</td>';
+                html += '<td>' + esc(u.classe || '-') + '</td>';
+                html += '<td>' + esc(u.element || '-') + '</td>';
+                html += '<td>';
+                html += '<button class="btn btn--small admin-unblock-user" data-id="' + u.id + '" data-username="' + esc(u.username) + '" style="background:var(--color-success);color:#fff;">Debloquer</button>';
+                html += '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
         container.innerHTML = html;
 
         /* Toggle admin */
@@ -194,6 +223,30 @@
                 if (!input) return;
                 await window.REN.supabase.from('profiles').update({ jetons: parseInt(input.value) || 0 }).eq('id', btn.dataset.id);
                 window.REN.toast('Jetons mis a jour.', 'success');
+            });
+        });
+
+        /* Bloquer utilisateur */
+        container.querySelectorAll('.admin-block-user').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var username = btn.dataset.username;
+                if (!confirm('Bloquer ' + username + ' ?\nCette personne ne pourra plus acceder au site.')) return;
+                var { error } = await window.REN.supabase.from('profiles').update({ is_validated: false }).eq('id', btn.dataset.id);
+                if (error) { window.REN.toast('Erreur : ' + error.message, 'error'); return; }
+                window.REN.toast(username + ' a ete bloque.', 'success');
+                loadTab('utilisateurs');
+            });
+        });
+
+        /* Débloquer utilisateur */
+        container.querySelectorAll('.admin-unblock-user').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var username = btn.dataset.username;
+                if (!confirm('Debloquer ' + username + ' ?\nCette personne pourra a nouveau acceder au site.')) return;
+                var { error } = await window.REN.supabase.from('profiles').update({ is_validated: true }).eq('id', btn.dataset.id);
+                if (error) { window.REN.toast('Erreur : ' + error.message, 'error'); return; }
+                window.REN.toast(username + ' a ete debloque.', 'success');
+                loadTab('utilisateurs');
             });
         });
     }
@@ -1254,7 +1307,7 @@
                 html += '<span class="admin-achat-card__article">' + esc2(a.item_nom) + '</span>';
                 html += '<span class="admin-achat-card__detail">Achet\u00e9 par <strong>' + username + '</strong> \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
                 html += '</div>';
-                html += '<button class="btn btn--primary btn--small btn-distribue" data-id="' + a.id + '">Distribu\u00e9 \u2713</button>';
+                html += '<button class="btn btn--primary btn--small btn-distribue" data-id="' + a.id + '" data-reward="' + (a.jetons_credites || 0) + '">' + ((a.jetons_credites > 0) ? 'Valider (+' + a.jetons_credites + ' jetons) \u2713' : 'Distribu\u00e9 \u2713') + '</button>';
                 html += '</div>';
             });
             html += '</div>';
@@ -1297,7 +1350,9 @@
         html += '<div style="display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-bottom:var(--spacing-sm);align-items:flex-end;">';
         html += '<div><label class="form-label">Nom</label><input class="form-input" id="add-item-nom" placeholder="Bl\u00e9 x100" style="width:160px;"></div>';
         html += '<div><label class="form-label">Description</label><input class="form-input" id="add-item-desc" placeholder="Optionnel" style="width:180px;"></div>';
-        html += '<div><label class="form-label">Prix (jetons)</label><input class="form-input" id="add-item-prix" type="number" min="1" value="1" style="width:90px;"></div>';
+        html += '<div><label class="form-label">Prix</label><input class="form-input" id="add-item-prix" type="number" min="1" value="1" style="width:90px;"></div>';
+        html += '<div><label class="form-label">Devise</label><select class="form-select" id="add-item-devise" style="width:130px;"><option value="classique">Classique</option><option value="enutrosor">Enutrosor</option><option value="kamas">Kamas</option></select></div>';
+        html += '<div><label class="form-label">Jetons offerts</label><input class="form-input" id="add-item-reward" type="number" min="0" value="0" style="width:90px;" title="Nb de jetons credites au joueur (pour packs kamas)"></div>';
         html += '<div><label class="form-label">Stock (-1=illimit\u00e9)</label><input class="form-input" id="add-item-stock" type="number" value="-1" style="width:90px;"></div>';
         html += '</div>';
 
@@ -1313,7 +1368,7 @@
         /* Liste des articles */
         html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Catalogue (' + items.length + ' articles)</h3>';
         if (items.length > 0) {
-            html += '<table class="admin-table"><thead><tr><th>Image</th><th>Nom</th><th>Description</th><th>Prix</th><th>Stock</th><th>Actif</th><th>Actions</th></tr></thead><tbody>';
+            html += '<table class="admin-table"><thead><tr><th>Image</th><th>Nom</th><th>Description</th><th>Prix</th><th>Devise</th><th>Stock</th><th>Actif</th><th>Actions</th></tr></thead><tbody>';
             var escI = window.REN.escapeHtml;
             items.forEach(function (item) {
                 var safeImgUrl = window.REN.sanitizeUrl(item.image_url);
@@ -1327,7 +1382,9 @@
                 /* Display */
                 html += '<td class="cell-display" data-field="nom">' + escI(item.nom) + '</td>';
                 html += '<td class="cell-display" data-field="desc">' + escI(item.description || '') + '</td>';
+                var deviseLabel = (item.devise === 'enutrosor') ? '<img class="icon-inline" src="assets/images/kamatrix.png" alt="enutrosor">' : (item.devise === 'kamas') ? '<img class="icon-inline" src="assets/images/Kama.webp" alt="kamas">' : '<img class="icon-inline" src="assets/images/jeton.png" alt="jetons">';
                 html += '<td class="cell-display" data-field="prix">' + item.prix_jetons + '</td>';
+                html += '<td class="cell-display" data-field="devise">' + deviseLabel + '</td>';
                 html += '<td class="cell-display" data-field="stock">' + (item.stock === -1 ? '\u221e' : item.stock) + '</td>';
                 html += '<td class="cell-display" data-field="actif">' + (item.actif ? '\u2705' : '\u274c') + '</td>';
 
@@ -1335,6 +1392,7 @@
                 html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-nom" value="' + escI(item.nom) + '" style="width:120px;"></td>';
                 html += '<td class="cell-edit" data-field="desc" style="display:none;"><input class="form-input edit-desc" value="' + escI(item.description || '') + '" style="width:140px;"></td>';
                 html += '<td class="cell-edit" data-field="prix" style="display:none;"><input class="form-input edit-prix" type="number" value="' + item.prix_jetons + '" style="width:70px;"></td>';
+                html += '<td class="cell-edit" data-field="devise" style="display:none;"><select class="form-select edit-devise"><option value="classique"' + ((item.devise || 'classique') === 'classique' ? ' selected' : '') + '>Classique</option><option value="enutrosor"' + (item.devise === 'enutrosor' ? ' selected' : '') + '>Enutrosor</option></select></td>';
                 html += '<td class="cell-edit" data-field="stock" style="display:none;"><input class="form-input edit-stock" type="number" value="' + item.stock + '" style="width:70px;"></td>';
                 html += '<td class="cell-edit" data-field="actif" style="display:none;"><select class="form-select edit-actif"><option value="true"' + (item.actif ? ' selected' : '') + '>Oui</option><option value="false"' + (!item.actif ? ' selected' : '') + '>Non</option></select></td>';
 
@@ -1373,9 +1431,18 @@
         /* Distribué */
         container.querySelectorAll('.btn-distribue').forEach(function (btn) {
             btn.addEventListener('click', async function () {
-                if (!confirm('Confirmer que la ressource a \u00e9t\u00e9 donn\u00e9e en jeu ?')) return;
-                await window.REN.supabase.from('boutique_achats').update({ statut: 'distribue' }).eq('id', parseInt(btn.dataset.id));
-                window.REN.toast('Achat marqu\u00e9 comme distribu\u00e9.', 'success');
+                var achatId = parseInt(btn.dataset.id);
+                var jetonsReward = parseInt(btn.dataset.reward || '0');
+                if (jetonsReward > 0) {
+                    if (!confirm('Confirmer que les kamas ont ete recus en jeu ?\n' + jetonsReward + ' jetons seront credites au joueur.')) return;
+                    var resp = await window.REN.supabase.rpc('valider_achat_kamas', { p_achat_id: achatId });
+                    if (resp.error) { window.REN.toast('Erreur : ' + resp.error.message, 'error'); return; }
+                    window.REN.toast('Achat valide ! ' + jetonsReward + ' jetons credites.', 'success');
+                } else {
+                    if (!confirm('Confirmer que la ressource a ete donnee en jeu ?')) return;
+                    await window.REN.supabase.from('boutique_achats').update({ statut: 'distribue' }).eq('id', achatId);
+                    window.REN.toast('Achat marque comme distribue.', 'success');
+                }
                 loadTab('boutique');
             });
         });
@@ -1434,13 +1501,17 @@
 
             if (!nom) { window.REN.toast('Le nom est obligatoire.', 'error'); return; }
 
+            var devise = document.getElementById('add-item-devise').value || 'classique';
+            var reward = parseInt(document.getElementById('add-item-reward').value) || 0;
             await window.REN.supabase.from('boutique_items').insert({
                 nom: nom,
                 description: desc,
                 prix_jetons: prix,
                 stock: isNaN(stock) ? -1 : stock,
                 image_url: imageUrl,
-                actif: true
+                actif: true,
+                devise: devise,
+                jetons_reward: reward
             });
             window.REN.toast('Article ajout\u00e9 !', 'success');
             loadTab('boutique');
@@ -1468,7 +1539,8 @@
                     description: row.querySelector('.edit-desc').value.trim(),
                     prix_jetons: parseInt(row.querySelector('.edit-prix').value) || 1,
                     stock: parseInt(row.querySelector('.edit-stock').value),
-                    actif: row.querySelector('.edit-actif').value === 'true'
+                    actif: row.querySelector('.edit-actif').value === 'true',
+                    devise: row.querySelector('.edit-devise') ? row.querySelector('.edit-devise').value : 'classique'
                 };
                 if (!updateData.nom) { window.REN.toast('Le nom est obligatoire.', 'error'); return; }
                 await window.REN.supabase.from('boutique_items').update(updateData).eq('id', parseInt(btn.dataset.id));
@@ -1593,6 +1665,236 @@
                     .eq('id', parseInt(btn.dataset.id));
                 window.REN.toast('Demande refus\u00e9e.', 'info');
                 loadTab('demandes-kamas');
+            });
+        });
+    }
+
+    /* ============================================ */
+    /* ONGLET SLOT MACHINE                          */
+    /* ============================================ */
+    async function tabSlot(container) {
+        var esc = window.REN.escapeHtml;
+        var results = await Promise.all([
+            window.REN.supabase.from('slot_symboles').select('*').order('ordre', { ascending: true }),
+            window.REN.supabase.from('slot_historique').select('*, profiles:joueur_id(username)').order('created_at', { ascending: false }).limit(30)
+        ]);
+
+        var symboles = results[0].data || [];
+        var historique = results[1].data || [];
+
+        var html = '<div class="admin-panel__title">Machine a Sous - Symboles</div>';
+
+        /* === Calculer RTP theorique === */
+        var totalPoids = symboles.reduce(function (sum, s) { return sum + (s.actif ? s.poids : 0); }, 0);
+        var rtp = 0;
+        if (totalPoids > 0) {
+            symboles.forEach(function (s) {
+                if (!s.actif) return;
+                var prob = s.poids / totalPoids;
+                /* Triple */
+                rtp += Math.pow(prob, 3) * s.gain_triple;
+                /* Paire : 3 * p^2 * (1-p) */
+                rtp += 3 * Math.pow(prob, 2) * (1 - prob) * (s.gain_paire || 0);
+            });
+        }
+        var rtpPercent = (rtp * 100).toFixed(1);
+
+        html += '<div style="margin-bottom:var(--spacing-lg);padding:var(--spacing-md);background:var(--color-bg-primary);border-radius:var(--radius-md);border:1px solid var(--color-border);">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:var(--spacing-sm);">';
+        html += '<div>';
+        html += '<span class="form-label" style="margin-bottom:2px;">RTP Theorique</span>';
+        html += '<div style="font-family:var(--font-title);font-size:1.5rem;font-weight:700;color:' + (rtp < 0.85 ? 'var(--color-danger)' : rtp > 1 ? 'var(--color-danger)' : 'var(--color-success)') + ';">' + rtpPercent + '%</div>';
+        html += '<span class="text-muted" style="font-size:0.7rem;">Cible casino : 90-95%</span>';
+        html += '</div>';
+        html += '<div>';
+        html += '<span class="form-label" style="margin-bottom:2px;">Poids Total</span>';
+        html += '<div style="font-family:var(--font-title);font-size:1.25rem;font-weight:700;color:var(--color-text-primary);">' + totalPoids + '</div>';
+        html += '</div>';
+        html += '</div></div>';
+
+        /* === Liste des symboles === */
+        html += '<div class="admin-achats-list" style="margin-bottom:var(--spacing-lg);">';
+        symboles.forEach(function (s) {
+            var prob = totalPoids > 0 ? ((s.poids / totalPoids) * 100).toFixed(1) : '0';
+            var imgHtml = s.image_url ? '<img src="' + esc(s.image_url) + '" alt="' + esc(s.nom) + '" style="width:40px;height:40px;object-fit:contain;">' : '<span class="text-muted" style="font-size:1.5rem;">?</span>';
+
+            html += '<div class="admin-achat-card" style="' + (s.actif ? '' : 'opacity:0.4;') + 'flex-wrap:wrap;">';
+            html += '<div style="display:flex;align-items:center;gap:var(--spacing-sm);width:100%;">';
+            html += '<div style="width:50px;height:50px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:var(--color-bg-primary);border-radius:var(--radius-sm);">' + imgHtml + '</div>';
+            html += '<div style="flex:1;min-width:0;">';
+            html += '<div style="font-family:var(--font-title);font-weight:700;font-size:0.9375rem;">' + esc(s.nom) + '</div>';
+            html += '<div class="text-muted" style="font-size:0.8rem;">Poids : <strong style="color:var(--color-text-primary);">' + s.poids + '</strong> (' + prob + '%) · Triple : <strong style="color:var(--color-warning);">x' + s.gain_triple + '</strong> · Paire : <strong style="color:var(--color-text-primary);">x' + (s.gain_paire || 0) + '</strong></div>';
+            html += '</div>';
+            html += '<div style="display:flex;gap:4px;flex-shrink:0;">';
+            html += '<button class="btn btn--primary btn--small btn-edit-sym" data-id="' + s.id + '">Editer</button>';
+            html += '<button class="btn btn--secondary btn--small btn-toggle-sym" data-id="' + s.id + '" data-actif="' + s.actif + '">' + (s.actif ? 'Desactiver' : 'Activer') + '</button>';
+            html += '</div>';
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
+
+        /* === Ajouter un symbole === */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Ajouter un symbole</h3>';
+        html += '<div style="display:flex;gap:var(--spacing-sm);flex-wrap:wrap;margin-bottom:var(--spacing-sm);align-items:flex-end;">';
+        html += '<div><label class="form-label">Nom</label><input class="form-input" id="slot-add-nom" placeholder="aubergine" style="width:120px;"></div>';
+        html += '<div><label class="form-label">ID DofusDB</label><div style="display:flex;gap:4px;"><input class="form-input" id="slot-add-dofusid" placeholder="Ex: 28203" style="width:100px;"><button class="btn btn--secondary btn--small" id="slot-add-fetch" type="button">Importer</button></div></div>';
+        html += '<div style="flex:1;min-width:150px;"><label class="form-label">Image URL</label><input class="form-input" id="slot-add-img" placeholder="Auto via ID DofusDB" style="width:100%;"></div>';
+        html += '<div id="slot-add-preview" style="width:40px;height:40px;"></div>';
+        html += '<div><label class="form-label">Poids</label><input class="form-input" id="slot-add-poids" type="number" min="1" value="10" style="width:70px;"></div>';
+        html += '<div><label class="form-label">Triple (x)</label><input class="form-input" id="slot-add-triple" type="number" min="0" value="5" style="width:70px;"></div>';
+        html += '<div><label class="form-label">Paire (x)</label><input class="form-input" id="slot-add-paire" type="number" min="0" value="0" style="width:70px;"></div>';
+        html += '<button class="btn btn--primary btn--small" id="slot-add-btn">Ajouter</button>';
+        html += '</div>';
+
+        /* === Historique recent === */
+        html += '<details style="margin-top:var(--spacing-lg);">';
+        html += '<summary style="cursor:pointer;font-family:var(--font-title);font-size:0.9rem;font-weight:700;color:var(--color-text-muted);margin-bottom:var(--spacing-sm);">Historique tirages (' + historique.length + ')</summary>';
+        if (historique.length > 0) {
+            html += '<div style="max-height:300px;overflow-y:auto;margin-top:var(--spacing-sm);">';
+            html += '<table class="admin-table"><thead><tr><th>Joueur</th><th>Mise</th><th>Resultat</th><th>Gain</th><th>Date</th></tr></thead><tbody>';
+            historique.forEach(function (h) {
+                var username = h.profiles ? esc(h.profiles.username) : 'Inconnu';
+                var date = new Date(h.created_at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                var resultat = (h.resultat || []).join(' | ');
+                var gainClass = h.gain_jetons > 0 ? 'color:var(--color-warning);font-weight:700;' : 'color:var(--color-text-muted);';
+                html += '<tr>';
+                html += '<td>' + username + '</td>';
+                html += '<td>' + h.mise + '</td>';
+                html += '<td>' + esc(resultat) + '</td>';
+                html += '<td style="' + gainClass + '">' + (h.gain_jetons > 0 ? '+' : '') + h.gain_jetons + '</td>';
+                html += '<td class="text-muted">' + date + '</td>';
+                html += '</tr>';
+            });
+            html += '</tbody></table></div>';
+        } else {
+            html += '<p class="text-muted" style="margin-top:var(--spacing-sm);">Aucun tirage.</p>';
+        }
+        html += '</details>';
+
+        container.innerHTML = html;
+
+        /* === EVENT LISTENERS === */
+
+        /* Fetch image DofusDB pour ajout */
+        var fetchAddBtn = document.getElementById('slot-add-fetch');
+        if (fetchAddBtn) fetchAddBtn.addEventListener('click', async function () {
+            var dofusId = document.getElementById('slot-add-dofusid').value.trim();
+            if (!dofusId) { window.REN.toast('Entre un ID DofusDB', 'error'); return; }
+            try {
+                var resp = await fetch('https://api.dofusdb.fr/items/' + encodeURIComponent(dofusId));
+                if (!resp.ok) throw new Error('ID introuvable');
+                var data = await resp.json();
+                if (data.img) {
+                    document.getElementById('slot-add-img').value = data.img;
+                    document.getElementById('slot-add-preview').innerHTML = '<img src="' + data.img + '" style="width:40px;height:40px;object-fit:contain;">';
+                    if (data.name && data.name.fr && !document.getElementById('slot-add-nom').value.trim()) {
+                        document.getElementById('slot-add-nom').value = data.name.fr.toLowerCase();
+                    }
+                    window.REN.toast('Image importee !', 'success');
+                } else {
+                    window.REN.toast('Pas d\'image trouvee', 'error');
+                }
+            } catch (err) {
+                window.REN.toast('Erreur : ' + err.message, 'error');
+            }
+        });
+
+        /* Ajouter symbole */
+        var addBtn = document.getElementById('slot-add-btn');
+        if (addBtn) addBtn.addEventListener('click', async function () {
+            var nom = (document.getElementById('slot-add-nom').value || '').trim().toLowerCase();
+            var img = (document.getElementById('slot-add-img').value || '').trim();
+            var poids = parseInt(document.getElementById('slot-add-poids').value) || 10;
+            var triple = parseInt(document.getElementById('slot-add-triple').value) || 5;
+            var paire = parseInt(document.getElementById('slot-add-paire').value) || 0;
+            if (!nom) { window.REN.toast('Nom requis', 'error'); return; }
+            var maxOrdre = symboles.length > 0 ? Math.max.apply(null, symboles.map(function (s) { return s.ordre; })) : 0;
+            var { error } = await window.REN.supabase.from('slot_symboles').insert({
+                nom: nom, image_url: img, poids: poids, gain_triple: triple, gain_paire: paire, ordre: maxOrdre + 1
+            });
+            if (error) { window.REN.toast('Erreur : ' + error.message, 'error'); return; }
+            window.REN.toast('Symbole ajoute !', 'success');
+            loadTab('slot');
+        });
+
+        /* Toggle actif/inactif */
+        container.querySelectorAll('.btn-toggle-sym').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var id = parseInt(btn.getAttribute('data-id'));
+                var actif = btn.getAttribute('data-actif') === 'true';
+                await window.REN.supabase.from('slot_symboles').update({ actif: !actif }).eq('id', id);
+                window.REN.toast(actif ? 'Symbole desactive' : 'Symbole active', 'info');
+                loadTab('slot');
+            });
+        });
+
+        /* Editer symbole — modal inline */
+        container.querySelectorAll('.btn-edit-sym').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var id = parseInt(btn.getAttribute('data-id'));
+                var sym = symboles.find(function (s) { return s.id === id; });
+                if (!sym) return;
+
+                var card = btn.closest('.admin-achat-card');
+                if (!card) return;
+
+                /* Check if already editing */
+                if (card.querySelector('.slot-edit-form')) return;
+
+                var form = document.createElement('div');
+                form.className = 'slot-edit-form';
+                form.style.cssText = 'display:flex;gap:var(--spacing-sm);flex-wrap:wrap;align-items:flex-end;margin-top:var(--spacing-sm);padding-top:var(--spacing-sm);border-top:1px solid var(--color-border);width:100%;';
+                form.innerHTML = ''
+                    + '<div><label class="form-label" style="font-size:0.75rem;">Nom</label><input class="form-input" id="edit-nom-' + id + '" value="' + esc(sym.nom) + '" style="width:110px;font-size:0.8rem;"></div>'
+                    + '<div><label class="form-label" style="font-size:0.75rem;">ID DofusDB</label><div style="display:flex;gap:4px;"><input class="form-input" id="edit-dofusid-' + id + '" placeholder="Ex: 28203" style="width:90px;font-size:0.8rem;"><button class="btn btn--secondary btn--small" id="fetch-img-' + id + '">Importer</button></div></div>'
+                    + '<div style="flex:1;min-width:150px;"><label class="form-label" style="font-size:0.75rem;">Image URL</label><input class="form-input" id="edit-img-' + id + '" value="' + esc(sym.image_url || '') + '" style="font-size:0.8rem;width:100%;"></div>'
+                    + '<div id="edit-preview-' + id + '" style="width:40px;height:40px;flex-shrink:0;">' + (sym.image_url ? '<img src="' + esc(sym.image_url) + '" style="width:40px;height:40px;object-fit:contain;">' : '') + '</div>'
+                    + '<div><label class="form-label" style="font-size:0.75rem;">Poids</label><input class="form-input" id="edit-poids-' + id + '" type="number" min="1" value="' + sym.poids + '" style="width:65px;font-size:0.8rem;"></div>'
+                    + '<div><label class="form-label" style="font-size:0.75rem;">Triple (x)</label><input class="form-input" id="edit-triple-' + id + '" type="number" min="0" value="' + sym.gain_triple + '" style="width:65px;font-size:0.8rem;"></div>'
+                    + '<div><label class="form-label" style="font-size:0.75rem;">Paire (x)</label><input class="form-input" id="edit-paire-' + id + '" type="number" min="0" value="' + (sym.gain_paire || 0) + '" style="width:65px;font-size:0.8rem;"></div>'
+                    + '<div style="display:flex;gap:4px;"><button class="btn btn--primary btn--small" id="save-sym-' + id + '">Sauver</button>'
+                    + '<button class="btn btn--secondary btn--small" id="cancel-sym-' + id + '">Annuler</button></div>';
+
+                card.appendChild(form);
+
+                document.getElementById('fetch-img-' + id).addEventListener('click', async function () {
+                    var dofusId = document.getElementById('edit-dofusid-' + id).value.trim();
+                    if (!dofusId) { window.REN.toast('Entre un ID DofusDB', 'error'); return; }
+                    try {
+                        var resp = await fetch('https://api.dofusdb.fr/items/' + encodeURIComponent(dofusId));
+                        if (!resp.ok) throw new Error('ID introuvable');
+                        var data = await resp.json();
+                        if (data.img) {
+                            document.getElementById('edit-img-' + id).value = data.img;
+                            document.getElementById('edit-preview-' + id).innerHTML = '<img src="' + data.img + '" style="width:40px;height:40px;object-fit:contain;">';
+                            window.REN.toast('Image importee !', 'success');
+                        } else {
+                            window.REN.toast('Pas d\'image trouvee', 'error');
+                        }
+                    } catch (err) {
+                        window.REN.toast('Erreur : ' + err.message, 'error');
+                    }
+                });
+
+                document.getElementById('save-sym-' + id).addEventListener('click', async function () {
+                    var nomVal = (document.getElementById('edit-nom-' + id).value || '').trim().toLowerCase();
+                    var imgVal = document.getElementById('edit-img-' + id).value.trim();
+                    var poidsVal = parseInt(document.getElementById('edit-poids-' + id).value) || 1;
+                    var tripleVal = parseInt(document.getElementById('edit-triple-' + id).value) || 0;
+                    var paireVal = parseInt(document.getElementById('edit-paire-' + id).value) || 0;
+                    if (!nomVal) { window.REN.toast('Nom requis', 'error'); return; }
+                    var { error } = await window.REN.supabase.from('slot_symboles').update({
+                        nom: nomVal, image_url: imgVal, poids: poidsVal, gain_triple: tripleVal, gain_paire: paireVal
+                    }).eq('id', id);
+                    if (error) { window.REN.toast('Erreur: ' + error.message, 'error'); console.error('[SLOT ADMIN]', error); return; }
+                    window.REN.toast('Symbole mis a jour !', 'success');
+                    loadTab('slot');
+                });
+
+                document.getElementById('cancel-sym-' + id).addEventListener('click', function () {
+                    form.remove();
+                });
             });
         });
     }
