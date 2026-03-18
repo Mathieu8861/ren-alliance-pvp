@@ -385,13 +385,13 @@
         if (btnUp) btnUp.addEventListener('click', function () { if (miseIndex < MISES.length - 1) { miseIndex++; updateMiseDisplay(); } });
         if (btnDown) btnDown.addEventListener('click', function () { if (miseIndex > 0) { miseIndex--; updateMiseDisplay(); } });
 
-        /* Preview conversion kamatrix → jetons (ratio 2:1) */
+        /* Preview conversion kamatrix → jetons (ratio 75%) */
         var convertInput = document.getElementById('convert-amount');
         var convertPreview = document.getElementById('convert-preview');
         if (convertInput && convertPreview) {
             convertInput.addEventListener('input', function () {
                 var val = parseInt(convertInput.value) || 0;
-                convertPreview.textContent = Math.floor(val / 2);
+                convertPreview.textContent = Math.floor(val * 0.75);
             });
         }
 
@@ -399,7 +399,7 @@
         var btnConvert = document.getElementById('btn-convert-kamatrix');
         if (btnConvert) btnConvert.addEventListener('click', async function () {
             var amount = parseInt(convertInput ? convertInput.value : 0);
-            if (!amount || amount < 2) { window.REN.toast('Minimum 2 Kamatrix', 'error'); return; }
+            if (!amount || amount < 1) { window.REN.toast('Minimum 1 Kamatrix', 'error'); return; }
             try {
                 var resp = await window.REN.supabase.rpc('convertir_kamatrix', { p_montant_kamatrix: amount });
                 if (resp.error) throw resp.error;
