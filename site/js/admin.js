@@ -1179,19 +1179,20 @@
         var html = '<div class="admin-panel__title">Barème Percepteurs & Récompenses</div>';
         html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-lg);">Définir les paliers de récompenses en fonction des points hebdomadaires</p>';
 
-        html += '<table class="admin-table"><thead><tr>';
-        html += '<th>Palier</th><th>Emoji</th><th>Points min</th><th>Points max</th><th>Percepteurs bonus</th><th>Pépites</th><th>Actions</th>';
+        html += '<table class="admin-table" style="width:100%;"><thead><tr>';
+        html += '<th style="text-align:center;">Palier</th><th style="text-align:center;">Emoji</th><th style="text-align:center;">Pts min</th><th style="text-align:center;">Pts max</th><th style="text-align:center;">Percos</th><th style="text-align:center;">Pépites</th><th style="text-align:center;">Jetons</th><th style="text-align:center;">Actions</th>';
         html += '</tr></thead><tbody>';
 
         rows.forEach(function (r) {
             html += '<tr data-id="' + r.id + '">';
-            html += '<td><input class="form-input" style="width:100px;" value="' + r.label + '" data-field="label"></td>';
-            html += '<td><input class="form-input" style="width:50px;text-align:center;" value="' + (r.emoji || '') + '" data-field="emoji"></td>';
-            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + r.seuil_min + '" data-field="seuil_min"></td>';
-            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + (r.seuil_max !== null ? r.seuil_max : '') + '" placeholder="∞" data-field="seuil_max"></td>';
-            html += '<td><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + r.percepteurs_bonus + '" data-field="percepteurs_bonus"></td>';
-            html += '<td><input class="form-input" style="width:90px;text-align:center;" type="number" value="' + r.pepites + '" data-field="pepites"></td>';
-            html += '<td><button class="btn btn--danger btn--small btn-delete-tier" data-id="' + r.id + '">✕</button></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:90px;text-align:center;" value="' + r.label + '" data-field="label"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:45px;text-align:center;" value="' + (r.emoji || '') + '" data-field="emoji"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" value="' + r.seuil_min + '" data-field="seuil_min"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" value="' + (r.seuil_max !== null ? r.seuil_max : '') + '" placeholder="∞" data-field="seuil_max"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" value="' + r.percepteurs_bonus + '" data-field="percepteurs_bonus"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:70px;text-align:center;" type="number" value="' + r.pepites + '" data-field="pepites"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" value="' + (r.jetons_reward || 0) + '" data-field="jetons_reward"></td>';
+            html += '<td style="text-align:center;"><button class="btn btn--danger btn--small btn-delete-tier" data-id="' + r.id + '">✕</button></td>';
             html += '</tr>';
         });
 
@@ -1219,11 +1220,12 @@
                 var seuil_max = inputs[3].value.trim() === '' ? null : parseInt(inputs[3].value);
                 var percepteurs_bonus = parseInt(inputs[4].value) || 0;
                 var pepites = parseInt(inputs[5].value) || 0;
+                var jetons_reward = parseInt(inputs[6].value) || 0;
 
                 updates.push(
                     window.REN.supabase.from('recompenses_config').update({
                         label: label, emoji: emoji, seuil_min: seuil_min, seuil_max: seuil_max,
-                        percepteurs_bonus: percepteurs_bonus, pepites: pepites
+                        percepteurs_bonus: percepteurs_bonus, pepites: pepites, jetons_reward: jetons_reward
                     }).eq('id', id)
                 );
             });
@@ -1237,7 +1239,7 @@
             var maxOrdre = rows.length ? Math.max.apply(null, rows.map(function (r) { return r.ordre; })) : 0;
             var { error } = await window.REN.supabase.from('recompenses_config').insert({
                 label: 'Nouveau', emoji: '🏅', seuil_min: 0, seuil_max: null,
-                percepteurs_bonus: 0, pepites: 0, ordre: maxOrdre + 1
+                percepteurs_bonus: 0, pepites: 0, jetons_reward: 0, ordre: maxOrdre + 1
             });
             if (error) {
                 console.error('[REN-ADMIN] Erreur ajout palier:', error);

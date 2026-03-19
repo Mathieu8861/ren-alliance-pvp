@@ -2736,7 +2736,7 @@ table {
 }
 
 .board-table__th--rank {
-    width: 50px;
+    width: 40px;
     text-align: center;
 }
 
@@ -2744,19 +2744,19 @@ table {
 .board-table__th--perco,
 .board-table__th--pepites {
     text-align: center;
-    width: 100px;
+    width: 80px;
 }
 
 .board-table__th--name {
-    width: 180px;
+    width: 120px;
 }
 
 .board-table__th--tier {
-    width: 110px;
+    width: 100px;
 }
 
 .board-table__th--zone {
-    width: 160px;
+    width: 170px;
 }
 
 .board-table__td--zone {
@@ -2765,11 +2765,22 @@ table {
 }
 
 .board-table__th--reward {
-    width: 130px;
+    width: 110px;
 }
 
 .board-table__th--pepjeu {
-    width: 110px;
+    width: 90px;
+}
+
+.board-table__th--kamatrix {
+    width: 90px;
+    text-align: center;
+}
+
+.board-table__td--reward,
+.board-table__td--pepjeu,
+.board-table__td--kamatrix {
+    text-align: center;
 }
 
 .board-table__row {
@@ -4108,6 +4119,62 @@ table {
     font-size: 0.8125rem;
     color: var(--color-text-secondary);
     cursor: pointer;
+}
+
+/* Segment control : choix récompense PVP */
+.profil-droits__pref-section {
+    padding: var(--spacing-xs) 0;
+}
+
+.profil-droits__pref-label {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.profil-droits__pref-group {
+    display: flex;
+    gap: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+}
+
+.profil-droits__pref-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--color-bg-secondary);
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 0.8125rem;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-right: 1px solid var(--color-border);
+}
+
+.profil-droits__pref-btn:last-child {
+    border-right: none;
+}
+
+.profil-droits__pref-btn:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}
+
+.profil-droits__pref-btn--active {
+    background: var(--color-accent);
+    color: #fff;
+    font-weight: 600;
+}
+
+.profil-droits__pref-btn--active:hover {
+    background: var(--color-accent-hover);
+    color: #fff;
 }
 
 .profil-droits__zone-row {
