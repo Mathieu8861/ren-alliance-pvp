@@ -5693,7 +5693,7 @@ table {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-xl);
-    max-width: 700px;
+    max-width: 900px;
     width: 100%;
 }
 
@@ -5767,6 +5767,24 @@ table {
 
 .jeux-hub__card .btn {
     align-self: flex-start;
+}
+
+@media (min-width: 1600px) {
+    .jeux-hub {
+        max-width: 1100px;
+    }
+    .jeux-hub__card-title { font-size: 1.4rem; }
+    .jeux-hub__card-desc { font-size: 0.95rem; }
+    .jeux-hub__card-god { font-size: 0.85rem; }
+}
+
+@media (min-width: 2200px) {
+    .jeux-hub {
+        max-width: 1400px;
+    }
+    .jeux-hub__card-title { font-size: 1.6rem; }
+    .jeux-hub__card-desc { font-size: 1.05rem; }
+    .jeux-hub__card-body { padding: var(--spacing-lg) var(--spacing-xl) var(--spacing-xl); }
 }
 
 @media (max-width: 600px) {
