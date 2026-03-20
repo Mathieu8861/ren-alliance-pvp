@@ -56,6 +56,7 @@
                 case 'definitif': await loadDefinitif(content); break;
                 case 'kamas': await loadKamas(content); break;
                 case 'jetons': await loadJetons(content); break;
+                case 'kamatrix': await loadKamatrix(content); break;
             }
         } catch (err) {
             console.error('[REN] Erreur classement:', err);
@@ -107,6 +108,14 @@
         var { data, error } = await window.REN.supabase.from('classement_jetons').select('*');
         if (error) throw error;
         renderRanking(container, data || [], 'jetons', 'jetons', 'Classement Jetons');
+    }
+
+    /* === KAMATRIX === */
+    async function loadKamatrix(container) {
+        var { data, error } = await window.REN.supabase.from('profiles').select('id, username, jetons_slot').order('jetons_slot', { ascending: false });
+        if (error) throw error;
+        var filtered = (data || []).filter(function (r) { return r.jetons_slot > 0; });
+        renderRanking(container, filtered, 'jetons_slot', 'kamatrix', 'Classement Kamatrix');
     }
 
     /* === RENDER === */
