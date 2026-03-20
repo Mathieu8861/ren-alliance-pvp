@@ -554,7 +554,7 @@
         try {
             var userId = window.REN.currentUser.id;
             var profile = window.REN.currentProfile;
-            var preferePepites = profile.prefere_pepites || false;
+            var prefRecompense = profile.preference_recompense || 'percos';
 
             /* Charger config + data semaine passee + semaine en cours en parallele */
             var results = await Promise.all([
@@ -599,27 +599,32 @@
 
             /* --- Semaine passee = droits actuels --- */
             html += '<div class="profil-droits__section-label">Semaine pass\u00e9e \u2192 droits actuels</div>';
-            html += buildWeekBlock(pointsLast, rewardLast, pepJeuLast, preferePepites);
+            html += buildWeekBlock(pointsLast, rewardLast, pepJeuLast, prefRecompense);
 
             /* Separateur entre les 2 semaines */
             html += '<div class="profil-droits__separator"></div>';
 
             /* --- Semaine en cours = droits prochains --- */
             html += '<div class="profil-droits__section-label profil-droits__section-label--muted">Semaine en cours \u2192 droits prochains</div>';
-            html += buildWeekBlock(pointsCurrent, rewardCurrent, pepJeuCurrent, preferePepites);
+            html += buildWeekBlock(pointsCurrent, rewardCurrent, pepJeuCurrent, prefRecompense);
 
             /* Separateur */
             html += '<div class="profil-droits__separator"></div>';
 
-            /* Toggle preference */
-            html += '<div class="profil-droits__toggle-row">';
-            html += '<label class="profil-droits__toggle-label" for="profil-prefere-pepites">';
-            html += 'Je pr\u00e9f\u00e8re les p\u00e9pites au lieu des percos';
-            html += '</label>';
-            html += '<label class="toggle-switch">';
-            html += '<input type="checkbox" id="profil-prefere-pepites" ' + (preferePepites ? 'checked' : '') + '>';
-            html += '<span class="toggle-switch__slider"></span>';
-            html += '</label>';
+            /* Sélecteur préférence récompense */
+            html += '<div class="profil-droits__pref-section">';
+            html += '<div class="profil-droits__pref-label">Pour mes r\u00e9compenses PvP de fin de semaine, je souhaite recevoir :</div>';
+            html += '<div class="profil-droits__pref-group" id="pref-recompense-group">';
+            html += '<button class="profil-droits__pref-btn' + (prefRecompense === 'percos' ? ' profil-droits__pref-btn--active' : '') + '" data-pref="percos">';
+            html += '<img class="icon-inline icon-inline--lg" src="assets/images/percepteur.png" alt=""> Percepteurs';
+            html += '</button>';
+            html += '<button class="profil-droits__pref-btn' + (prefRecompense === 'pepites' ? ' profil-droits__pref-btn--active' : '') + '" data-pref="pepites">';
+            html += '<img class="icon-inline" src="assets/images/pepite.png" alt=""> P\u00e9pites';
+            html += '</button>';
+            html += '<button class="profil-droits__pref-btn' + (prefRecompense === 'jetons' ? ' profil-droits__pref-btn--active' : '') + '" data-pref="jetons">';
+            html += '<img class="icon-inline" src="assets/images/jeton.png" alt=""> Jetons';
+            html += '</button>';
+            html += '</div>';
             html += '</div>';
 
             /* Zone réservée (75+ pts semaine en cours OU semaine passée) */
@@ -659,7 +664,7 @@
         return { pepites: 0, percepteurs_bonus: 0, label: 'Aucun', emoji: '' };
     }
 
-    function buildWeekBlock(points, reward, pepJeu, preferePepites) {
+    function buildWeekBlock(points, reward, pepJeu, prefRecompense) {
         var html = '';
 
         /* Ligne 1 : points + palier */
@@ -679,9 +684,12 @@
 
         /* Bloc récompense PVP (selon préférence) */
         html += '<div class="profil-droits__stat">';
-        if (points > 0 && preferePepites && reward.pepites > 0) {
+        if (points > 0 && prefRecompense === 'pepites' && reward.pepites > 0) {
             html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
             html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">' + window.REN.formatNumber(reward.pepites) + ' <img class="icon-inline" src="assets/images/pepite.png" alt=""></span>';
+        } else if (points > 0 && prefRecompense === 'jetons' && (reward.jetons_reward || 0) > 0) {
+            html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
+            html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">+' + reward.jetons_reward + ' <img class="icon-inline" src="assets/images/jeton.png" alt=""></span>';
         } else if (points > 0 && reward.percepteurs_bonus > 0) {
             html += '<span class="profil-droits__stat-label">R\u00e9compense PVP</span>';
             html += '<span class="profil-droits__stat-value profil-droits__stat-value--accent">+' + reward.percepteurs_bonus + ' <img class="icon-inline icon-inline--lg" src="assets/images/percepteur.png" alt=""></span>';
@@ -707,34 +715,35 @@
     }
 
     function setupPreferenceToggle() {
-        var toggle = document.getElementById('profil-prefere-pepites');
-        if (!toggle) return;
+        var group = document.getElementById('pref-recompense-group');
+        if (!group) return;
 
-        toggle.addEventListener('change', async function () {
-            var newValue = toggle.checked;
+        var btns = group.querySelectorAll('.profil-droits__pref-btn');
+        btns.forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var newValue = btn.getAttribute('data-pref');
+                if (newValue === window.REN.currentProfile.preference_recompense) return;
 
-            try {
-                var resp = await window.REN.supabase
-                    .from('profiles')
-                    .update({ prefere_pepites: newValue })
-                    .eq('id', window.REN.currentUser.id);
+                try {
+                    var resp = await window.REN.supabase
+                        .from('profiles')
+                        .update({ preference_recompense: newValue })
+                        .eq('id', window.REN.currentUser.id);
 
-                if (resp.error) throw resp.error;
+                    if (resp.error) throw resp.error;
 
-                window.REN.currentProfile.prefere_pepites = newValue;
-                window.REN.toast(
-                    newValue ? 'Pr\u00e9f\u00e9rence : p\u00e9pites' : 'Pr\u00e9f\u00e9rence : percos',
-                    'success'
-                );
+                    window.REN.currentProfile.preference_recompense = newValue;
+                    var labels = { percos: 'Percepteurs', pepites: 'P\u00e9pites', jetons: 'Jetons' };
+                    window.REN.toast('Pr\u00e9f\u00e9rence : ' + labels[newValue], 'success');
 
-                /* Rafraichir le bloc pour refléter le choix */
-                await loadDroitsHebdo();
+                    /* Rafraichir le bloc pour refléter le choix */
+                    await loadDroitsHebdo();
 
-            } catch (err) {
-                console.error('[REN] Erreur sauvegarde preference:', err);
-                toggle.checked = !newValue;
-                window.REN.toast('Erreur lors de la sauvegarde.', 'error');
-            }
+                } catch (err) {
+                    console.error('[REN] Erreur sauvegarde preference:', err);
+                    window.REN.toast('Erreur lors de la sauvegarde.', 'error');
+                }
+            });
         });
     }
 

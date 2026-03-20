@@ -90,14 +90,11 @@
             monday.setHours(0, 0, 0, 0);
 
             var { data } = await window.REN.supabase
-                .from('slot_historique')
-                .select('user_id, gain_jetons')
-                .gte('created_at', monday.toISOString())
-                .gt('gain_jetons', 0);
+                .from('kamatrix_semaine')
+                .select('id, kamatrix');
 
             (data || []).forEach(function (row) {
-                if (!kamatrixMap[row.user_id]) kamatrixMap[row.user_id] = 0;
-                kamatrixMap[row.user_id] += row.gain_jetons;
+                kamatrixMap[row.id] = row.kamatrix || 0;
             });
         } catch (err) {
             console.error('[REN-BOARD] Erreur chargement kamatrix:', err);
