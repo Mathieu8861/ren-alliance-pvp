@@ -261,7 +261,7 @@
         html += '<div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-lg);flex-wrap:wrap;">';
         html += '<input class="form-input" id="add-alliance-nom" placeholder="Nom de l\'alliance" style="flex:2;min-width:150px;">';
         html += '<input class="form-input" id="add-alliance-tag" placeholder="Tag" style="flex:1;min-width:80px;">';
-        html += '<input class="form-input" id="add-alliance-mult" type="number" placeholder="Multiplicateur" value="1" min="1" style="flex:1;min-width:80px;">';
+        html += '<input class="form-input" id="add-alliance-mult" type="number" placeholder="Multiplicateur" value="1" min="0.5" step="0.5" style="flex:1;min-width:80px;">';
         html += '<button class="btn btn--primary btn--small" id="btn-add-alliance">Ajouter</button>';
         html += '</div>';
 
@@ -280,7 +280,7 @@
             /* Mode edition (masque par defaut) */
             html += '<td class="cell-edit" data-field="nom" style="display:none;"><input class="form-input edit-alliance-nom" value="' + escNom + '" style="width:100%;"></td>';
             html += '<td class="cell-edit" data-field="tag" style="display:none;"><input class="form-input edit-alliance-tag" value="' + escTag + '" style="width:100%;"></td>';
-            html += '<td class="cell-edit" data-field="mult" style="display:none;"><input class="form-input edit-alliance-mult" type="number" value="' + a.multiplicateur + '" min="1" style="width:80px;"></td>';
+            html += '<td class="cell-edit" data-field="mult" style="display:none;"><input class="form-input edit-alliance-mult" type="number" value="' + a.multiplicateur + '" min="0.5" step="0.5" style="width:80px;"></td>';
             /* Boutons */
             html += '<td>';
             html += '<span class="actions-display">';
@@ -302,7 +302,7 @@
         document.getElementById('btn-add-alliance').addEventListener('click', async function () {
             var nom = document.getElementById('add-alliance-nom').value.trim();
             var tag = document.getElementById('add-alliance-tag').value.trim();
-            var mult = parseInt(document.getElementById('add-alliance-mult').value) || 1;
+            var mult = parseFloat(document.getElementById('add-alliance-mult').value) || 1;
             if (!nom) { window.REN.toast('Entrez un nom.', 'error'); return; }
             await window.REN.supabase.from('alliances').insert({ nom: nom, tag: tag || null, multiplicateur: mult });
             window.REN.toast('Alliance ajoutee !', 'success');
@@ -335,7 +335,7 @@
                 if (!row) return;
                 var nom = row.querySelector('.edit-alliance-nom').value.trim();
                 var tag = row.querySelector('.edit-alliance-tag').value.trim();
-                var mult = parseInt(row.querySelector('.edit-alliance-mult').value) || 1;
+                var mult = parseFloat(row.querySelector('.edit-alliance-mult').value) || 1;
                 if (!nom) { window.REN.toast('Le nom ne peut pas etre vide.', 'error'); return; }
                 var { error } = await window.REN.supabase.from('alliances').update({ nom: nom, tag: tag || null, multiplicateur: mult }).eq('id', btn.dataset.id);
                 if (error) { window.REN.toast('Erreur: ' + error.message, 'error'); return; }
