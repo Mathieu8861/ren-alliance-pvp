@@ -34,7 +34,7 @@ CREATE OR REPLACE FUNCTION public.calculer_points(
 RETURNS INTEGER AS $$
 DECLARE
     base_points INTEGER;
-    mult INTEGER := 1;
+    mult NUMERIC(3,1) := 1;
 BEGIN
     -- Recuperer les points du bareme
     SELECT
@@ -61,7 +61,7 @@ BEGIN
         END IF;
     END IF;
 
-    RETURN base_points * mult;
+    RETURN ROUND(base_points * mult);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public;

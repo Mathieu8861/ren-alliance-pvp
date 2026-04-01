@@ -1309,7 +1309,10 @@
                 html += '<span class="admin-achat-card__article">' + esc2(a.item_nom) + '</span>';
                 html += '<span class="admin-achat-card__detail">Achet\u00e9 par <strong>' + username + '</strong> \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
                 html += '</div>';
+                html += '<div style="display:flex;gap:var(--spacing-xs);align-items:center;">';
                 html += '<button class="btn btn--primary btn--small btn-distribue" data-id="' + a.id + '" data-reward="' + (a.jetons_credites || 0) + '">' + ((a.jetons_credites > 0) ? 'Valider (+' + a.jetons_credites + ' jetons) \u2713' : 'Distribu\u00e9 \u2713') + '</button>';
+                html += '<button class="btn btn--small btn-annuler-achat" data-id="' + a.id + '" data-nom="' + esc2(a.item_nom) + '" style="background:var(--color-danger);color:#fff;">Annuler</button>';
+                html += '</div>';
                 html += '</div>';
             });
             html += '</div>';
@@ -1338,7 +1341,10 @@
                 html += '<span class="admin-achat-card__article">' + esc2(a.item_nom) + '</span>';
                 html += '<span class="admin-achat-card__detail">' + username + ' \u00b7 ' + a.prix_paye + ' <img class="icon-inline" src="assets/images/jeton.png" alt="jetons"> \u00b7 ' + date + '</span>';
                 html += '</div>';
+                html += '<div style="display:flex;gap:var(--spacing-xs);align-items:center;">';
                 html += '<span class="badge-statut badge-statut--distribue">Distribu\u00e9</span>';
+                html += '<button class="btn btn--small btn-rembourser-achat" data-id="' + a.id + '" data-nom="' + esc2(a.item_nom) + '" style="background:var(--color-danger);color:#fff;font-size:0.7rem;">Rembourser</button>';
+                html += '</div>';
                 html += '</div>';
             });
             html += '</div>';
@@ -1445,6 +1451,26 @@
                     await window.REN.supabase.from('boutique_achats').update({ statut: 'distribue' }).eq('id', achatId);
                     window.REN.toast('Achat marque comme distribue.', 'success');
                 }
+                loadTab('boutique');
+            });
+        });
+
+        /* Annuler / Rembourser un achat */
+        container.querySelectorAll('.btn-annuler-achat, .btn-rembourser-achat').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var achatId = parseInt(btn.dataset.id);
+                var nomItem = btn.dataset.nom || '';
+                var isRemboursement = btn.classList.contains('btn-rembourser-achat');
+                var msg = isRemboursement
+                    ? 'Rembourser l\'achat "' + nomItem + '" et recrediter les jetons au joueur ?'
+                    : 'Annuler l\'achat "' + nomItem + '" et recrediter les jetons au joueur ?';
+                if (!confirm(msg)) return;
+                var resp = await window.REN.supabase.rpc('rembourser_achat', { p_achat_id: achatId });
+                if (resp.error) {
+                    window.REN.toast('Erreur : ' + resp.error.message, 'error');
+                    return;
+                }
+                window.REN.toast('Achat annul\u00e9 et jetons recr\u00e9dit\u00e9s !', 'success');
                 loadTab('boutique');
             });
         });
