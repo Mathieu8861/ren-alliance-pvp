@@ -269,7 +269,7 @@
                 await sleep(600);
 
                 /* Glow effect */
-                var isRien = selectedLot.nom.toLowerCase().indexOf('rien') !== -1 && selectedLot.gain_jetons <= 0;
+                var isRien = selectedLot.nom.toLowerCase().indexOf('rien') !== -1 && selectedLot.gain_jetons <= 0 && (selectedLot.gain_pepites || 0) <= 0;
                 console.log('[REN-JEU] Lot tire:', selectedLot.nom, '| gain_jetons:', selectedLot.gain_jetons, '| isRien:', isRien);
 
                 card.classList.add(isRien ? 'glow-lose' : 'glow-win');
@@ -360,6 +360,9 @@
             if (gainJetons > 0) {
                 html += '<div class="result-gain">+' + gainJetons + ' jetons</div>';
             }
+            if ((lot.gain_pepites || 0) > 0) {
+                html += '<div class="result-gain" style="color:var(--color-warning);">+' + lot.gain_pepites + ' p\u00e9pites <img class="icon-inline" src="assets/images/pepite.png" alt=""></div>';
+            }
             html += '<div class="result-double-question">Tenter le quitte ou double ?</div>';
             html += '<div class="result-actions">';
             html += '<button class="btn btn--garder" id="btn-garder">Garder</button>';
@@ -438,7 +441,11 @@
             html += '<div class="result-lot-name">' + lot.nom + ' x2</div>';
             if (finalGain > 0) {
                 html += '<div class="result-gain">+' + finalGain + ' jetons !</div>';
-            } else {
+            }
+            if ((lot.gain_pepites || 0) > 0) {
+                html += '<div class="result-gain" style="color:var(--color-warning);">+' + (lot.gain_pepites * 2) + ' p\u00e9pites <img class="icon-inline" src="assets/images/pepite.png" alt=""> !</div>';
+            }
+            if (finalGain <= 0 && (lot.gain_pepites || 0) <= 0) {
                 html += '<div class="result-gain">Lot double !</div>';
             }
         } else {
