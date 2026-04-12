@@ -1027,7 +1027,36 @@
         var config = configRes.data || [];
         var livePlayers = liveRes.data || [];
 
+        /* Charger zones BDA */
+        var bdaRes = await window.REN.supabase.from('zones_bda').select('*').order('created_at', { ascending: true });
+        var zonesBda = bdaRes.data || [];
+
         var html = '<div class="admin-panel__title">Board Hebdomadaire</div>';
+
+        /* Section Zones BDA */
+        html += '<div style="background:var(--color-bg-tertiary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-lg);margin-bottom:var(--spacing-lg);">';
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;margin-bottom:var(--spacing-sm);">Zones réservées BDA <span class="text-muted" style="font-weight:400;font-size:0.8125rem;">(' + zonesBda.length + '/4)</span></h3>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-md);">Zones où la Banque d\'Alliance pose des percepteurs pour financer les récompenses.</p>';
+
+        if (zonesBda.length > 0) {
+            zonesBda.forEach(function (z) {
+                html += '<div style="display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) 0;border-bottom:1px solid var(--color-border);">';
+                html += '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+                html += '<span style="flex:1;font-weight:600;">' + window.REN.escapeHtml(z.nom_zone) + '</span>';
+                if (z.description) html += '<span class="text-muted" style="font-size:0.75rem;flex:1;">' + window.REN.escapeHtml(z.description) + '</span>';
+                html += '<button class="btn btn--small btn-delete-bda" data-id="' + z.id + '" data-nom="' + window.REN.escapeHtml(z.nom_zone) + '" style="background:var(--color-danger);color:#fff;font-size:0.7rem;">Supprimer</button>';
+                html += '</div>';
+            });
+        } else {
+            html += '<p class="text-muted text-center" style="padding:var(--spacing-sm);">Aucune zone réservée.</p>';
+        }
+
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md);align-items:flex-end;">';
+        html += '<div style="flex:1;"><label class="text-muted" style="font-size:0.75rem;display:block;margin-bottom:4px;">Nom de la zone</label><input class="form-input" id="bda-zone-nom" placeholder="Ex: Plaines de Cania" style="width:100%;"></div>';
+        html += '<div style="flex:1;"><label class="text-muted" style="font-size:0.75rem;display:block;margin-bottom:4px;">Description (optionnel)</label><input class="form-input" id="bda-zone-desc" placeholder="Ex: ~150k/h" style="width:100%;"></div>';
+        html += '<button class="btn btn--primary btn--small" id="btn-add-bda" ' + (zonesBda.length >= 4 ? 'disabled title="Maximum 4 zones"' : '') + '>Ajouter</button>';
+        html += '</div>';
+        html += '</div>';
 
         /* Section archivage */
         html += '<div style="background:var(--color-bg-tertiary);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:var(--spacing-lg);margin-bottom:var(--spacing-lg);">';
@@ -1151,6 +1180,32 @@
                 }
             });
         }
+
+        /* Events zones BDA */
+        var addBdaBtn = document.getElementById('btn-add-bda');
+        if (addBdaBtn) {
+            addBdaBtn.addEventListener('click', async function () {
+                var nom = document.getElementById('bda-zone-nom').value.trim();
+                if (!nom) { window.REN.toast('Nom de zone requis', 'error'); return; }
+                var desc = document.getElementById('bda-zone-desc').value.trim();
+                var { error } = await window.REN.supabase.from('zones_bda').insert({ nom_zone: nom, description: desc || '' });
+                if (error) { window.REN.toast('Erreur : ' + error.message, 'error'); return; }
+                window.REN.toast('Zone BDA ajoutée !', 'success');
+                loadTab('board');
+            });
+        }
+
+        content.querySelectorAll('.btn-delete-bda').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var id = parseInt(btn.dataset.id);
+                var nom = btn.dataset.nom;
+                if (!confirm('Supprimer la zone "' + nom + '" de la BDA ?')) return;
+                var { error } = await window.REN.supabase.from('zones_bda').delete().eq('id', id);
+                if (error) { window.REN.toast('Erreur : ' + error.message, 'error'); return; }
+                window.REN.toast('Zone supprimée !', 'success');
+                loadTab('board');
+            });
+        });
     }
 
     function findReward(config, points) {

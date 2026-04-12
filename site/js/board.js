@@ -11,6 +11,7 @@
     var zonesMap = {};
     var zoneEligibleMap = {};
     var kamatrixMap = {};
+    var zonesBda = [];
     var currentSelection = 'last';
 
     document.addEventListener('ren:ready', init);
@@ -22,7 +23,9 @@
         await loadZoneEligibility();
         await loadKamatrix();
         await loadSemaines();
+        await loadZonesBda();
         setupWeekSelect();
+        setupBdaModal();
         renderBareme();
         loadBoard(currentSelection);
     }
@@ -395,6 +398,65 @@
         });
 
         html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    /* === ZONES BDA === */
+    async function loadZonesBda() {
+        try {
+            var { data } = await window.REN.supabase
+                .from('zones_bda')
+                .select('*')
+                .order('created_at', { ascending: true });
+            zonesBda = data || [];
+        } catch (err) {
+            console.error('[REN-BOARD] Erreur zones BDA:', err);
+        }
+    }
+
+    function setupBdaModal() {
+        var btn = document.getElementById('btn-zones-bda');
+        var overlay = document.getElementById('modal-zones-bda');
+        var closeBtn = document.getElementById('modal-bda-close');
+        var listEl = document.getElementById('zones-bda-list');
+        if (!btn || !overlay) return;
+
+        /* Badge count on button */
+        if (zonesBda.length > 0) {
+            btn.innerHTML += ' <span class="bda-badge">' + zonesBda.length + '</span>';
+        }
+
+        btn.addEventListener('click', function () {
+            renderBdaZones(listEl);
+            overlay.classList.add('active');
+        });
+
+        closeBtn.addEventListener('click', function () {
+            overlay.classList.remove('active');
+        });
+
+        overlay.addEventListener('click', function (e) {
+            if (e.target === overlay) overlay.classList.remove('active');
+        });
+    }
+
+    function renderBdaZones(container) {
+        if (!zonesBda.length) {
+            container.innerHTML = '<p class="text-muted text-center" style="padding:var(--spacing-lg);">Aucune zone réservée pour le moment.</p>';
+            return;
+        }
+
+        var html = '<div class="bda-zones-grid">';
+        zonesBda.forEach(function (z) {
+            html += '<div class="bda-zone-card">';
+            html += '<div class="bda-zone-card__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>';
+            html += '<div class="bda-zone-card__info">';
+            html += '<span class="bda-zone-card__name">' + window.REN.escapeHtml(z.nom_zone) + '</span>';
+            if (z.description) html += '<span class="bda-zone-card__desc">' + window.REN.escapeHtml(z.description) + '</span>';
+            html += '</div>';
+            html += '</div>';
+        });
+        html += '</div>';
         container.innerHTML = html;
     }
 

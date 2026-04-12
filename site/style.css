@@ -2645,6 +2645,77 @@ table {
     min-width: 220px;
 }
 
+/* Bouton Zones BDA */
+.btn--bda {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: var(--spacing-xs) var(--spacing-md);
+    background: linear-gradient(135deg, rgba(var(--color-warning-rgb, 245, 158, 11), 0.15), rgba(var(--color-warning-rgb, 245, 158, 11), 0.05));
+    color: var(--color-warning);
+    border: 1px solid rgba(var(--color-warning-rgb, 245, 158, 11), 0.3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+.btn--bda:hover {
+    background: linear-gradient(135deg, rgba(var(--color-warning-rgb, 245, 158, 11), 0.25), rgba(var(--color-warning-rgb, 245, 158, 11), 0.1));
+    border-color: var(--color-warning);
+}
+.btn--bda svg {
+    flex-shrink: 0;
+}
+.bda-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    background: var(--color-warning);
+    color: var(--color-bg-primary);
+    border-radius: 999px;
+    padding: 0 4px;
+}
+
+/* Zones BDA cards dans le modal */
+.bda-zones-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.bda-zone-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    border-left: 3px solid var(--color-warning);
+}
+.bda-zone-card__icon {
+    color: var(--color-warning);
+    flex-shrink: 0;
+}
+.bda-zone-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.bda-zone-card__name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--color-text-primary);
+}
+.bda-zone-card__desc {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+}
+
 /* Barème (légende des paliers) */
 .board-bareme {
     margin-bottom: var(--spacing-lg);
