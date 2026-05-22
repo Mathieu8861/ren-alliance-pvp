@@ -87,6 +87,8 @@
                 case 'cadres': tabCadres(content); break;
                 case 'board': await tabBoard(content); break;
                 case 'bareme-perco': await tabBaremePerco(content); break;
+                case 'recyclages-hebdo': await tabRecyclagesHebdo(content); break;
+                case 'zones-perco': await tabZonesPerco(content); break;
                 case 'boutique': await tabBoutique(content); break;
                 case 'demandes-kamas': await tabDemandesKamas(content); break;
                 case 'slot': await tabSlot(content); break;
@@ -1978,6 +1980,293 @@
                 document.getElementById('cancel-sym-' + id).addEventListener('click', function () {
                     form.remove();
                 });
+            });
+        });
+    }
+
+    /* ============================================ */
+    /* ONGLET RECYCLAGES HEBDO                      */
+    /* ============================================ */
+    async function tabRecyclagesHebdo(content) {
+        var esc = window.REN.escapeHtml;
+        var fmt = window.REN.formatNumber;
+
+        /* Charge global + par user + détails */
+        var [globalRes, parUserRes, detailsRes] = await Promise.all([
+            window.REN.supabase.from('v_recyclages_semaine_global').select('*').maybeSingle(),
+            window.REN.supabase.from('v_recyclages_semaine_par_user').select('*').order('total_alliance', { ascending: false }),
+            window.REN.supabase
+                .from('recyclages')
+                .select('id, user_id, pepites_perso, pepites_alliance, cout_pose, plus_value, note, preuve_url, created_at, profiles:user_id(username, avatar_url), zones_perco:zone_id(nom, niveau_zone, type)')
+                .gte('created_at', startOfIsoWeek())
+                .order('created_at', { ascending: false })
+        ]);
+
+        var g = globalRes.data || { nb_recyclages: 0, nb_recycleurs: 0, total_alliance: 0, total_perso: 0, total_plus_value: 0, nb_avec_preuve: 0, debut_semaine: null };
+        var membres = parUserRes.data || [];
+        var details = detailsRes.data || [];
+
+        var startStr = g.debut_semaine ? new Date(g.debut_semaine).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) : '—';
+
+        var html = '<div class="admin-panel__title">Recyclages — Semaine en cours</div>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-lg);">Depuis le ' + startStr + ' (lundi). Bilan des pépites générées pour l\'alliance par chaque membre cette semaine.</p>';
+
+        /* KPI banner */
+        html += '<div class="recyc-kpi-grid mb-lg">';
+        html += '<div class="recyc-kpi"><span class="recyc-kpi__label">Total alliance</span><span class="recyc-kpi__value recyc-kpi__value--gold">' + fmt(g.total_alliance) + '</span></div>';
+        html += '<div class="recyc-kpi"><span class="recyc-kpi__label">Recyclages</span><span class="recyc-kpi__value">' + fmt(g.nb_recyclages) + '</span></div>';
+        html += '<div class="recyc-kpi"><span class="recyc-kpi__label">Recycleurs actifs</span><span class="recyc-kpi__value">' + fmt(g.nb_recycleurs) + '</span></div>';
+        html += '<div class="recyc-kpi"><span class="recyc-kpi__label">Avec preuve</span><span class="recyc-kpi__value">' + fmt(g.nb_avec_preuve) + ' / ' + fmt(g.nb_recyclages) + '</span></div>';
+        html += '</div>';
+
+        /* Classement membres */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:0 0 var(--spacing-md) 0;">Classement membres (par pépites alliance générées)</h3>';
+
+        if (!membres.length) {
+            html += '<p class="text-muted" style="padding:var(--spacing-md);">Aucun recyclage cette semaine.</p>';
+        } else {
+            html += '<div class="recyc-table-wrap mb-lg"><table class="recyc-table"><thead><tr>';
+            html += '<th>#</th>'
+                + '<th>Membre</th>'
+                + '<th class="recyc-num">Recyclages</th>'
+                + '<th class="recyc-num">Pépites alliance</th>'
+                + '<th class="recyc-num">Pépites perso</th>'
+                + '<th class="recyc-num">Plus-value</th>'
+                + '<th class="recyc-num">Avec preuve</th>';
+            html += '</tr></thead><tbody>';
+            membres.forEach(function (m, i) {
+                var rank = i + 1;
+                var pv = m.total_plus_value || 0;
+                var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
+                html += '<tr>'
+                    + '<td><strong>' + rank + '</strong></td>'
+                    + '<td><strong>' + esc(m.username || '?') + '</strong></td>'
+                    + '<td class="recyc-num">' + fmt(m.nb_recyclages) + '</td>'
+                    + '<td class="recyc-num" style="color:var(--color-warning);font-weight:700;">' + fmt(m.total_alliance) + '</td>'
+                    + '<td class="recyc-num">' + fmt(m.total_perso) + '</td>'
+                    + '<td class="recyc-num ' + pvCls + '">' + (pv >= 0 ? '+' : '') + fmt(pv) + '</td>'
+                    + '<td class="recyc-num">' + fmt(m.nb_avec_preuve) + ' / ' + fmt(m.nb_recyclages) + '</td>'
+                    + '</tr>';
+            });
+            html += '</tbody></table></div>';
+        }
+
+        /* Détail des recyclages */
+        html += '<h3 style="font-family:var(--font-title);font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;margin:var(--spacing-lg) 0 var(--spacing-md) 0;">Détails (' + details.length + ' recyclages)</h3>';
+
+        if (!details.length) {
+            html += '<p class="text-muted" style="padding:var(--spacing-md);">Aucun recyclage à afficher.</p>';
+        } else {
+            html += '<div class="recyc-history">';
+            details.forEach(function (r) {
+                var prof = r.profiles || {};
+                var zone = r.zones_perco || {};
+                var pv = r.plus_value || 0;
+                var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
+                var preuveBadge = r.preuve_url
+                    ? '<a class="recyc-history__preuve" href="' + esc(r.preuve_url) + '" target="_blank" rel="noopener" title="Voir la preuve">'
+                        + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Vérifié'
+                      + '</a>'
+                    : '<span class="recyc-pill" style="opacity:0.6;font-size:0.65rem;">sans preuve</span>';
+                var typeTag = zone.type === 'dj' ? '<span class="recyc-pill" style="font-size:0.65rem;background:rgba(243,156,18,0.12);color:var(--color-warning);">DJ</span>' : '';
+
+                html += '<div class="recyc-history__row">'
+                    + '<div class="recyc-history__user">'
+                        + '<span class="recyc-history__username">' + esc(prof.username || '?') + '</span>'
+                        + '<span class="recyc-history__date">' + window.REN.formatDate(r.created_at) + '</span>'
+                    + '</div>'
+                    + '<div class="recyc-history__zone">'
+                        + '<strong>' + esc(zone.nom || '?') + '</strong>'
+                        + '<small class="text-muted"> · Niv. ' + (zone.niveau_zone || '?') + '</small>'
+                        + ' ' + typeTag
+                        + ' ' + preuveBadge
+                    + '</div>'
+                    + '<div class="recyc-history__stats">'
+                        + '<span class="recyc-pill recyc-pill--green" title="Pépites perso">' + fmt(r.pepites_perso) + '</span>'
+                        + '<span class="recyc-pill recyc-pill--gold" title="Pépites alliance">' + fmt(r.pepites_alliance) + '</span>'
+                        + '<span class="recyc-pill ' + pvCls + '" title="Plus-value">' + (pv >= 0 ? '+' : '') + fmt(pv) + '</span>'
+                    + '</div>'
+                    + (r.note ? '<div class="recyc-history__note">' + esc(r.note) + '</div>' : '')
+                    + '</div>';
+            });
+            html += '</div>';
+        }
+
+        content.innerHTML = html;
+    }
+
+    /* Helper : date ISO du lundi 00:00 (semaine en cours, fuseau local) */
+    function startOfIsoWeek() {
+        var d = new Date();
+        var day = d.getDay(); /* 0 = dim, 1 = lun, ... */
+        var diff = (day === 0 ? -6 : 1 - day);
+        d.setDate(d.getDate() + diff);
+        d.setHours(0, 0, 0, 0);
+        return d.toISOString();
+    }
+
+    /* ============================================ */
+    /* ONGLET ZONES PERCO (recyclage)               */
+    /* ============================================ */
+    function coutPotion(niveau) {
+        var n = parseInt(niveau, 10) || 0;
+        if (n <= 0) return 20;
+        return Math.min(200, Math.max(20, Math.ceil(n / 20) * 20));
+    }
+
+    async function tabZonesPerco(content) {
+        var { data: zones, error } = await window.REN.supabase
+            .from('zones_perco')
+            .select('*')
+            .order('ordre', { ascending: true })
+            .order('nom', { ascending: true });
+
+        if (error) {
+            content.innerHTML = '<p class="text-muted" style="padding:1rem;">Erreur: ' + error.message + '</p>';
+            return;
+        }
+
+        var rows = zones || [];
+        var esc = window.REN.escapeHtml;
+
+        var html = '<div class="admin-panel__title">Zones de recyclage</div>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-lg);">Configurer les zones disponibles pour le suivi des recyclages de percepteurs. Le coût de pose est calculé automatiquement (tranche de 20 supérieure du niveau de zone) mais peut être surchargé.</p>';
+
+        html += '<table class="admin-table" style="width:100%;"><thead><tr>';
+        html += '<th>Nom</th>';
+        html += '<th style="text-align:center;">Type</th>';
+        html += '<th style="text-align:center;">Niv. zone</th>';
+        html += '<th style="text-align:center;">Coût pose</th>';
+        html += '<th style="text-align:center;">Ordre</th>';
+        html += '<th style="text-align:center;">Actif</th>';
+        html += '<th style="text-align:center;">Actions</th>';
+        html += '</tr></thead><tbody>';
+
+        function typeSelectHtml(currentType, fieldName) {
+            var t = currentType || 'zone';
+            var attr = fieldName ? (' data-field="' + fieldName + '"') : '';
+            return '<select class="form-input" style="width:85px;"' + attr + '>'
+                + '<option value="zone"' + (t === 'zone' ? ' selected' : '') + '>Zone</option>'
+                + '<option value="dj"' + (t === 'dj' ? ' selected' : '') + '>Donjon</option>'
+                + '</select>';
+        }
+
+        rows.forEach(function (z) {
+            html += '<tr data-id="' + z.id + '">';
+            html += '<td><input class="form-input" value="' + esc(z.nom) + '" data-field="nom"></td>';
+            html += '<td style="text-align:center;">' + typeSelectHtml(z.type, 'type') + '</td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:80px;text-align:center;" type="number" min="1" max="200" value="' + z.niveau_zone + '" data-field="niveau_zone"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:80px;text-align:center;" type="number" min="20" max="200" step="20" value="' + z.cout_pepites_pose + '" data-field="cout_pepites_pose"></td>';
+            html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" value="' + (z.ordre || 0) + '" data-field="ordre"></td>';
+            html += '<td style="text-align:center;"><input type="checkbox" data-field="actif"' + (z.actif ? ' checked' : '') + '></td>';
+            html += '<td style="text-align:center;"><button class="btn btn--danger btn--small btn-delete-zone" data-id="' + z.id + '">✕</button></td>';
+            html += '</tr>';
+        });
+
+        /* Ligne d'ajout */
+        html += '<tr id="new-zone-row" style="background:rgba(0,200,0,0.04);">';
+        html += '<td><input class="form-input" id="new-zone-nom" placeholder="Nom de la zone ou du donjon"></td>';
+        html += '<td style="text-align:center;"><select class="form-input" style="width:85px;" id="new-zone-type"><option value="zone">Zone</option><option value="dj">Donjon</option></select></td>';
+        html += '<td style="text-align:center;"><input class="form-input" style="width:80px;text-align:center;" type="number" min="1" max="200" id="new-zone-niveau" placeholder="40"></td>';
+        html += '<td style="text-align:center;"><input class="form-input" style="width:80px;text-align:center;" type="number" min="20" max="200" step="20" id="new-zone-cout" placeholder="auto"></td>';
+        html += '<td style="text-align:center;"><input class="form-input" style="width:65px;text-align:center;" type="number" id="new-zone-ordre" value="999"></td>';
+        html += '<td style="text-align:center;"><input type="checkbox" id="new-zone-actif" checked></td>';
+        html += '<td style="text-align:center;"><button class="btn btn--primary btn--small" id="btn-add-zone">+ Ajouter</button></td>';
+        html += '</tr>';
+
+        html += '</tbody></table>';
+
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md);">';
+        html += '<button class="btn btn--primary" id="btn-save-zones">Sauvegarder les modifications</button>';
+        html += '</div>';
+
+        content.innerHTML = html;
+
+        /* Auto-calcul cout pose quand niveau change (ligne existante) */
+        content.querySelectorAll('tbody tr[data-id]').forEach(function (tr) {
+            var niveauInput = tr.querySelector('[data-field="niveau_zone"]');
+            var coutInput = tr.querySelector('[data-field="cout_pepites_pose"]');
+            niveauInput.addEventListener('change', function () {
+                coutInput.value = coutPotion(niveauInput.value);
+            });
+        });
+
+        /* Auto-calcul ligne d'ajout */
+        var newNiveau = document.getElementById('new-zone-niveau');
+        var newCout = document.getElementById('new-zone-cout');
+        newNiveau.addEventListener('change', function () {
+            if (!newCout.value) newCout.value = coutPotion(newNiveau.value);
+        });
+
+        /* Save existant */
+        document.getElementById('btn-save-zones').addEventListener('click', async function () {
+            var trs = content.querySelectorAll('tbody tr[data-id]');
+            var updates = [];
+            trs.forEach(function (tr) {
+                var id = parseInt(tr.getAttribute('data-id'), 10);
+                if (!id) return;
+                var nom = tr.querySelector('[data-field="nom"]').value.trim();
+                var type = tr.querySelector('[data-field="type"]').value;
+                var niveau_zone = parseInt(tr.querySelector('[data-field="niveau_zone"]').value, 10) || 1;
+                var cout_pepites_pose = parseInt(tr.querySelector('[data-field="cout_pepites_pose"]').value, 10) || coutPotion(niveau_zone);
+                var ordre = parseInt(tr.querySelector('[data-field="ordre"]').value, 10) || 0;
+                var actif = tr.querySelector('[data-field="actif"]').checked;
+                updates.push(
+                    window.REN.supabase.from('zones_perco').update({
+                        nom: nom, type: type, niveau_zone: niveau_zone, cout_pepites_pose: cout_pepites_pose,
+                        ordre: ordre, actif: actif
+                    }).eq('id', id)
+                );
+            });
+            var results = await Promise.all(updates);
+            var errs = results.filter(function (r) { return r.error; });
+            if (errs.length) {
+                console.error('[REN-ADMIN] Erreurs zones:', errs);
+                window.REN.toast('Erreur sur ' + errs.length + ' zone(s)', 'error');
+            } else {
+                window.REN.toast('Zones sauvegardées !', 'success');
+            }
+        });
+
+        /* Ajout zone */
+        document.getElementById('btn-add-zone').addEventListener('click', async function () {
+            var nom = document.getElementById('new-zone-nom').value.trim();
+            var type = document.getElementById('new-zone-type').value;
+            var niveau = parseInt(document.getElementById('new-zone-niveau').value, 10);
+            var cout = parseInt(document.getElementById('new-zone-cout').value, 10);
+            var ordre = parseInt(document.getElementById('new-zone-ordre').value, 10) || 999;
+            var actif = document.getElementById('new-zone-actif').checked;
+
+            if (!nom) { window.REN.toast('Nom requis', 'error'); return; }
+            if (!niveau || niveau < 1 || niveau > 200) { window.REN.toast('Niveau 1-200', 'error'); return; }
+            if (!cout) cout = coutPotion(niveau);
+
+            var { error } = await window.REN.supabase.from('zones_perco').insert({
+                nom: nom, type: type, niveau_zone: niveau, cout_pepites_pose: cout, ordre: ordre, actif: actif
+            });
+            if (error) {
+                console.error('[REN-ADMIN] Erreur ajout zone:', error);
+                window.REN.toast('Erreur : ' + error.message, 'error');
+                return;
+            }
+            window.REN.toast('Zone ajoutée !', 'success');
+            loadTab('zones-perco');
+        });
+
+        /* Delete zone */
+        content.querySelectorAll('.btn-delete-zone').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                if (!confirm('Supprimer cette zone ? Tous les recyclages liés seront aussi affectés.')) return;
+                var { error } = await window.REN.supabase
+                    .from('zones_perco')
+                    .delete()
+                    .eq('id', parseInt(btn.getAttribute('data-id'), 10));
+                if (error) {
+                    window.REN.toast('Erreur (zone utilisée par des recyclages ?)', 'error');
+                    return;
+                }
+                window.REN.toast('Zone supprimée', 'success');
+                loadTab('zones-perco');
             });
         });
     }

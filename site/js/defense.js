@@ -24,6 +24,12 @@
         setupPercoOwnerAutocomplete();
         setupSubmit();
         renderAlliesList();
+        /* Autocomplete zones+donjons sur le champ "Zone" */
+        var zoneInput = document.getElementById('input-commentaire');
+        if (zoneInput && window.REN.attachZoneAutocomplete) {
+            zoneInput.setAttribute('placeholder', 'Tape pour rechercher une zone ou un donjon...');
+            window.REN.attachZoneAutocomplete(zoneInput);
+        }
     }
 
     async function loadData() {

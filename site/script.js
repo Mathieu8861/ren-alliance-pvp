@@ -24,7 +24,7 @@
 
     /* === CONSTANTES === */
     const MOBILE_BREAKPOINT = 768;
-    const PAGES = ['accueil', 'attaque', 'defense', 'classement', 'historique', 'membres', 'builds', 'jeux'];
+    const PAGES = ['accueil', 'attaque', 'defense', 'classement', 'historique', 'membres', 'builds', 'jeux', 'recyclages'];
     const AUTH_PAGE = 'connexion.html';
     const ADMIN_PAGE = 'admin.html';
 
@@ -126,6 +126,15 @@
         }
         if (navAdminLink) {
             navAdminLink.style.display = (profile && profile.is_admin) ? '' : 'none';
+        }
+        /* Synchroniser les éléments user de la sidebar (desktop) */
+        const appUsername = document.getElementById('app-username');
+        if (appUsername && profile) {
+            appUsername.textContent = profile.username;
+        }
+        const appAdminLink = document.getElementById('app-admin-link');
+        if (appAdminLink) {
+            appAdminLink.style.display = (profile && profile.is_admin) ? '' : 'none';
         }
     }
 
@@ -441,9 +450,276 @@
         });
     }
 
+    /* === SIDEBAR INJECTION === */
+    /* Single source of truth pour la nav publique. */
+    /* Maj du menu = modifier SIDEBAR_GROUPS ci-dessous, rien d'autre. */
+    const SIDEBAR_GROUPS = [
+        {
+            items: [
+                { page: 'accueil', label: 'Accueil', href: 'index.html', icon: 'home' }
+            ]
+        },
+        {
+            title: 'PvP',
+            items: [
+                { page: 'attaque', label: 'Attaque', href: 'attaque.html', icon: 'sword' },
+                { page: 'defense', label: 'Défense', href: 'defense.html', icon: 'shield' },
+                { page: 'historique', label: 'Historique', href: 'historique.html', icon: 'clock' },
+                { page: 'classement', label: 'Classement', href: 'classement.html', icon: 'trophy' }
+            ]
+        },
+        {
+            title: 'Alliance',
+            items: [
+                { page: 'membres', label: 'Membres', href: 'membres.html', icon: 'users' },
+                { page: 'builds', label: 'Builds', href: 'builds.html', icon: 'tool' },
+                { page: 'board', label: 'Droits Perco', href: 'board.html', icon: 'chart' },
+                { page: 'liens', label: 'Liens utiles', href: 'liens.html', icon: 'link' }
+            ]
+        },
+        {
+            title: 'Économie',
+            items: [
+                { page: 'boutique', label: 'Boutique', href: 'boutique.html', icon: 'cart' },
+                { page: 'recyclages', label: 'Recyclages', href: 'recyclages.html', icon: 'recycle' }
+            ]
+        },
+        {
+            title: 'Fun',
+            items: [
+                { page: 'jeux', label: 'Jeux', href: 'jeux.html', icon: 'dice', cta: true }
+            ]
+        }
+    ];
+
+    const SIDEBAR_ICONS = {
+        home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+        sword: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5"/><line x1="13" y1="19" x2="19" y2="13"/><line x1="16" y1="16" x2="20" y2="20"/><line x1="19" y1="21" x2="21" y2="19"/></svg>',
+        shield: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+        trophy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>',
+        clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        tool: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+        users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+        chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+        link: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>',
+        cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>',
+        recycle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 19H4.815a1.83 1.83 0 0 1-1.57-.881 1.785 1.785 0 0 1-.004-1.784L7.196 9.5"/><path d="M11 19h8.203a1.83 1.83 0 0 0 1.556-.89 1.784 1.784 0 0 0 0-1.775l-1.226-2.12"/><path d="M14 16l-3 3 3 3"/><path d="M8.293 13.596 4.5 9.5 8.5 5"/><path d="m13.378 9.633 4.096-1.098L19 4.5"/><path d="M16 4.5v.01"/><path d="M20.582 11.5a1.82 1.82 0 0 0 .064-1.886L19.36 7.5"/></svg>',
+        dice: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="15.5" r="1.2" fill="currentColor"/><circle cx="15.5" cy="8.5" r="1.2" fill="currentColor"/><circle cx="8.5" cy="15.5" r="1.2" fill="currentColor"/></svg>'
+    };
+
+    /* Icons SVG pour les actions user (admin + logout) */
+    const ADMIN_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15v2m-6 4h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2zm10-10V7a4 4 0 0 0-8 0v4h8z"/></svg>';
+    const LOGOUT_ICON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
+
+    function injectSidebar() {
+        const slot = document.getElementById('app-sidebar');
+        if (!slot) return; /* page sans sidebar (admin, connexion) */
+
+        const currentPage = getCurrentPage();
+        let html = '';
+
+        /* Bloc brand : logo + nom alliance en haut de la sidebar (desktop only) */
+        html += '<div class="app-sidebar__brand">'
+            + '<img src="assets/images/logo-ren.png" alt="Logo Alliance REN">'
+            + '<span class="app-sidebar__brand-name">Alliance REN</span>'
+            + '</div>';
+
+        /* Groupes de nav */
+        SIDEBAR_GROUPS.forEach(function (group) {
+            html += '<div class="app-sidebar__group">';
+            if (group.title) {
+                html += '<div class="app-sidebar__group-title">' + group.title + '</div>';
+            }
+            group.items.forEach(function (item) {
+                const active = item.page === currentPage ? ' active' : '';
+                const cta = item.cta ? ' app-sidebar__link--cta' : '';
+                const icon = SIDEBAR_ICONS[item.icon] || '';
+                html += '<a href="' + item.href + '" class="app-sidebar__link' + cta + active + '" data-page="' + item.page + '">'
+                    + icon
+                    + '<span>' + item.label + '</span>'
+                    + '</a>';
+            });
+            html += '</div>';
+        });
+
+        /* Bloc user en bas de la sidebar (sticky) */
+        html += '<div class="app-sidebar__user">'
+            + '<a href="admin.html" class="app-sidebar__user-icon" id="app-admin-link" title="Admin" style="display:none;">' + ADMIN_ICON_SVG + '</a>'
+            + '<span class="app-sidebar__username" id="app-username" title="Voir mon profil"></span>'
+            + '<button class="app-sidebar__user-icon" id="app-btn-logout" title="Déconnexion">' + LOGOUT_ICON_SVG + '</button>'
+            + '</div>';
+
+        slot.innerHTML = html;
+        document.body.classList.add('app-has-sidebar');
+
+        /* Inject overlay si pas déjà présent */
+        if (!document.getElementById('app-sidebar-overlay')) {
+            const ov = document.createElement('div');
+            ov.className = 'app-sidebar__overlay';
+            ov.id = 'app-sidebar-overlay';
+            document.body.appendChild(ov);
+            ov.addEventListener('click', closeSidebar);
+        }
+
+        /* Click sur username → profil */
+        const appUsername = document.getElementById('app-username');
+        if (appUsername) {
+            appUsername.style.cursor = 'pointer';
+            appUsername.addEventListener('click', function () {
+                window.location.href = 'profil.html';
+            });
+        }
+
+        /* Click sur logout sidebar : déconnexion */
+        const appBtnLogout = document.getElementById('app-btn-logout');
+        if (appBtnLogout) {
+            appBtnLogout.addEventListener('click', async function () {
+                if (window.REN.supabase) await window.REN.supabase.auth.signOut();
+                window.location.href = AUTH_PAGE;
+            });
+        }
+    }
+
+    function openSidebar() {
+        const sb = document.getElementById('app-sidebar');
+        const ov = document.getElementById('app-sidebar-overlay');
+        if (sb) sb.classList.add('active');
+        if (ov) ov.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        const sb = document.getElementById('app-sidebar');
+        const ov = document.getElementById('app-sidebar-overlay');
+        if (sb) sb.classList.remove('active');
+        if (ov) ov.classList.remove('active');
+        document.body.style.overflow = '';
+        if (navToggle) navToggle.classList.remove('active');
+    }
+
+    function bindSidebarMobileToggle() {
+        if (!navToggle) return;
+        /* On remplace l'ancien comportement (nav horizontal) par sidebar */
+        navToggle.addEventListener('click', function (e) {
+            if (!document.getElementById('app-sidebar')) return; /* page sans sidebar */
+            e.stopPropagation();
+            navToggle.classList.toggle('active');
+            const isOpen = document.getElementById('app-sidebar').classList.contains('active');
+            if (isOpen) closeSidebar(); else openSidebar();
+        });
+
+        /* Fermer la sidebar quand on clique sur un lien */
+        document.addEventListener('click', function (e) {
+            const link = e.target.closest('.app-sidebar__link');
+            if (link) closeSidebar();
+        });
+    }
+
+    /* === ZONES AUTOCOMPLETE (utilitaire réutilisable) === */
+    /* Cache global des zones (chargé une fois par session) */
+    var zonesCache = null;
+    var zonesPromise = null;
+
+    async function loadZonesOnce() {
+        if (zonesCache) return zonesCache;
+        if (zonesPromise) return zonesPromise;
+        if (!window.REN.supabase) return [];
+        zonesPromise = window.REN.supabase
+            .from('zones_perco')
+            .select('id, nom, type, niveau_zone')
+            .eq('actif', true)
+            .order('nom', { ascending: true })
+            .then(function (res) {
+                zonesCache = res.data || [];
+                return zonesCache;
+            });
+        return zonesPromise;
+    }
+
+    function normalizeText(s) {
+        return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    }
+
+    /* Branche un autocomplete zones+donjons sur un input texte existant. */
+    /* Le wrapper .ally-autocomplete et le .ally-dropdown sont créés    */
+    /* automatiquement si pas déjà présents. La valeur reste un string  */
+    /* libre (l'utilisateur peut taper ou choisir dans la liste).       */
+    window.REN.attachZoneAutocomplete = async function (input) {
+        if (!input || input.dataset.zoneAutocompleteBound === '1') return;
+        input.dataset.zoneAutocompleteBound = '1';
+
+        var zones = await loadZonesOnce();
+        if (!zones || !zones.length) return;
+
+        /* Wrap dans .ally-autocomplete si pas déjà */
+        var wrap = input.parentElement;
+        var dropdown;
+        if (wrap && wrap.classList.contains('ally-autocomplete')) {
+            dropdown = wrap.querySelector('.ally-dropdown');
+        } else {
+            wrap = document.createElement('div');
+            wrap.className = 'ally-autocomplete';
+            input.parentNode.insertBefore(wrap, input);
+            wrap.appendChild(input);
+            input.classList.add('ally-search');
+        }
+        if (!dropdown) {
+            dropdown = document.createElement('div');
+            dropdown.className = 'ally-dropdown';
+            wrap.appendChild(dropdown);
+        }
+        input.setAttribute('autocomplete', 'off');
+
+        var esc = window.REN.escapeHtml;
+
+        function showDropdown(filter) {
+            var q = normalizeText(filter);
+            var matches = zones.filter(function (z) {
+                if (!q) return true;
+                return normalizeText(z.nom).indexOf(q) !== -1
+                    || String(z.niveau_zone).indexOf(q) !== -1;
+            }).slice(0, 80);
+
+            if (!matches.length) {
+                dropdown.innerHTML = '<div class="ally-dropdown__empty">Aucun résultat</div>';
+                dropdown.classList.add('active');
+                return;
+            }
+
+            var html = '';
+            matches.forEach(function (z) {
+                var typeTag = z.type === 'dj' ? ' [DJ]' : '';
+                var label = z.nom + ' (Niv. ' + z.niveau_zone + ')' + typeTag;
+                html += '<div class="ally-dropdown__item" data-label="' + esc(z.nom) + '">'
+                    + esc(label)
+                    + '</div>';
+            });
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+
+            dropdown.querySelectorAll('.ally-dropdown__item').forEach(function (item) {
+                item.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    input.value = item.getAttribute('data-label');
+                    dropdown.classList.remove('active');
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+        }
+
+        input.addEventListener('focus', function () { showDropdown(input.value); });
+        input.addEventListener('input', function () { showDropdown(input.value); });
+        input.addEventListener('blur', function () {
+            setTimeout(function () { dropdown.classList.remove('active'); }, 150);
+        });
+    };
+
     /* === INIT === */
     function init() {
+        injectSidebar();
         setActiveNav();
+        bindSidebarMobileToggle();
         initMobileMenu();
         initLogout();
         checkAuth();
