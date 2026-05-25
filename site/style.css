@@ -7470,6 +7470,164 @@ table {
     to   { transform: scale(1);    opacity: 1; }
 }
 
+/* ============================================ */
+/* ACCÈS MULES (liens utiles)                   */
+/* ============================================ */
+.mules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+}
+@media (min-width: 1280px) {
+    .mules-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.mule-card {
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    transition: border-color var(--transition-fast);
+}
+.mule-card:hover {
+    border-color: var(--color-border-light);
+}
+.mule-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--color-border);
+}
+.mule-card__zone {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+.mule-card__title {
+    font-family: var(--font-title);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-accent-light);
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+}
+.mule-card__quest {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: var(--color-bg-primary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: 0.7rem;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    font-weight: 600;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+.mule-card__quest:hover {
+    color: var(--color-text-primary);
+    border-color: var(--color-accent);
+    background: var(--color-bg-tertiary);
+}
+
+/* Métadonnées (niveau, position, prérequis) en pills */
+.mule-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.mule-card__pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    white-space: nowrap;
+}
+.mule-card__pill--lvl {
+    background: rgba(46, 204, 113, 0.12);
+    color: var(--color-success);
+    border-color: rgba(46, 204, 113, 0.3);
+}
+.mule-card__pill--pos {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+.mule-card__pill--prereq {
+    background: rgba(243, 156, 18, 0.12);
+    color: var(--color-warning);
+    border-color: rgba(243, 156, 18, 0.3);
+}
+
+.mule-card__section-title {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+    margin-top: 4px;
+}
+
+.mule-card__rewards {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--color-border);
+    margin-top: auto;
+}
+.mule-card__rewards-label {
+    color: var(--color-warning);
+    font-weight: 700;
+    margin-right: 4px;
+}
+.mule-card__resources {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.mule-card__resources li {
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 4px 0;
+}
+.mule-card__qty {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    padding: 2px 8px;
+    background: rgba(46, 204, 113, 0.12);
+    color: var(--color-success);
+    border: 1px solid rgba(46, 204, 113, 0.3);
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
     .build-lightbox__close {
         top: 10px;
