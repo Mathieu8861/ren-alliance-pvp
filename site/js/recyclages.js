@@ -318,7 +318,7 @@
             await Promise.all([loadMesStats(), loadHistoriqueMoi()]);
         } else if (panel === 'alliance' && !loaded.alliance) {
             loaded.alliance = true;
-            await Promise.all([loadAllianceStats(), loadZonesStats(), loadHistoriqueAlliance()]);
+            await Promise.all([loadAllianceStats(), loadClassementMembres(), loadZonesStats(), loadHistoriqueAlliance()]);
         } else if (panel === 'saisir') {
             focusChatTextarea();
         }
@@ -400,7 +400,6 @@
         var alliance = parseInt(document.getElementById('recyc-alliance').value, 10);
         var zoneId = parseInt(document.getElementById('recyc-zone').value, 10);
         var cout = parseInt(document.getElementById('recyc-cout').value, 10);
-        var note = document.getElementById('recyc-note').value.trim();
         var brut = document.getElementById('recyc-chat').value.trim();
         var preuveUrl = document.getElementById('recyc-preuve-url').value.trim();
 
@@ -423,7 +422,6 @@
                     pepites_alliance: alliance,
                     cout_pose: cout,
                     message_brut: brut || null,
-                    note: note || null,
                     preuve_url: preuveUrl || null
                 });
             if (error) throw error;
@@ -503,6 +501,48 @@
             setKpiSigned('kpi-alli-pv', s.total_plus_value);
         } catch (err) {
             console.error('[REN-RECYC] Erreur stats alliance:', err);
+        }
+    }
+
+    /* === CLASSEMENT MEMBRES (all time) === */
+    async function loadClassementMembres() {
+        var tbody = document.getElementById('classement-tbody');
+        if (!tbody) return;
+        try {
+            var { data, error } = await window.REN.supabase
+                .from('v_recyclages_par_user')
+                .select('*')
+                .order('total_alliance', { ascending: false });
+            if (error) throw error;
+
+            if (!data || !data.length) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center" style="padding:var(--spacing-lg);">Aucun recyclage enregistré pour le moment.</td></tr>';
+                return;
+            }
+
+            var esc = window.REN.escapeHtml;
+            var fmt = window.REN.formatNumber;
+            var html = '';
+            data.forEach(function (m, i) {
+                var rank = i + 1;
+                var pv = m.total_plus_value || 0;
+                var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
+                var pvText = (pv >= 0 ? '+' : '') + fmt(pv);
+                var isMe = m.user_id === userId;
+                html += '<tr' + (isMe ? ' style="background:rgba(219,41,41,0.06);"' : '') + '>'
+                    + '<td><strong>' + rank + '</strong></td>'
+                    + '<td><strong>' + esc(m.username || '?') + '</strong>' + (isMe ? ' <span class="text-muted" style="font-size:0.7rem;">(vous)</span>' : '') + '</td>'
+                    + '<td class="recyc-num">' + fmt(m.nb_recyclages || 0) + '</td>'
+                    + '<td class="recyc-num" style="color:var(--color-warning);font-weight:700;">' + fmt(m.total_alliance || 0) + '</td>'
+                    + '<td class="recyc-num" style="color:var(--color-success);">' + fmt(m.total_perso || 0) + '</td>'
+                    + '<td class="recyc-num ' + pvCls + '">' + pvText + '</td>'
+                    + '<td class="recyc-num">' + fmt(m.moy_perso_par_tir || 0) + '</td>'
+                    + '</tr>';
+            });
+            tbody.innerHTML = html;
+        } catch (err) {
+            console.error('[REN-RECYC] Erreur classement membres:', err);
+            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Erreur chargement.</td></tr>';
         }
     }
 

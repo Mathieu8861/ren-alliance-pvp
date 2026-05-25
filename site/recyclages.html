@@ -117,11 +117,6 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label class="form-label" for="recyc-note">Note (facultative)</label>
-                        <input type="text" id="recyc-note" class="form-input" maxlength="200" placeholder="Ex: perco BCL équipé full pods">
-                    </div>
-
                     <!-- Preuve (paste image) -->
                     <div class="form-group">
                         <label class="form-label">
@@ -247,6 +242,28 @@
                         <span class="recyc-kpi__label">Plus-value cumulée</span>
                         <span class="recyc-kpi__value" id="kpi-alli-pv">0</span>
                     </div>
+                </div>
+            </section>
+
+            <section class="mb-lg">
+                <h2 class="recyc-section-title">Classement membres <span class="text-muted" style="font-size:0.75rem;font-weight:400;">(par pépites alliance générées, depuis le début)</span></h2>
+                <div class="recyc-table-wrap">
+                    <table class="recyc-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Membre</th>
+                                <th class="recyc-num">Recyclages</th>
+                                <th class="recyc-num">Pépites alliance</th>
+                                <th class="recyc-num">Pépites perso</th>
+                                <th class="recyc-num">Plus-value</th>
+                                <th class="recyc-num">Moy/tir</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classement-tbody">
+                            <tr><td colspan="7" class="text-muted text-center">Chargement…</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </section>
 
