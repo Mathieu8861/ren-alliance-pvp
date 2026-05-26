@@ -591,6 +591,13 @@
         var table = document.getElementById(tableId);
         if (!table) return;
         table.querySelectorAll('th[data-sort]').forEach(function (th) {
+            /* Injecter un span indicateur inline (badge) si pas déjà présent */
+            if (!th.querySelector('.recyc-th-sort__indicator')) {
+                var span = document.createElement('span');
+                span.className = 'recyc-th-sort__indicator';
+                span.textContent = '↕'; /* ↕ */
+                th.appendChild(span);
+            }
             th.addEventListener('click', function () {
                 var col = th.getAttribute('data-sort');
                 var state = tableState[stateKey].sort;
@@ -612,9 +619,15 @@
         if (!table) return;
         table.querySelectorAll('th[data-sort]').forEach(function (th) {
             var col = th.getAttribute('data-sort');
-            th.classList.remove('recyc-th-sort--asc', 'recyc-th-sort--desc');
-            if (col === sort.col) {
-                th.classList.add(sort.dir === 'asc' ? 'recyc-th-sort--asc' : 'recyc-th-sort--desc');
+            var isActive = (col === sort.col);
+            th.classList.toggle('recyc-th-sort--active', isActive);
+            var ind = th.querySelector('.recyc-th-sort__indicator');
+            if (ind) {
+                if (isActive) {
+                    ind.textContent = sort.dir === 'asc' ? '↑' : '↓'; /* ↑ ↓ */
+                } else {
+                    ind.textContent = '↕'; /* ↕ */
+                }
             }
         });
     }
