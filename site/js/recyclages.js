@@ -15,6 +15,12 @@
     /* Cache des recyclages chargés par historique (pour filtrer côté JS) */
     var historyCache = { moi: [], alliance: [] };
 
+    /* Cache + état de tri des tables (côté JS, instantané) */
+    var tableState = {
+        classement: { data: [], sort: { col: 'total_alliance', dir: 'desc' } },
+        zones:      { data: [], sort: { col: 'total_plus_value', dir: 'desc' } }
+    };
+
     document.addEventListener('ren:ready', init);
 
     async function init() {
@@ -511,39 +517,106 @@
         try {
             var { data, error } = await window.REN.supabase
                 .from('v_recyclages_par_user')
-                .select('*')
-                .order('total_alliance', { ascending: false });
+                .select('*');
             if (error) throw error;
-
-            if (!data || !data.length) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center" style="padding:var(--spacing-lg);">Aucun recyclage enregistré pour le moment.</td></tr>';
-                return;
-            }
-
-            var esc = window.REN.escapeHtml;
-            var fmt = window.REN.formatNumber;
-            var html = '';
-            data.forEach(function (m, i) {
-                var rank = i + 1;
-                var pv = m.total_plus_value || 0;
-                var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
-                var pvText = (pv >= 0 ? '+' : '') + fmt(pv);
-                var isMe = m.user_id === userId;
-                html += '<tr' + (isMe ? ' style="background:rgba(219,41,41,0.06);"' : '') + '>'
-                    + '<td><strong>' + rank + '</strong></td>'
-                    + '<td><strong>' + esc(m.username || '?') + '</strong>' + (isMe ? ' <span class="text-muted" style="font-size:0.7rem;">(vous)</span>' : '') + '</td>'
-                    + '<td class="recyc-num">' + fmt(m.nb_recyclages || 0) + '</td>'
-                    + '<td class="recyc-num" style="color:var(--color-warning);font-weight:700;">' + fmt(m.total_alliance || 0) + '</td>'
-                    + '<td class="recyc-num" style="color:var(--color-success);">' + fmt(m.total_perso || 0) + '</td>'
-                    + '<td class="recyc-num ' + pvCls + '">' + pvText + '</td>'
-                    + '<td class="recyc-num">' + fmt(m.moy_perso_par_tir || 0) + '</td>'
-                    + '</tr>';
-            });
-            tbody.innerHTML = html;
+            tableState.classement.data = data || [];
+            bindTableSort('classement-table', 'classement', renderClassement);
+            renderClassement();
         } catch (err) {
             console.error('[REN-RECYC] Erreur classement membres:', err);
             tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center">Erreur chargement.</td></tr>';
         }
+    }
+
+    function renderClassement() {
+        var tbody = document.getElementById('classement-tbody');
+        if (!tbody) return;
+        var data = sortRows(tableState.classement.data, tableState.classement.sort);
+
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-muted text-center" style="padding:var(--spacing-lg);">Aucun recyclage enregistré pour le moment.</td></tr>';
+            updateSortIndicators('classement-table', tableState.classement.sort);
+            return;
+        }
+
+        var esc = window.REN.escapeHtml;
+        var fmt = window.REN.formatNumber;
+        var html = '';
+        data.forEach(function (m, i) {
+            var rank = i + 1;
+            var pv = m.total_plus_value || 0;
+            var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
+            var pvText = (pv >= 0 ? '+' : '') + fmt(pv);
+            var isMe = m.user_id === userId;
+            html += '<tr' + (isMe ? ' style="background:rgba(219,41,41,0.06);"' : '') + '>'
+                + '<td><strong>' + rank + '</strong></td>'
+                + '<td><strong>' + esc(m.username || '?') + '</strong>' + (isMe ? ' <span class="text-muted" style="font-size:0.7rem;">(vous)</span>' : '') + '</td>'
+                + '<td class="recyc-num">' + fmt(m.nb_recyclages || 0) + '</td>'
+                + '<td class="recyc-num" style="color:var(--color-warning);font-weight:700;">' + fmt(m.total_alliance || 0) + '</td>'
+                + '<td class="recyc-num" style="color:var(--color-success);">' + fmt(m.total_perso || 0) + '</td>'
+                + '<td class="recyc-num ' + pvCls + '">' + pvText + '</td>'
+                + '<td class="recyc-num">' + fmt(m.moy_perso_par_tir || 0) + '</td>'
+                + '</tr>';
+        });
+        tbody.innerHTML = html;
+        updateSortIndicators('classement-table', tableState.classement.sort);
+    }
+
+    /* === TRI GÉNÉRIQUE === */
+
+    /* Compare 2 valeurs (numérique ou texte), null/undefined en dernier */
+    function sortRows(rows, sortConfig) {
+        var col = sortConfig.col;
+        var dir = sortConfig.dir === 'asc' ? 1 : -1;
+        var copy = rows.slice();
+        copy.sort(function (a, b) {
+            var va = a[col];
+            var vb = b[col];
+            /* null/undefined toujours en bas */
+            if (va === null || va === undefined) return 1;
+            if (vb === null || vb === undefined) return -1;
+            if (typeof va === 'number' && typeof vb === 'number') {
+                return (va - vb) * dir;
+            }
+            return String(va).localeCompare(String(vb), 'fr', { numeric: true }) * dir;
+        });
+        return copy;
+    }
+
+    /* Bind les clicks de tri sur les <th data-sort> d'une table */
+    var sortBound = {};
+    function bindTableSort(tableId, stateKey, renderFn) {
+        if (sortBound[tableId]) return;
+        sortBound[tableId] = true;
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        table.querySelectorAll('th[data-sort]').forEach(function (th) {
+            th.addEventListener('click', function () {
+                var col = th.getAttribute('data-sort');
+                var state = tableState[stateKey].sort;
+                if (state.col === col) {
+                    state.dir = state.dir === 'desc' ? 'asc' : 'desc';
+                } else {
+                    state.col = col;
+                    /* Texte par défaut asc, numérique par défaut desc */
+                    state.dir = (col === 'zone_nom' || col === 'username') ? 'asc' : 'desc';
+                }
+                renderFn();
+            });
+        });
+    }
+
+    /* Met à jour les indicateurs visuels ↑↓ sur les <th> */
+    function updateSortIndicators(tableId, sort) {
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        table.querySelectorAll('th[data-sort]').forEach(function (th) {
+            var col = th.getAttribute('data-sort');
+            th.classList.remove('recyc-th-sort--asc', 'recyc-th-sort--desc');
+            if (col === sort.col) {
+                th.classList.add(sort.dir === 'asc' ? 'recyc-th-sort--asc' : 'recyc-th-sort--desc');
+            }
+        });
     }
 
     function setKpi(id, val) {
@@ -570,38 +643,48 @@
         try {
             var { data, error } = await window.REN.supabase
                 .from('v_recyclages_par_zone')
-                .select('*')
-                .order('total_plus_value', { ascending: false, nullsFirst: false });
+                .select('*');
             if (error) throw error;
-
-            var filtered = (data || []).filter(function (z) { return (z.nb_recyclages || 0) > 0; });
-
-            if (!filtered.length) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center" style="padding:var(--spacing-lg);">Aucun recyclage enregistré pour le moment.</td></tr>';
-                return;
-            }
-
-            var html = '';
-            filtered.forEach(function (z) {
-                var pv = z.total_plus_value || 0;
-                var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
-                var pvText = (pv >= 0 ? '+' : '') + window.REN.formatNumber(pv);
-                html += '<tr>'
-                    + '<td><strong>' + window.REN.escapeHtml(z.zone_nom) + '</strong></td>'
-                    + '<td>' + z.niveau_zone + '</td>'
-                    + '<td><span class="recyc-pill">' + z.cout_pepites_pose + ' p.</span></td>'
-                    + '<td>' + (z.nb_recyclages || 0) + '</td>'
-                    + '<td class="recyc-num">' + window.REN.formatNumber(z.total_perso || 0) + '</td>'
-                    + '<td class="recyc-num">' + window.REN.formatNumber(z.total_alliance || 0) + '</td>'
-                    + '<td class="recyc-num ' + pvCls + '">' + pvText + '</td>'
-                    + '<td class="recyc-num">' + window.REN.formatNumber(z.moy_perso_par_tir || 0) + '</td>'
-                    + '</tr>';
-            });
-            tbody.innerHTML = html;
+            tableState.zones.data = (data || []).filter(function (z) { return (z.nb_recyclages || 0) > 0; });
+            bindTableSort('zones-table', 'zones', renderZones);
+            renderZones();
         } catch (err) {
             console.error('[REN-RECYC] Erreur stats zones:', err);
             tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center">Erreur chargement.</td></tr>';
         }
+    }
+
+    function renderZones() {
+        var tbody = document.getElementById('zones-tbody');
+        if (!tbody) return;
+        var data = sortRows(tableState.zones.data, tableState.zones.sort);
+
+        if (!data.length) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-muted text-center" style="padding:var(--spacing-lg);">Aucun recyclage enregistré pour le moment.</td></tr>';
+            updateSortIndicators('zones-table', tableState.zones.sort);
+            return;
+        }
+
+        var fmt = window.REN.formatNumber;
+        var esc = window.REN.escapeHtml;
+        var html = '';
+        data.forEach(function (z) {
+            var pv = z.total_plus_value || 0;
+            var pvCls = pv > 0 ? 'recyc-pv--positive' : (pv < 0 ? 'recyc-pv--negative' : 'recyc-pv--neutral');
+            var pvText = (pv >= 0 ? '+' : '') + fmt(pv);
+            html += '<tr>'
+                + '<td><strong>' + esc(z.zone_nom) + '</strong></td>'
+                + '<td class="recyc-num">' + z.niveau_zone + '</td>'
+                + '<td class="recyc-num"><span class="recyc-pill">' + z.cout_pepites_pose + ' p.</span></td>'
+                + '<td class="recyc-num">' + (z.nb_recyclages || 0) + '</td>'
+                + '<td class="recyc-num">' + fmt(z.total_perso || 0) + '</td>'
+                + '<td class="recyc-num">' + fmt(z.total_alliance || 0) + '</td>'
+                + '<td class="recyc-num ' + pvCls + '">' + pvText + '</td>'
+                + '<td class="recyc-num">' + fmt(z.moy_perso_par_tir || 0) + '</td>'
+                + '</tr>';
+        });
+        tbody.innerHTML = html;
+        updateSortIndicators('zones-table', tableState.zones.sort);
     }
 
     /* === HISTORIQUES === */

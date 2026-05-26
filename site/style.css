@@ -7079,6 +7079,40 @@ table {
 .recyc-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
 .recyc-num { text-align: center; font-variant-numeric: tabular-nums; }
 
+/* === Colonnes triables === */
+.recyc-th-sort {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: calc(var(--spacing-md) + 14px) !important;
+    transition: color var(--transition-fast);
+}
+.recyc-th-sort:hover {
+    color: var(--color-text-primary);
+}
+.recyc-th-sort::after {
+    content: '↕';
+    position: absolute;
+    right: var(--spacing-sm);
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    opacity: 0.35;
+    transition: opacity var(--transition-fast);
+}
+.recyc-th-sort:hover::after { opacity: 0.6; }
+.recyc-th-sort--asc::after,
+.recyc-th-sort--desc::after {
+    opacity: 1;
+    color: var(--color-accent);
+}
+.recyc-th-sort--asc::after { content: '↑'; }
+.recyc-th-sort--desc::after { content: '↓'; }
+/* Sur les colonnes numériques (text-align center), aligner l'indicateur avec le texte */
+.recyc-num.recyc-th-sort {
+    padding-left: calc(var(--spacing-md) + 14px) !important;
+}
+
 .recyc-pill {
     display: inline-flex;
     align-items: center;

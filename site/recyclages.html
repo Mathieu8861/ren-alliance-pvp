@@ -248,16 +248,16 @@
             <section class="mb-lg">
                 <h2 class="recyc-section-title">Classement membres <span class="text-muted" style="font-size:0.75rem;font-weight:400;">(par pépites alliance générées, depuis le début)</span></h2>
                 <div class="recyc-table-wrap">
-                    <table class="recyc-table">
+                    <table class="recyc-table recyc-table--sortable" id="classement-table">
                         <thead>
                             <tr>
                                 <th>#</th>
-                                <th>Membre</th>
-                                <th class="recyc-num">Recyclages</th>
-                                <th class="recyc-num">Pépites alliance</th>
-                                <th class="recyc-num">Pépites perso</th>
-                                <th class="recyc-num">Plus-value</th>
-                                <th class="recyc-num">Moy/tir</th>
+                                <th class="recyc-th-sort" data-sort="username">Membre</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="nb_recyclages">Recyclages</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_alliance">Pépites alliance</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_perso">Pépites perso</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_plus_value">Plus-value</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="moy_perso_par_tir">Moy/tir</th>
                             </tr>
                         </thead>
                         <tbody id="classement-tbody">
@@ -270,17 +270,17 @@
             <section class="mb-lg">
                 <h2 class="recyc-section-title">Rentabilité par zone</h2>
                 <div class="recyc-table-wrap">
-                    <table class="recyc-table">
+                    <table class="recyc-table recyc-table--sortable" id="zones-table">
                         <thead>
                             <tr>
-                                <th>Zone</th>
-                                <th>Niveau</th>
-                                <th>Coût</th>
-                                <th>Tirs</th>
-                                <th>Perso</th>
-                                <th>Alliance</th>
-                                <th>Plus-value</th>
-                                <th>Moy/tir</th>
+                                <th class="recyc-th-sort" data-sort="zone_nom">Zone</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="niveau_zone">Niveau</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="cout_pepites_pose">Coût</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="nb_recyclages">Tirs</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_perso">Perso</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_alliance">Alliance</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="total_plus_value">Plus-value</th>
+                                <th class="recyc-num recyc-th-sort" data-sort="moy_perso_par_tir">Moy/tir</th>
                             </tr>
                         </thead>
                         <tbody id="zones-tbody">
