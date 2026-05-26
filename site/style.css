@@ -7077,40 +7077,50 @@ table {
 }
 .recyc-table tbody tr:last-child td { border-bottom: none; }
 .recyc-table tbody tr:hover { background: rgba(255, 255, 255, 0.02); }
-.recyc-num { text-align: center; font-variant-numeric: tabular-nums; }
+.recyc-num { text-align: left; font-variant-numeric: tabular-nums; }
 
-/* === Colonnes triables === */
+/* === Colonnes triables ===                                          */
+/* Badge en position absolute pour ne pas pousser le texte du <th>.   */
+/* Caché par défaut, visible seulement sur la colonne active.         */
 .recyc-th-sort {
     cursor: pointer;
     user-select: none;
     position: relative;
-    padding-right: calc(var(--spacing-md) + 14px) !important;
     transition: color var(--transition-fast);
 }
 .recyc-th-sort:hover {
     color: var(--color-text-primary);
 }
-.recyc-th-sort::after {
-    content: '↕';
+.recyc-th-sort__indicator {
+    display: none;
     position: absolute;
-    right: var(--spacing-sm);
     top: 50%;
+    right: 6px;
     transform: translateY(-50%);
-    font-size: 0.65rem;
-    opacity: 0.35;
-    transition: opacity var(--transition-fast);
+    width: 16px;
+    height: 16px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    line-height: 1;
+    background: var(--color-accent);
+    color: #fff;
+    pointer-events: none;
 }
-.recyc-th-sort:hover::after { opacity: 0.6; }
-.recyc-th-sort--asc::after,
-.recyc-th-sort--desc::after {
-    opacity: 1;
-    color: var(--color-accent);
+/* Visible sur la colonne active */
+.recyc-th-sort--active .recyc-th-sort__indicator {
+    display: inline-flex;
 }
-.recyc-th-sort--asc::after { content: '↑'; }
-.recyc-th-sort--desc::after { content: '↓'; }
-/* Sur les colonnes numériques (text-align center), aligner l'indicateur avec le texte */
-.recyc-num.recyc-th-sort {
-    padding-left: calc(var(--spacing-md) + 14px) !important;
+/* Visible aussi au hover pour signaler que la colonne est triable */
+.recyc-th-sort:hover .recyc-th-sort__indicator {
+    display: inline-flex;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+.recyc-th-sort--active:hover .recyc-th-sort__indicator {
+    background: var(--color-accent-light);
+    color: #fff;
 }
 
 .recyc-pill {
