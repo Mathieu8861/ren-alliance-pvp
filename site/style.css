@@ -7671,6 +7671,20 @@ table {
     font-variant-numeric: tabular-nums;
     flex-shrink: 0;
 }
+/* Sorts prioritaires : badge accent rouge (★) */
+.mule-card__qty--priority {
+    background: rgba(219, 41, 41, 0.14);
+    color: var(--color-accent);
+    border-color: rgba(219, 41, 41, 0.35);
+    min-width: 24px;
+}
+/* Sorts secondaires : badge orange / warning (◆) */
+.mule-card__qty--secondary {
+    background: rgba(243, 156, 18, 0.12);
+    color: var(--color-warning);
+    border-color: rgba(243, 156, 18, 0.3);
+    min-width: 24px;
+}
 
 @media (max-width: 768px) {
     .build-lightbox__close {
