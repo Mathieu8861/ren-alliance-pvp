@@ -65,6 +65,7 @@
 - `020-fm-concassage.sql` — Colonne qty_ajustement sur fm_session_runes + table fm_session_concassages (fusion 3 basiques → 1 Pa au concasseur, neutre en coût)
 - `021-fm-multi-sessions.sql` — Colonne last_active_at sur fm_sessions (multi-sessions en parallèle, reprise depuis Mes sessions)
 - `022-runes-icones.sql` — Colonne img_url + 105 icônes officielles **hébergées en local** (`site/assets/images/runes/`, 104 PNG 128×128 téléchargés depuis l'API DofusDB, ~1,9 Mo)
+- `023-fm-item-pui.sql` — Colonnes item_pui_depart/max/final sur fm_sessions (poids de l'item calculé depuis les stats min/max/actuel du Costumager × poids/unité du catalogue ; puits dispo = max − actuel)
 
 ## Historique & Décisions
 - Système complet gestion alliance : membres, classements, PvP, boutique kamas, board hebdo

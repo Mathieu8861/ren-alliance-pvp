@@ -45,6 +45,7 @@
         <div class="tabs" id="fm-tabs">
             <button class="tabs__btn active" data-panel="session">Session</button>
             <button class="tabs__btn" data-panel="historique">Mes sessions</button>
+            <button class="tabs__btn" data-panel="alliance">Alliance</button>
             <button class="tabs__btn" data-panel="runes">Runes &amp; prix</button>
         </div>
 
@@ -54,6 +55,19 @@
             <!-- ÉTAPE 1 : Nouvelle session (visible si aucune session en cours) -->
             <section class="recyc-card mb-lg" id="fm-new-session" hidden>
                 <button type="button" class="btn btn--secondary btn--small" id="fm-back-to-session" hidden style="margin-bottom:var(--spacing-md);">← Revenir à la session en cours</button>
+
+                <!-- Guide première session -->
+                <details class="fm-guide" id="fm-guide" open>
+                    <summary>📖 Comment ça marche ?</summary>
+                    <ol>
+                        <li><strong>Screen de départ</strong> — ouvre ton atelier (Costumager) ou ton inventaire filtré sur les runes, prends un screen (<kbd>Win</kbd>+<kbd>Maj</kbd>+<kbd>S</kbd>) et colle-le ici (<kbd>Ctrl</kbd>+<kbd>V</kbd>). L'IA compte tes runes automatiquement — vérifie la grille et corrige si besoin.</li>
+                        <li><strong>Runes invisibles</strong> — si tu comptes passer une rune qui n'apparaît pas sur le screen (exo Do Per So, Ga Pa…), ajoute-la avec « + Ajouter une rune » et ta quantité possédée.</li>
+                        <li><strong>Pendant la session</strong> — chaque achat HDV : colle la ligne du chat. Chaque concassage : déclare-le. Tout est sauvegardé automatiquement, tu peux fermer le site et revenir plus tard.</li>
+                        <li><strong>Plusieurs items en même temps</strong> — « ⏸ Changer d'item » met la session de côté ; reprends-la quand tu veux depuis « Mes sessions ».</li>
+                        <li><strong>Clôture</strong> — colle le screen de fin : le site calcule les runes consommées et le coût total en kamas. C'est le prix réel de ton FM 💸</li>
+                    </ol>
+                </details>
+
                 <h2 class="recyc-card__title">Nouvelle session</h2>
 
                 <div class="form-group">
@@ -90,6 +104,7 @@
                     </label>
                     <div class="fm-grid" id="fm-grid-avant"></div>
                     <button type="button" class="btn btn--secondary btn--small mt-sm" id="fm-grid-avant-add">+ Ajouter une rune</button>
+                    <div class="fm-pui-banner mt-sm" id="fm-pui-avant" hidden></div>
                 </div>
 
                 <div class="recyc-form__actions">
@@ -225,6 +240,8 @@
                             </table>
                         </div>
 
+                        <div class="fm-pui-banner mt-sm" id="fm-pui-apres" hidden></div>
+
                         <!-- Ajout d'une rune absente des screens (ex: rune exo passée à la main) -->
                         <div id="fm-apres-extra" style="margin-top:var(--spacing-sm);" hidden>
                             <div class="fm-achat-row" id="fm-apres-extra-row"></div>
@@ -255,6 +272,10 @@
                     <div class="recyc-kpi">
                         <span class="recyc-kpi__label">Dont achats en session</span>
                         <span class="recyc-kpi__value" id="fm-summary-achats">0</span>
+                    </div>
+                    <div class="recyc-kpi" id="fm-summary-pui-wrap" hidden>
+                        <span class="recyc-kpi__label">Pui de l'item</span>
+                        <span class="recyc-kpi__value" id="fm-summary-pui">—</span>
                     </div>
                 </div>
                 <div class="recyc-table-wrap" id="fm-summary-detail"></div>
@@ -310,6 +331,46 @@
                     <div class="loading"><div class="spinner"></div> Chargement...</div>
                 </div>
             </div>
+        </div>
+
+        <!-- =============== PANEL : ALLIANCE =============== -->
+        <div class="fm-panel" id="panel-alliance" hidden>
+            <section class="mb-lg">
+                <h2 class="recyc-section-title">Stats FM de l'alliance</h2>
+                <div class="recyc-kpi-grid">
+                    <div class="recyc-kpi">
+                        <span class="recyc-kpi__label">FMeurs actifs</span>
+                        <span class="recyc-kpi__value" id="fm-alli-fmeurs">0</span>
+                    </div>
+                    <div class="recyc-kpi">
+                        <span class="recyc-kpi__label">Sessions terminées</span>
+                        <span class="recyc-kpi__value" id="fm-alli-sessions">0</span>
+                    </div>
+                    <div class="recyc-kpi">
+                        <span class="recyc-kpi__label">Runes consommées</span>
+                        <span class="recyc-kpi__value" id="fm-alli-runes">0</span>
+                    </div>
+                    <div class="recyc-kpi">
+                        <span class="recyc-kpi__label">Kamas investis</span>
+                        <span class="recyc-kpi__value recyc-kpi__value--gold" id="fm-alli-kamas">0</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-lg">
+                <div class="recyc-history__header">
+                    <h2 class="recyc-section-title" style="margin:0;">Sessions de l'alliance</h2>
+                    <select class="form-input" id="fm-alli-sort" style="max-width:220px;">
+                        <option value="recent">Plus récentes</option>
+                        <option value="cout-desc">Coût décroissant</option>
+                        <option value="cout-asc">Coût croissant</option>
+                        <option value="runes-desc">Runes consommées</option>
+                    </select>
+                </div>
+                <div class="fm-sessions-grid" id="fm-alli-list">
+                    <div class="loading"><div class="spinner"></div> Chargement...</div>
+                </div>
+            </section>
         </div>
 
         <!-- =============== PANEL : RUNES & PRIX =============== -->

@@ -29,6 +29,79 @@
         return '<img class="fm-rune-icon" src="' + window.REN.escapeHtml(rune.img_url) + '" alt="" loading="lazy">';
     }
 
+    /* ============================================ */
+    /* POIDS (PUI) DE L'ITEM                        */
+    /* ============================================ */
+    /* Ratio pui/unité par catégorie de stat, dérivé du catalogue :
+       poids/bonus de la rune BASIQUE de la famille (ex Vi: 1/5 = 0.2/pt). */
+    var statCatMap = {};
+
+    /* Normalisation qui PRÉSERVE le % (distingue "Res. Feu" et "% Res. Feu") */
+    function normStat(s) {
+        return (s || '').toString().toLowerCase()
+            .normalize('NFD').replace(/[̀-ͯ]/g, '')
+            .replace(/[^a-z0-9% ]/g, ' ')
+            .replace(/\s+/g, ' ').trim();
+    }
+
+    function buildStatMaps() {
+        statCatMap = {};
+        runes.forEach(function (r) {
+            if (r.tier !== 'basique') return;
+            statCatMap[normStat(r.categorie)] = r.poids / (r.bonus || 1);
+        });
+    }
+
+    /* Libellé de stat (vision Costumager) -> clé du catalogue */
+    function statToCatKey(label) {
+        var n = normStat(label);
+        n = n.replace(/^[-+]?\d+([.,]\d+)?\s*/, ''); /* valeur résiduelle en tête */
+        if (n.indexOf('renvoi') !== -1) return 'renvoi de dommages';
+        if (n.indexOf('res critiques') !== -1 || n.indexOf('resistances critiques') !== -1) return 'res critiques';
+        n = n.replace(/resistances?/g, 'res');
+        if (n === 'invocations') n = 'invocation';
+        if (n === '% critique') n = 'critique';
+        return n;
+    }
+
+    /* item_stats (vision) -> { actuel, max, ignorees[] } ou null */
+    function computeItemPui(itemStats) {
+        if (!itemStats || !itemStats.length) return null;
+        var actuel = 0, max = 0, hasMax = false, ignorees = [];
+        itemStats.forEach(function (st) {
+            var ratio = statCatMap[statToCatKey(st.stat)];
+            if (ratio === undefined) { ignorees.push(st.stat); return; }
+            actuel += (Number(st.actuel) || 0) * ratio;
+            if (st.max !== null && st.max !== undefined && st.max !== '') {
+                max += (Number(st.max) || 0) * ratio;
+                hasMax = true;
+            }
+        });
+        return {
+            actuel: Math.round(actuel * 10) / 10,
+            max: hasMax ? Math.round(max * 10) / 10 : null,
+            ignorees: ignorees
+        };
+    }
+
+    function renderPuiBanner(elId, pui) {
+        var el = document.getElementById(elId);
+        if (!el) return;
+        if (!pui) { el.setAttribute('hidden', ''); el.innerHTML = ''; return; }
+        var fmt = window.REN.formatNumber;
+        var html = '⚖️ Poids de l\'item : <strong>' + fmt(pui.actuel) + ' pui</strong>';
+        if (pui.max !== null) {
+            var puits = Math.round((pui.max - pui.actuel) * 10) / 10;
+            html += ' / max <strong>' + fmt(pui.max) + '</strong>'
+                + ' → puits dispo <strong style="color:' + (puits >= 0 ? 'var(--color-success)' : 'var(--color-danger)') + ';">' + fmt(puits) + '</strong>';
+        }
+        if (pui.ignorees.length) {
+            html += ' <span class="text-muted" style="font-size:0.75em;" title="' + window.REN.escapeHtml(pui.ignorees.join(', ')) + '">(' + pui.ignorees.length + ' stat(s) non comptée(s))</span>';
+        }
+        el.innerHTML = html;
+        el.removeAttribute('hidden');
+    }
+
     /* Grilles d'extraction en cours d'edition */
     var gridAvant = [];   /* [{runeId, qty}] */
     var gridApres = {};   /* runeId -> qty fin */
@@ -44,6 +117,7 @@
         isAdmin = !!window.REN.currentProfile.is_admin;
 
         await loadRunes();
+        buildStatMaps();
         bindTabs();
         bindNewSession();
         bindAchats();
@@ -52,6 +126,18 @@
 
         await loadCurrentSession();
         renderSessionPanel();
+
+        /* Guide première session : replié si l'utilisateur a déjà FM */
+        try {
+            var { count } = await window.REN.supabase
+                .from('fm_sessions')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId);
+            if ((count || 0) > 0) {
+                var guide = document.getElementById('fm-guide');
+                if (guide) guide.removeAttribute('open');
+            }
+        } catch (e) { /* non bloquant */ }
     }
 
     /* ============================================ */
@@ -98,7 +184,15 @@
     /* ============================================ */
     /* TABS                                         */
     /* ============================================ */
-    var loaded = { historique: false, runes: false };
+    var loaded = { historique: false, alliance: false, runes: false };
+
+    /* À appeler après toute action qui change les sessions (abandon,
+       clôture, démarrage, reprise) : les onglets listes rechargeront
+       leurs données au prochain affichage. */
+    function invalidateSessionLists() {
+        loaded.historique = false;
+        loaded.alliance = false;
+    }
 
     function bindTabs() {
         var tabs = document.getElementById('fm-tabs');
@@ -119,6 +213,9 @@
             if (panel === 'historique' && !loaded.historique) {
                 loaded.historique = true;
                 loadHistorique();
+            } else if (panel === 'alliance' && !loaded.alliance) {
+                loaded.alliance = true;
+                loadAlliance();
             } else if (panel === 'runes' && !loaded.runes) {
                 loaded.runes = true;
                 renderRunesCatalogue();
@@ -296,6 +393,10 @@
                 try {
                     var result = await extractRunesFromImage(file);
                     pendingAvantFile = file;
+                    /* Poids de l'item depuis les stats du Costumager (si présentes) */
+                    var pui = computeItemPui(result.item_stats);
+                    if (pui) pendingItemPui = pui;
+                    renderPuiBanner('fm-pui-avant', pendingItemPui);
                     fillGridAvant(result);
                     setStatus('Analysé ✓', 'recyc-preuve__status--ok');
                 } catch (err) {
@@ -310,6 +411,8 @@
             },
             function () {
                 pendingAvantFile = null;
+                pendingItemPui = null;
+                renderPuiBanner('fm-pui-avant', null);
                 gridAvant = [];
                 document.getElementById('fm-grid-avant-wrap').setAttribute('hidden', '');
                 updateStartButton();
@@ -325,6 +428,8 @@
     }
 
     var pendingAvantFile = null;
+    var pendingItemPui = null;    /* {actuel, max, ignorees} du screen de départ */
+    var pendingApresPui = null;   /* idem pour le screen de clôture */
 
     /* Merge les runes extraites dans la grille existante :              */
     /* - rune deja presente -> sa qty est remplacee (le screen fait foi)  */
@@ -489,7 +594,13 @@
 
             var { data: session, error } = await window.REN.supabase
                 .from('fm_sessions')
-                .insert({ user_id: userId, titre: titre, screenshot_avant_url: screenUrl })
+                .insert({
+                    user_id: userId,
+                    titre: titre,
+                    screenshot_avant_url: screenUrl,
+                    item_pui_depart: pendingItemPui ? pendingItemPui.actuel : null,
+                    item_pui_max: pendingItemPui ? pendingItemPui.max : null
+                })
                 .select()
                 .single();
             if (error) throw error;
@@ -501,6 +612,7 @@
             if (err2) throw err2;
 
             window.REN.toast('Session démarrée — bon FM !', 'success');
+            invalidateSessionLists();
             forceNewSession = false;
             /* Reset du form pour la prochaine fois */
             document.getElementById('fm-titre').value = '';
@@ -564,7 +676,15 @@
             newS.setAttribute('hidden', '');
             curS.removeAttribute('hidden');
             document.getElementById('fm-current-titre').textContent = currentSession.titre;
-            document.getElementById('fm-current-date').textContent = ' · démarrée ' + window.REN.formatDate(currentSession.started_at);
+            var dateTxt = ' · démarrée ' + window.REN.formatDate(currentSession.started_at);
+            if (currentSession.item_pui_depart !== null && currentSession.item_pui_depart !== undefined) {
+                dateTxt += ' · ⚖️ ' + window.REN.formatNumber(currentSession.item_pui_depart) + ' pui';
+                if (currentSession.item_pui_max !== null && currentSession.item_pui_max !== undefined) {
+                    var puits = Math.round((currentSession.item_pui_max - currentSession.item_pui_depart) * 10) / 10;
+                    dateTxt += ' / ' + window.REN.formatNumber(currentSession.item_pui_max) + ' max (puits ' + window.REN.formatNumber(puits) + ')';
+                }
+            }
+            document.getElementById('fm-current-date').textContent = dateTxt;
             renderStock();
             renderAchats();
             renderConcassages();
@@ -601,6 +721,7 @@
                 .eq('id', sessionId);
             if (error) throw error;
 
+            invalidateSessionLists();
             forceNewSession = false;
             await loadCurrentSession();
             renderSessionPanel();
@@ -659,6 +780,7 @@
                 .then(async function (res) {
                     if (res.error) { window.REN.toast('Erreur', 'error'); return; }
                     window.REN.toast('Session abandonnée', 'success');
+                    invalidateSessionLists();
                     /* Recharger : une autre session en_cours peut prendre le relais */
                     await loadCurrentSession();
                     renderSessionPanel();
@@ -1097,6 +1219,9 @@
                 try {
                     var result = await extractRunesFromImage(file);
                     pendingApresFile = file;
+                    var pui = computeItemPui(result.item_stats);
+                    if (pui) pendingApresPui = pui;
+                    renderPuiBanner('fm-pui-apres', pendingApresPui);
                     fillGridApres(result);
                     setStatus('Analysé ✓', 'recyc-preuve__status--ok');
                 } catch (err) {
@@ -1111,6 +1236,8 @@
             },
             function () {
                 pendingApresFile = null;
+                pendingApresPui = null;
+                renderPuiBanner('fm-pui-apres', null);
                 gridApres = {};
                 document.getElementById('fm-grid-apres-wrap').setAttribute('hidden', '');
                 document.getElementById('fm-close-session').disabled = true;
@@ -1333,11 +1460,13 @@
                     ended_at: new Date().toISOString(),
                     cout_total_kamas: totalCout,
                     nb_runes_consommees: totalConso,
-                    screenshot_apres_url: screenUrl
+                    screenshot_apres_url: screenUrl,
+                    item_pui_final: pendingApresPui ? pendingApresPui.actuel : null
                 })
                 .eq('id', currentSession.id);
             if (error) throw error;
 
+            invalidateSessionLists();
             showSummary(totalConso, totalCout);
         } catch (err) {
             console.error('[REN-FM] Erreur cloture:', err);
@@ -1360,6 +1489,25 @@
         document.getElementById('fm-summary-cout').textContent = fmt(totalCout) + ' K';
         var totalAchats = achats.reduce(function (acc, a) { return acc + (a.prix_total || 0); }, 0);
         document.getElementById('fm-summary-achats').textContent = fmt(totalAchats) + ' K';
+
+        /* Évolution du pui de l'item (si mesuré au départ et/ou à la fin) */
+        var puiWrap = document.getElementById('fm-summary-pui-wrap');
+        var depart = currentSession ? currentSession.item_pui_depart : null;
+        var final_ = pendingApresPui ? pendingApresPui.actuel : null;
+        if (puiWrap) {
+            if (depart !== null && depart !== undefined && final_ !== null) {
+                var delta = Math.round((final_ - depart) * 10) / 10;
+                document.getElementById('fm-summary-pui').innerHTML =
+                    fmt(depart) + ' → ' + fmt(final_)
+                    + ' <span style="font-size:0.8em;color:' + (delta >= 0 ? 'var(--color-success)' : 'var(--color-danger)') + ';">(' + (delta >= 0 ? '+' : '') + fmt(delta) + ')</span>';
+                puiWrap.removeAttribute('hidden');
+            } else if (final_ !== null) {
+                document.getElementById('fm-summary-pui').textContent = fmt(final_);
+                puiWrap.removeAttribute('hidden');
+            } else {
+                puiWrap.setAttribute('hidden', '');
+            }
+        }
 
         var html = '<table class="recyc-table"><thead><tr>'
             + '<th>Rune</th><th class="recyc-num">Consommé</th><th class="recyc-num">Prix unit.</th><th class="recyc-num">Coût</th>'
@@ -1490,10 +1638,14 @@
             var dateText = isOngoing
                 ? 'démarrée ' + window.REN.formatDate(s.started_at)
                 : window.REN.formatDateFull(s.ended_at);
+            var puiVal = s.item_pui_final !== null && s.item_pui_final !== undefined ? s.item_pui_final : s.item_pui_depart;
+            var puiPill = (puiVal !== null && puiVal !== undefined)
+                ? '<span class="recyc-pill" title="Poids de l\'item">⚖ ' + fmt(puiVal) + ' pui</span>' : '';
             var statsHtml = isOngoing
-                ? '<span class="recyc-pill recyc-pill--green">▶ Reprendre</span>'
+                ? '<span class="recyc-pill recyc-pill--green">▶ Reprendre</span>' + puiPill
                 : '<span class="recyc-pill">' + fmt(s.nb_runes_consommees || 0) + ' runes</span>'
-                    + '<span class="recyc-pill recyc-pill--gold">' + fmt(s.cout_total_kamas || 0) + ' K</span>';
+                    + '<span class="recyc-pill recyc-pill--gold">' + fmt(s.cout_total_kamas || 0) + ' K</span>'
+                    + puiPill;
 
             html += '<div class="fm-session-card' + (isOngoing ? ' fm-session-card--ongoing' : '') + '" data-id="' + s.id + '" data-statut="' + s.statut + '">'
                 + badge
@@ -1547,7 +1699,8 @@
         var content = document.getElementById('fm-modal-content');
         if (!modal || !content) return;
 
-        modalSession = sessionsCache.find(function (s) { return s.id === sessionId; });
+        modalSession = sessionsCache.find(function (s) { return s.id === sessionId; })
+            || alliSessions.find(function (s) { return s.id === sessionId; });
         if (!modalSession) return;
 
         modal.removeAttribute('hidden');
@@ -1607,8 +1760,10 @@
         var html = '';
 
         /* Header */
+        var ownerName = (s.profiles && s.profiles.username) || (s.user_id === userId ? '' : '?');
         html += '<div class="fm-modal__header">'
             + '<div>'
+                + (ownerName ? '<div class="fm-modal__owner">' + esc(ownerName) + (s.user_id === userId ? ' <span class="text-muted">(vous)</span>' : '') + '</div>' : '')
                 + '<div class="fm-modal__title">' + esc(s.titre) + '</div>'
                 + '<div class="fm-modal__date">' + window.REN.formatDateFull(s.ended_at) + '</div>'
             + '</div>'
@@ -1622,10 +1777,21 @@
         }
 
         /* KPIs */
+        var puiKpi = '';
+        if (s.item_pui_depart !== null && s.item_pui_depart !== undefined && s.item_pui_final !== null && s.item_pui_final !== undefined) {
+            var d = Math.round((s.item_pui_final - s.item_pui_depart) * 10) / 10;
+            puiKpi = '<div class="recyc-kpi"><span class="recyc-kpi__label">Pui de l\'item</span><span class="recyc-kpi__value">'
+                + fmt(s.item_pui_depart) + ' → ' + fmt(s.item_pui_final)
+                + ' <span style="font-size:0.7em;color:' + (d >= 0 ? 'var(--color-success)' : 'var(--color-danger)') + ';">(' + (d >= 0 ? '+' : '') + fmt(d) + ')</span>'
+                + '</span></div>';
+        } else if (s.item_pui_final !== null && s.item_pui_final !== undefined) {
+            puiKpi = '<div class="recyc-kpi"><span class="recyc-kpi__label">Pui de l\'item</span><span class="recyc-kpi__value">' + fmt(s.item_pui_final) + '</span></div>';
+        }
         html += '<div class="recyc-kpi-grid mb-lg" style="margin-top:var(--spacing-md);">'
             + '<div class="recyc-kpi"><span class="recyc-kpi__label">Runes consommées</span><span class="recyc-kpi__value">' + fmt(s.nb_runes_consommees || 0) + '</span></div>'
             + '<div class="recyc-kpi"><span class="recyc-kpi__label">Coût total</span><span class="recyc-kpi__value recyc-kpi__value--gold">' + fmt(s.cout_total_kamas || 0) + ' K</span></div>'
             + '<div class="recyc-kpi"><span class="recyc-kpi__label">Dont achats en session</span><span class="recyc-kpi__value">' + fmt(totalAchats) + ' K</span></div>'
+            + puiKpi
             + '</div>';
 
         /* Tableau détail triable */
@@ -1674,6 +1840,140 @@
         return '<th class="' + cls + '" data-sort="' + col + '">' + label
             + '<span class="recyc-th-sort__indicator" style="display:' + (active ? 'inline-flex' : 'none') + ';">' + arrow + '</span>'
             + '</th>';
+    }
+
+    /* ============================================ */
+    /* ALLIANCE (sessions de tous les membres)      */
+    /* ============================================ */
+    var alliSessions = [];
+    var alliSortBound = false;
+
+    async function loadAlliance() {
+        var list = document.getElementById('fm-alli-list');
+        try {
+            var res = await Promise.all([
+                window.REN.supabase
+                    .from('fm_sessions')
+                    .select('*, profiles:user_id(username)')
+                    .in('statut', ['en_cours', 'terminee'])
+                    .order('started_at', { ascending: false })
+                    .limit(120),
+                window.REN.supabase
+                    .from('v_fm_par_user')
+                    .select('*')
+            ]);
+            alliSessions = res[0].data || [];
+            var parUser = res[1].data || [];
+
+            var fmt = window.REN.formatNumber;
+            var actifs = parUser.filter(function (u) { return (u.nb_sessions || 0) > 0; });
+            var totSessions = 0, totRunes = 0, totKamas = 0;
+            actifs.forEach(function (u) {
+                totSessions += u.nb_sessions || 0;
+                totRunes += u.total_runes || 0;
+                totKamas += u.total_kamas || 0;
+            });
+            setAlliKpi('fm-alli-fmeurs', fmt(actifs.length));
+            setAlliKpi('fm-alli-sessions', fmt(totSessions));
+            setAlliKpi('fm-alli-runes', fmt(totRunes));
+            setAlliKpi('fm-alli-kamas', fmt(totKamas) + ' K');
+
+            if (!alliSortBound) {
+                alliSortBound = true;
+                var sel = document.getElementById('fm-alli-sort');
+                if (sel) sel.addEventListener('change', renderAlliGrid);
+            }
+            renderAlliGrid();
+        } catch (err) {
+            console.error('[REN-FM] Erreur alliance:', err);
+            list.innerHTML = '<p class="text-muted">Erreur de chargement.</p>';
+        }
+    }
+
+    function setAlliKpi(id, val) {
+        var el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
+
+    function renderAlliGrid() {
+        var list = document.getElementById('fm-alli-list');
+        var fmt = window.REN.formatNumber;
+        var esc = window.REN.escapeHtml;
+
+        if (!alliSessions.length) {
+            list.innerHTML = '<p class="text-muted text-center" style="padding:var(--spacing-lg);grid-column:1/-1;">Aucune session dans l\'alliance pour le moment.</p>';
+            return;
+        }
+
+        var mode = (document.getElementById('fm-alli-sort') || {}).value || 'recent';
+        function sortFn(a, b) {
+            switch (mode) {
+                case 'cout-desc':  return (b.cout_total_kamas || 0) - (a.cout_total_kamas || 0);
+                case 'cout-asc':   return (a.cout_total_kamas || 0) - (b.cout_total_kamas || 0);
+                case 'runes-desc': return (b.nb_runes_consommees || 0) - (a.nb_runes_consommees || 0);
+                default:           return new Date(b.ended_at || b.started_at) - new Date(a.ended_at || a.started_at);
+            }
+        }
+        var enCours = alliSessions.filter(function (s) { return s.statut === 'en_cours'; })
+            .sort(function (a, b) { return new Date(b.last_active_at || b.started_at) - new Date(a.last_active_at || a.started_at); });
+        var terminees = alliSessions.filter(function (s) { return s.statut === 'terminee'; }).sort(sortFn);
+        var sorted = enCours.concat(terminees);
+
+        var html = '';
+        sorted.forEach(function (s) {
+            var isOngoing = s.statut === 'en_cours';
+            var isMine = s.user_id === userId;
+            var username = (s.profiles && s.profiles.username) || '?';
+            var screenUrl = s.screenshot_apres_url || s.screenshot_avant_url;
+            var imgHtml = screenUrl
+                ? '<img src="' + esc(screenUrl) + '" alt="' + esc(s.titre) + '" loading="lazy">'
+                : '<div class="fm-session-card__placeholder">'
+                    + '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.373 8.373a1 1 0 1 1-3-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172V7l-2.26-2.26a6 6 0 0 0-4.202-1.756L9 2.96l.92.82A6.18 6.18 0 0 1 12 8.4V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></svg>'
+                  + '</div>';
+
+            var badge = isOngoing ? '<span class="fm-session-card__badge">EN COURS</span>' : '';
+            var dateText = isOngoing
+                ? 'démarrée ' + window.REN.formatDate(s.started_at)
+                : window.REN.formatDateFull(s.ended_at);
+            var puiVal = s.item_pui_final !== null && s.item_pui_final !== undefined ? s.item_pui_final : s.item_pui_depart;
+            var puiPill = (puiVal !== null && puiVal !== undefined)
+                ? '<span class="recyc-pill" title="Poids de l\'item">⚖ ' + fmt(puiVal) + ' pui</span>' : '';
+            var statsHtml = isOngoing
+                ? (isMine ? '<span class="recyc-pill recyc-pill--green">▶ Reprendre</span>' : '<span class="recyc-pill">⚒️ en plein FM…</span>') + puiPill
+                : '<span class="recyc-pill">' + fmt(s.nb_runes_consommees || 0) + ' runes</span>'
+                    + '<span class="recyc-pill recyc-pill--gold">' + fmt(s.cout_total_kamas || 0) + ' K</span>'
+                    + puiPill;
+
+            var clickable = !isOngoing || isMine;
+            html += '<div class="fm-session-card' + (isOngoing ? ' fm-session-card--ongoing' : '') + '"'
+                + ' data-id="' + s.id + '" data-statut="' + s.statut + '" data-mine="' + (isMine ? '1' : '0') + '"'
+                + (clickable ? '' : ' style="cursor:default;"')
+                + '>'
+                + badge
+                + '<div class="fm-session-card__image">' + imgHtml + '</div>'
+                + '<div class="fm-session-card__body">'
+                    + '<div class="fm-session-card__user">' + esc(username) + (isMine ? ' <span class="text-muted" style="font-weight:400;">(vous)</span>' : '') + '</div>'
+                    + '<div class="fm-session-card__title">' + esc(s.titre) + '</div>'
+                    + '<div class="fm-session-card__date">' + dateText + '</div>'
+                    + '<div class="fm-session-card__stats">' + statsHtml + '</div>'
+                + '</div>'
+                + '</div>';
+        });
+        list.innerHTML = html;
+
+        list.querySelectorAll('.fm-session-card').forEach(function (card) {
+            card.addEventListener('click', function () {
+                var id = parseInt(card.getAttribute('data-id'), 10);
+                var statut = card.getAttribute('data-statut');
+                var mine = card.getAttribute('data-mine') === '1';
+                if (statut === 'en_cours') {
+                    if (mine) reprendreSession(id);
+                    /* en_cours d'un autre membre : pas d'action */
+                } else {
+                    openSessionDetail(id);
+                }
+            });
+        });
     }
 
     /* ============================================ */

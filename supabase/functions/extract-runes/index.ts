@@ -99,8 +99,16 @@ MÉTHODE OBLIGATOIRE (les deux formats) :
 3. Produis une entrée par cellule occupée avec le bon préfixe de tier.
 4. Ne fusionne JAMAIS deux cellules. Ne décale JAMAIS les colonnes. Le nombre d'entrées du JSON = le nombre de cellules occupées.
 
+STATS DE L'ITEM (FORMAT A uniquement) :
+Le tableau du Costumager affiche aussi, pour chaque ligne de stat, les colonnes « Min » et « Max » (jet d'origine) à gauche, et la VALEUR ACTUELLE dans le libellé central (ex: "351 | 400 | ❤ 384 Vitalité" → min 351, max 400, actuel 384).
+Extrais CHAQUE ligne de stat de l'item dans "item_stats" :
+- "stat" : le libellé exact tel qu'affiché (ex: "Vitalité", "Agilité", "PA", "Portée", "Dommages Air", "Initiative", "8% Résistance Eau" → écris "% Résistance Eau", "Retrait PM", "Résistances Critiques", "Fuite", "1% Dommages aux sorts" → écris "% Dommages aux sorts")
+- "actuel" : la valeur actuelle (le nombre dans le libellé central, peut être négatif)
+- "min" et "max" : les colonnes Min/Max (peuvent être négatives ou absentes → null)
+Pour le FORMAT B (inventaire), "item_stats" est un tableau vide.
+
 Réponds UNIQUEMENT avec un JSON valide de cette forme, sans markdown :
-{"runes": [{"nom": "Rune Fo", "qty": 184}, ...], "non_identifiees": 2}
+{"runes": [{"nom": "Rune Fo", "qty": 184}, ...], "item_stats": [{"stat": "Vitalité", "actuel": 384, "min": 351, "max": 400}, ...], "non_identifiees": 2}
 
 - "qty" est le nombre affiché en haut à gauche de la cellule.
 - Si tu vois une cellule de rune mais ne peux pas l'identifier avec certitude, incrémente "non_identifiees" au lieu de deviner.

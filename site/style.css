@@ -7702,6 +7702,13 @@ table {
     flex-direction: column;
     gap: var(--spacing-xs);
 }
+.fm-session-card__user {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-accent-light);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
 .fm-session-card__title {
     font-family: var(--font-title);
     font-size: 1rem;
@@ -7780,6 +7787,71 @@ table {
     font-size: 0.75rem;
     color: var(--color-text-muted);
     margin-top: 2px;
+}
+.fm-modal__owner {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--color-accent-light);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 2px;
+}
+
+/* === BANDEAU PUI DE L'ITEM === */
+.fm-pui-banner {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(243, 156, 18, 0.07);
+    border: 1px solid rgba(243, 156, 18, 0.3);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+.fm-pui-banner strong {
+    color: var(--color-warning);
+    font-family: var(--font-title);
+    font-size: 1.02em;
+}
+.fm-pui-banner[hidden] { display: none; }
+
+/* === GUIDE PREMIÈRE SESSION === */
+.fm-guide {
+    background: rgba(59, 130, 246, 0.06);
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+.fm-guide summary {
+    cursor: pointer;
+    font-family: var(--font-title);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--color-text-primary);
+    user-select: none;
+    padding: var(--spacing-xs) 0;
+}
+.fm-guide summary:hover { color: #3b82f6; }
+.fm-guide ol {
+    margin: var(--spacing-sm) 0 var(--spacing-xs) 0;
+    padding-left: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+.fm-guide li {
+    font-size: 0.82rem;
+    color: var(--color-text-secondary);
+    line-height: 1.5;
+}
+.fm-guide li strong { color: var(--color-text-primary); }
+.fm-guide kbd {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid var(--color-border);
+    font-family: var(--font-body);
+    font-size: 0.72rem;
 }
 .fm-modal__screen {
     display: block;
