@@ -60,6 +60,11 @@
 - `015-zones-type-dj.sql` — Colonne type ('zone' / 'dj') sur zones_perco
 - `016-recyclages-preuves-hebdo.sql` — Colonne preuve_url + vues v_recyclages_semaine_par_user/global + policies storage
 - `017-zones-dofus-seed.sql` — **Seed complet ~298 zones Dofus (territoires + donjons) issus du panneau Anomalies**
+- `018-forgemagie.sql` — **Tables FM : runes (catalogue poids/prix), fm_sessions, fm_session_runes, fm_session_achats + vue v_fm_par_user + RLS + seed ~65 runes avec poids standards**
+- `019-runes-officielles.sql` — **Catalogue officiel 104 runes (noms HDV + prix moyens relevés IG le 11/06) — remplace le seed du 018**
+- `020-fm-concassage.sql` — Colonne qty_ajustement sur fm_session_runes + table fm_session_concassages (fusion 3 basiques → 1 Pa au concasseur, neutre en coût)
+- `021-fm-multi-sessions.sql` — Colonne last_active_at sur fm_sessions (multi-sessions en parallèle, reprise depuis Mes sessions)
+- `022-runes-icones.sql` — Colonne img_url + 105 icônes officielles **hébergées en local** (`site/assets/images/runes/`, 104 PNG 128×128 téléchargés depuis l'API DofusDB, ~1,9 Mo)
 
 ## Historique & Décisions
 - Système complet gestion alliance : membres, classements, PvP, boutique kamas, board hebdo
@@ -81,9 +86,21 @@
   - "Board hebdo" renommé en "Droits Perco" (label nav uniquement)
   - CSS : ~400 lignes ajoutées (recyc-*, app-sidebar*, recyc-toggle, recyc-preuve, recyc-mini-perso, etc.)
 
+- **22/05/2026 (soir) — feat: Tracker Forgemagie (FM)**
+  - Migration SQL `018-forgemagie.sql` : catalogue `runes` (nom, catégorie, tier basique/pa/ra, bonus, poids/pui, prix_kamas admin), `fm_sessions` (statut en_cours/terminee/abandonnee, coût figé à la clôture), `fm_session_runes` (qty avant/achetée/après/consommée), `fm_session_achats` (parse chat)
+  - Edge function `supabase/functions/extract-runes/index.ts` : reçoit un screenshot d'inventaire en base64 → Claude Haiku vision → JSON [{nom, qty}]. **À déployer via Dashboard Supabase + secret ANTHROPIC_API_KEY**
+  - Page `fm.html` + `js/fm.js` : 3 onglets — Session (paste screen avant → grille corrigeable → session en cours → achats collés depuis le chat → clôture screen après → résumé conso/coût), Mes sessions (KPI + historique expandable), Runes & prix (catalogue searchable, prix éditables admin)
+  - Workflow : conso = qty_avant + achats − qty_après, valorisée au prix catalogue figé à la clôture
+  - Screens uploadés dans `preuves-recyclages/fm/{userId}/` (non bloquant si échec)
+  - Sidebar : "Forgemagie" ajouté au groupe Économie (icône hammer) + PAGES const
+
 ## Storage Supabase
 - Bucket **`preuves-recyclages`** (public) — créé manuellement via Supabase Dashboard
 - Policies via migration 016 : INSERT membres validés / SELECT public / DELETE owner ou admin
+- Le tracker FM range ses screens dans le dossier `fm/` du même bucket
+
+## Edge Functions Supabase
+- **`extract-runes`** — extraction runes+quantités depuis un screenshot d'inventaire (Claude Haiku vision). Code dans `supabase/functions/extract-runes/index.ts`. Secret requis : `ANTHROPIC_API_KEY`. À déployer via Dashboard > Edge Functions
 
 ## Prochaines étapes
 - **Tester en prod** : saisie d'un recyclage avec preuve + récap admin hebdo
