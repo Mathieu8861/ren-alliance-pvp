@@ -66,6 +66,7 @@
 - `021-fm-multi-sessions.sql` — Colonne last_active_at sur fm_sessions (multi-sessions en parallèle, reprise depuis Mes sessions)
 - `022-runes-icones.sql` — Colonne img_url + 105 icônes officielles **hébergées en local** (`site/assets/images/runes/`, 104 PNG 128×128 téléchargés depuis l'API DofusDB, ~1,9 Mo)
 - `023-fm-item-pui.sql` — Colonnes item_pui_depart/max/final sur fm_sessions (poids de l'item calculé depuis les stats min/max/actuel du Costumager × poids/unité du catalogue ; puits dispo = max − actuel)
+- `024-modules-config.sql` — **Table modules_config (feature flags)** : 12 modules activables/désactivables depuis Admin > Modules. Un module off = masqué de la sidebar + pages redirigées vers l'accueil. Cache localStorage `ren_modules` côté front. Prévu pour la duplication du site vers d'autres alliances (chaque instance active ses modules)
 
 ## Historique & Décisions
 - Système complet gestion alliance : membres, classements, PvP, boutique kamas, board hebdo

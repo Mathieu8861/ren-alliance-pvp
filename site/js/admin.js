@@ -79,6 +79,7 @@
                 case 'validation': await tabValidation(content); break;
                 case 'utilisateurs': await tabUtilisateurs(content); break;
                 case 'alliances': await tabAlliances(content); break;
+                case 'modules': await tabModules(content); break;
                 case 'bareme': await tabBareme(content); break;
                 case 'builds': await tabBuilds(content); break;
                 case 'jeu-config': await tabJeuConfig(content); break;
@@ -1981,6 +1982,87 @@
                     form.remove();
                 });
             });
+        });
+    }
+
+    /* ============================================ */
+    /* ONGLET MODULES (feature flags)               */
+    /* ============================================ */
+    var MODULES_DEF = [
+        { key: 'attaque',    label: 'Attaque',        desc: 'Saisie des combats d\'attaque' },
+        { key: 'defense',    label: 'Défense',        desc: 'Saisie des combats de défense' },
+        { key: 'historique', label: 'Historique',     desc: 'Historique de tous les combats' },
+        { key: 'classement', label: 'Classement',     desc: 'Classement PvP des membres' },
+        { key: 'membres',    label: 'Membres',        desc: 'Annuaire des membres de l\'alliance' },
+        { key: 'builds',     label: 'Builds',         desc: 'Builds recommandés par l\'alliance' },
+        { key: 'board',      label: 'Droits Perco',   desc: 'Board hebdomadaire et récompenses percepteurs' },
+        { key: 'liens',      label: 'Liens utiles',   desc: 'Outils Dofus + accès mules + sorts communs' },
+        { key: 'boutique',   label: 'Boutique',       desc: 'Boutique jetons / kamas interne' },
+        { key: 'recyclages', label: 'Recyclages',     desc: 'Suivi des recyclages percepteurs (pépites)' },
+        { key: 'fm',         label: 'Forgemagie',     desc: 'Tracker de sessions FM (runes, coûts, pui)' },
+        { key: 'jeux',       label: 'Jeux',           desc: 'Jeux de cartes + slot machine (inclut la page Slot)' }
+    ];
+
+    async function tabModules(content) {
+        var { data, error } = await window.REN.supabase
+            .from('modules_config')
+            .select('*');
+
+        if (error) {
+            content.innerHTML = '<div class="admin-panel__title">Modules</div>'
+                + '<p class="text-muted" style="padding:1rem;">Table modules_config absente — exécute la migration <code>sql/024-modules-config.sql</code> dans Supabase.</p>';
+            return;
+        }
+
+        var state = {};
+        (data || []).forEach(function (m) { state[m.module] = m.actif; });
+
+        var html = '<div class="admin-panel__title">Modules du site</div>';
+        html += '<p class="text-muted" style="font-size:0.8125rem;margin-bottom:var(--spacing-lg);">Décoche un module pour le masquer de la navigation et bloquer l\'accès à ses pages. Réactivable à tout moment — aucune donnée n\'est supprimée. Les membres voient le changement au prochain chargement de page.</p>';
+
+        html += '<table class="admin-table" style="width:100%;"><thead><tr>';
+        html += '<th style="text-align:center;width:70px;">Actif</th><th>Module</th><th>Description</th>';
+        html += '</tr></thead><tbody>';
+        MODULES_DEF.forEach(function (m) {
+            var actif = state[m.key] !== false; /* absent = actif */
+            html += '<tr>'
+                + '<td style="text-align:center;"><input type="checkbox" class="module-toggle" data-module="' + m.key + '"' + (actif ? ' checked' : '') + '></td>'
+                + '<td><strong>' + m.label + '</strong></td>'
+                + '<td class="text-muted" style="font-size:0.8125rem;">' + m.desc + '</td>'
+                + '</tr>';
+        });
+        html += '</tbody></table>';
+
+        html += '<div style="display:flex;gap:var(--spacing-sm);margin-top:var(--spacing-md);">';
+        html += '<button class="btn btn--primary" id="btn-save-modules">Sauvegarder</button>';
+        html += '</div>';
+
+        content.innerHTML = html;
+
+        document.getElementById('btn-save-modules').addEventListener('click', async function () {
+            var rows = [];
+            content.querySelectorAll('.module-toggle').forEach(function (cb) {
+                rows.push({
+                    module: cb.getAttribute('data-module'),
+                    actif: cb.checked,
+                    updated_at: new Date().toISOString()
+                });
+            });
+            var { error: err } = await window.REN.supabase
+                .from('modules_config')
+                .upsert(rows, { onConflict: 'module' });
+            if (err) {
+                console.error('[REN-ADMIN] Erreur modules:', err);
+                window.REN.toast('Erreur sauvegarde : ' + err.message, 'error');
+                return;
+            }
+            /* Rafraîchir le cache local pour voir l'effet immédiatement */
+            try {
+                var map = {};
+                rows.forEach(function (r) { map[r.module] = r.actif; });
+                localStorage.setItem('ren_modules', JSON.stringify(map));
+            } catch (e) { /* ignore */ }
+            window.REN.toast('Modules sauvegardés !', 'success');
         });
     }
 

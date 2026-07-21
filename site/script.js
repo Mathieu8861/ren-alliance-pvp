@@ -462,36 +462,102 @@
         {
             title: 'PvP',
             items: [
-                { page: 'attaque', label: 'Attaque', href: 'attaque.html', icon: 'sword' },
-                { page: 'defense', label: 'Défense', href: 'defense.html', icon: 'shield' },
-                { page: 'historique', label: 'Historique', href: 'historique.html', icon: 'clock' },
-                { page: 'classement', label: 'Classement', href: 'classement.html', icon: 'trophy' }
+                { page: 'attaque', label: 'Attaque', href: 'attaque.html', icon: 'sword', module: 'attaque' },
+                { page: 'defense', label: 'Défense', href: 'defense.html', icon: 'shield', module: 'defense' },
+                { page: 'historique', label: 'Historique', href: 'historique.html', icon: 'clock', module: 'historique' },
+                { page: 'classement', label: 'Classement', href: 'classement.html', icon: 'trophy', module: 'classement' }
             ]
         },
         {
             title: 'Alliance',
             items: [
-                { page: 'membres', label: 'Membres', href: 'membres.html', icon: 'users' },
-                { page: 'builds', label: 'Builds', href: 'builds.html', icon: 'tool' },
-                { page: 'board', label: 'Droits Perco', href: 'board.html', icon: 'chart' },
-                { page: 'liens', label: 'Liens utiles', href: 'liens.html', icon: 'link' }
+                { page: 'membres', label: 'Membres', href: 'membres.html', icon: 'users', module: 'membres' },
+                { page: 'builds', label: 'Builds', href: 'builds.html', icon: 'tool', module: 'builds' },
+                { page: 'board', label: 'Droits Perco', href: 'board.html', icon: 'chart', module: 'board' },
+                { page: 'liens', label: 'Liens utiles', href: 'liens.html', icon: 'link', module: 'liens' }
             ]
         },
         {
             title: 'Économie',
             items: [
-                { page: 'boutique', label: 'Boutique', href: 'boutique.html', icon: 'cart' },
-                { page: 'recyclages', label: 'Recyclages', href: 'recyclages.html', icon: 'recycle' },
-                { page: 'fm', label: 'Forgemagie', href: 'fm.html', icon: 'hammer' }
+                { page: 'boutique', label: 'Boutique', href: 'boutique.html', icon: 'cart', module: 'boutique' },
+                { page: 'recyclages', label: 'Recyclages', href: 'recyclages.html', icon: 'recycle', module: 'recyclages' },
+                { page: 'fm', label: 'Forgemagie', href: 'fm.html', icon: 'hammer', module: 'fm' }
             ]
         },
         {
             title: 'Fun',
             items: [
-                { page: 'jeux', label: 'Jeux', href: 'jeux.html', icon: 'dice', cta: true }
+                { page: 'jeux', label: 'Jeux', href: 'jeux.html', icon: 'dice', cta: true, module: 'jeux' }
             ]
         }
     ];
+
+    /* === MODULES ACTIVABLES (feature flags) === */
+    /* Page -> module (les pages sans entrée sont toujours accessibles) */
+    const PAGE_MODULES = {
+        attaque: 'attaque', defense: 'defense', historique: 'historique',
+        classement: 'classement', membres: 'membres', builds: 'builds',
+        board: 'board', liens: 'liens', boutique: 'boutique',
+        recyclages: 'recyclages', fm: 'fm', jeux: 'jeux', slot: 'jeux'
+    };
+    let modulesActifs = null; /* null = config pas chargée => tout actif */
+
+    function readModulesCache() {
+        try {
+            const raw = localStorage.getItem('ren_modules');
+            if (raw) modulesActifs = JSON.parse(raw);
+        } catch (e) { /* ignore */ }
+    }
+
+    function isModuleActif(mod) {
+        if (!mod || !modulesActifs) return true;
+        return modulesActifs[mod] !== false;
+    }
+
+    function applyModulesToSidebar() {
+        const sidebar = document.getElementById('app-sidebar');
+        if (!sidebar) return;
+        sidebar.querySelectorAll('.app-sidebar__link[data-module]').forEach(function (link) {
+            link.style.display = isModuleActif(link.getAttribute('data-module')) ? '' : 'none';
+        });
+        /* Masquer les groupes entièrement vides */
+        sidebar.querySelectorAll('.app-sidebar__group').forEach(function (group) {
+            const links = group.querySelectorAll('.app-sidebar__link');
+            if (!links.length) return;
+            let visible = 0;
+            links.forEach(function (l) { if (l.style.display !== 'none') visible++; });
+            group.style.display = visible ? '' : 'none';
+        });
+    }
+
+    /* Redirige vers l'accueil si la page courante appartient à un module désactivé */
+    function guardCurrentPage() {
+        const mod = PAGE_MODULES[getCurrentPage()];
+        if (mod && !isModuleActif(mod)) {
+            window.location.href = 'index.html';
+            return true;
+        }
+        return false;
+    }
+
+    async function loadModulesConfig() {
+        if (!window.REN.supabase) return;
+        try {
+            const { data, error } = await window.REN.supabase
+                .from('modules_config')
+                .select('module, actif');
+            if (error) throw error;
+            modulesActifs = {};
+            (data || []).forEach(function (m) { modulesActifs[m.module] = m.actif; });
+            try { localStorage.setItem('ren_modules', JSON.stringify(modulesActifs)); } catch (e) { /* ignore */ }
+            applyModulesToSidebar();
+            guardCurrentPage();
+        } catch (err) {
+            /* Table absente ou indisponible : tout reste actif */
+            console.warn('[REN] modules_config indisponible:', err.message);
+        }
+    }
 
     const SIDEBAR_ICONS = {
         home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
@@ -536,7 +602,9 @@
                 const active = item.page === currentPage ? ' active' : '';
                 const cta = item.cta ? ' app-sidebar__link--cta' : '';
                 const icon = SIDEBAR_ICONS[item.icon] || '';
-                html += '<a href="' + item.href + '" class="app-sidebar__link' + cta + active + '" data-page="' + item.page + '">'
+                html += '<a href="' + item.href + '" class="app-sidebar__link' + cta + active + '" data-page="' + item.page + '"'
+                    + (item.module ? ' data-module="' + item.module + '"' : '')
+                    + '>'
                     + icon
                     + '<span>' + item.label + '</span>'
                     + '</a>';
@@ -720,6 +788,11 @@
     /* === INIT === */
     function init() {
         injectSidebar();
+        /* Modules : filtrage immédiat depuis le cache, puis maj depuis la BDD */
+        readModulesCache();
+        applyModulesToSidebar();
+        if (guardCurrentPage()) return; /* redirection en cours, inutile de continuer */
+        loadModulesConfig();
         setActiveNav();
         bindSidebarMobileToggle();
         initMobileMenu();
